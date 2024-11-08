@@ -1,0 +1,25 @@
+# Node.js dependencies
+backend/node_modules/
+frontend/node_modules/
+
+# Environment variables
+backend/.env
+frontend/.env
+
+# Build files
+frontend/dist/
+backend/build/
+
+# Logs
+*.log
+backend/logs/
+frontend/logs/
+
+# System files
+.DS_Store               # macOS
+Thumbs.db               # Windows
+
+# IDE and editor specific files
+.vscode/                # VS Code
+.idea/                  # JetBrains IDEs
+*.swp                   # Vim swap files
