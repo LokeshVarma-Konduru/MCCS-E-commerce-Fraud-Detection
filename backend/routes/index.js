@@ -1,10 +1,20 @@
 import express from "express";
 
-import { getAllTeamMembers
- } from "../controllers/team.js";
+import { getAllTeamMembers} from "../controllers/team.js";
+import { login, verifyLoginOTP } from '../controllers/authController.js';
+import { getUserInfo } from "../controllers/userController.js";
+import { addUsers } from '../controllers/adminController.js';
+import authMiddleware from '../middleware/auth.js';
+import adminMiddleware from '../middleware/admin.js';
 
 const router = express.Router();
 
 router.get('/team-members', getAllTeamMembers);
+
+router.post('/login', login);
+router.post('/verify-login-otp', verifyLoginOTP);
+router.get('/user/:userId', getUserInfo);
+
+router.post('/addUsers', addUsers);
 
 export default router;

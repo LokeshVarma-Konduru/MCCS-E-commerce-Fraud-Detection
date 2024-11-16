@@ -1,7 +1,7 @@
 // src/TeamMembers.js
 
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { getTeamMembers } from './api';
 
 const TeamMembers = () => {
   const [teamMembers, setTeamMembers] = useState([]);
@@ -11,9 +11,8 @@ const TeamMembers = () => {
   useEffect(() => {
     const fetchTeamMembers = async () => {
       try {
-        // Make an API call to fetch team members
-        const response = await axios.get('http://localhost:9000/mccs/team-members');
-        console.log(response)
+        // Use the API abstraction to fetch team members
+        const response = await getTeamMembers();
         setTeamMembers(response.data.data);
       } catch (err) {
         setError(err.message);
