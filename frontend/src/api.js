@@ -8,6 +8,9 @@ export const login = (email, password) =>
 export const verifyLoginOTP = (userId, otp) => 
     axios.post(`${API_URL}/verify-login-otp`, { userId, otp });
 
+export const logout = () => 
+    axios.post(`${API_URL}/logout`);
+
 export const getUserInfo = (userId) => 
     axios.get(`${API_URL}/user/${userId}`);
 

@@ -77,3 +77,17 @@ export const verifyLoginOTP = async (req, res) => {
     }
 };
 
+
+export const logout = async (req, res) => {
+    try {
+        res.clearCookie('authonlycookie', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'development', // Set to true in production
+            sameSite: 'Strict',
+        });
+        res.status(200).json({ message: 'Logout successful' });
+    } catch (error) {
+        console.error('Logout error:', error);
+        res.status(500).json({ message: 'Logout failed', error: error.message });
+    }
+};

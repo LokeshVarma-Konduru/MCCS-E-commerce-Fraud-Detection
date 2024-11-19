@@ -1,7 +1,7 @@
 import express from "express";
 
 import { getAllTeamMembers} from "../controllers/team.js";
-import { login, verifyLoginOTP } from '../controllers/authController.js';
+import { login, verifyLoginOTP, logout } from '../controllers/authController.js';
 import { getUserInfo } from "../controllers/userController.js";
 import { addUsers } from '../controllers/adminController.js';
 import authMiddleware from '../middleware/auth.js';
@@ -13,6 +13,7 @@ router.get('/team-members', getAllTeamMembers);
 
 router.post('/login', login);
 router.post('/verify-login-otp', verifyLoginOTP);
+router.post('/logout', authMiddleware, logout);
 router.get('/user/:userId', getUserInfo);
 
 router.post('/addUsers', addUsers);
