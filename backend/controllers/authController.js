@@ -91,3 +91,37 @@ export const logout = async (req, res) => {
         res.status(500).json({ message: 'Logout failed', error: error.message });
     }
 };
+
+export const updatePassword = async (req, res) => {
+    const { userId, oldPassword, newPassword } = req.body;
+    if (!userId || !oldPassword || !newPassword) {
+        return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    try {
+        // Fetch the user by ID
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Verify the old password
+        const isMatch = await bcrypt.compare(oldPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Old password is incorrect' });
+        }
+
+        // Hash the new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // Update the user's password
+        user.password = hashedPassword;
+        await user.save();
+
+        res.status(200).json({ message: 'Password updated successfully' });
+    } catch (error) {
+        console.error('Error updating password:', error);
+        res.status(500).json({ message: 'Failed to update password', error: error.message });
+    }
+};

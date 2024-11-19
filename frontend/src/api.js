@@ -19,3 +19,6 @@ export const getTeamMembers = () =>
 
 export const addUsers = () => 
     axios.get(`${API_URL}/addUsers`);
+
+export const updatePassword = (userId, oldPassword, newPassword) =>
+    axios.post(`${API_URL}/update-password`, { userId, oldPassword, newPassword });
