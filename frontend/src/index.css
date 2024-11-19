@@ -1,40 +1,40 @@
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: Inter, system-ui, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
   background-color: #242424;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+#root {
+  width: 100%;
+  min-height: 100vh;
 }
 
+/* Remove conflicting styles */
+body {
+  display: block;
+  place-items: unset;
+}
+
+/* Basic button styles - won't affect our login button due to specificity */
 button {
   border-radius: 8px;
   border: 1px solid transparent;
@@ -46,12 +46,30 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
-button:hover {
+
+/* Only apply these styles to buttons that aren't in the login form */
+button:not(.submit-button):hover {
   border-color: #646cff;
 }
-button:focus,
-button:focus-visible {
+
+button:not(.submit-button):focus,
+button:not(.submit-button):focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+
+a:hover {
+  color: #535bf2;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
 }
 
 @media (prefers-color-scheme: light) {
@@ -62,7 +80,7 @@ button:focus-visible {
   a:hover {
     color: #747bff;
   }
-  button {
+  button:not(.submit-button) {
     background-color: #f9f9f9;
   }
 }

@@ -1,5 +1,6 @@
 // src/TeamMembers.js
 
+// eslint-disable-next-line no-unused-vars
 import React, { useEffect, useState } from 'react';
 import { getTeamMembers } from './api';
 
