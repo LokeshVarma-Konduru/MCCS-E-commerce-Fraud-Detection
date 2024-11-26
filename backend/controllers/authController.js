@@ -67,7 +67,7 @@ export const verifyLoginOTP = async (req, res) => {
         await user.save();
 
         // Generate JWT token and set it as an HTTP-only cookie
-        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ userId: user._id, role:user.role}, process.env.JWT_SECRET, { expiresIn: '1h' });
         res.cookie('authonlycookie', token, { httpOnly: true, maxAge: 3600000 }); // 1 hour
 
         res.status(200).json({ message: 'OTP verified, login successful' });

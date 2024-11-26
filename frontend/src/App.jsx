@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import TeamMembers from './TeamMembers.jsx';
 import Login from './Login.jsx';
+import Navbar from './components/Navbar.jsx';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -14,7 +15,12 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  return children;
+  return (
+    <>
+      <Navbar />
+      {children}
+    </>
+  );
 };
 
 // Add PropTypes validation
@@ -25,7 +31,7 @@ ProtectedRoute.propTypes = {
 // Dashboard Content
 const DashboardContent = () => {
   return (
-    <div>
+    <div className="dashboard-content">
       <h1>Welcome to the Team Dashboard</h1>
       <TeamMembers />
     </div>
@@ -35,17 +41,19 @@ const DashboardContent = () => {
 const App = () => {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <DashboardContent />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
+      <div className="app">
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <DashboardContent />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </div>
     </BrowserRouter>
   );
 };

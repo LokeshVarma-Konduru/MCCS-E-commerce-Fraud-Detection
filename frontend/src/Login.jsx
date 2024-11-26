@@ -28,6 +28,7 @@ const Login = () => {
       } else {
         const response = await verifyLoginOTP(userId, otp);
         localStorage.setItem('token', response.data.token);
+        localStorage.setItem('userId', userId);  
         navigate('/');
       }
     } catch (err) {
