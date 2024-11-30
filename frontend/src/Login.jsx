@@ -29,7 +29,7 @@ const Login = () => {
         const response = await verifyLoginOTP(userId, otp);
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('userId', userId);  
-        navigate('/');
+        navigate('/dashboard');
       }
     } catch (err) {
       setError(err.response?.data?.message || 'An error occurred');

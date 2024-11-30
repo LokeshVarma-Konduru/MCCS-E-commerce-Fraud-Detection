@@ -48,7 +48,6 @@ Your Company Name`;
 // Verify OTP Controller: Validates OTP and grants access by setting JWT token
 export const verifyLoginOTP = async (req, res) => {
     const { userId, otp } = req.body;
-
     try {
         // Validate input
         if (!userId || !otp) {

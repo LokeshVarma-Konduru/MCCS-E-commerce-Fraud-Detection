@@ -6,6 +6,7 @@ import TeamMembers from './TeamMembers.jsx';
 import Login from './Login.jsx';
 import Navbar from './components/Navbar.jsx';
 import AdminPanel from './pages/AdminPanel.jsx';
+import { getUserInfo } from './api.js';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -24,8 +25,48 @@ const ProtectedRoute = ({ children }) => {
   );
 };
 
+// Admin Route Component
+const AdminRoute = ({ children }) => {
+  const [isAdmin, setIsAdmin] = React.useState(null);
+  const location = useLocation();
+  
+  React.useEffect(() => {
+    const checkAdminStatus = async () => {
+      try {
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+          setIsAdmin(false);
+          return;
+        }
+        
+        const response = await getUserInfo(userId);
+        setIsAdmin(response.data.user.role === 'Admin');
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        setIsAdmin(false);
+      }
+    };
+    
+    checkAdminStatus();
+  }, []);
+  
+  if (isAdmin === null) {
+    return <div>Loading...</div>;
+  }
+  
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" state={{ from: location }} replace />;
+  }
+  
+  return <ProtectedRoute>{children}</ProtectedRoute>;
+};
+
 // Add PropTypes validation
 ProtectedRoute.propTypes = {
+  children: PropTypes.node.isRequired
+};
+
+AdminRoute.propTypes = {
   children: PropTypes.node.isRequired
 };
 
@@ -45,8 +86,9 @@ const App = () => {
       <div className="app">
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route
-            path="/"
+            path="/dashboard"
             element={
               <ProtectedRoute>
                 <DashboardContent />
@@ -56,9 +98,9 @@ const App = () => {
           <Route
             path="/admin"
             element={
-              <ProtectedRoute>
+              <AdminRoute>
                 <AdminPanel />
-              </ProtectedRoute>
+              </AdminRoute>
             }
           />
         </Routes>

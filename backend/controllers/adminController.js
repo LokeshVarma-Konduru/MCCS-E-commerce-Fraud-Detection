@@ -85,3 +85,44 @@ Your Company Name`;
 
     res.status(200).json(response);
 };
+
+// Controller to get all users with filters and search
+export const getAllUsers = async (req, res) => {
+    try {
+        const { role, search } = req.query;
+        // Build query
+        let query = {};
+        
+        // Add role filter if provided
+        if (role) {
+            query.role = role;
+        }
+        
+        // Add search filter if provided
+        if (search) {
+            const searchRegex = new RegExp(search, 'i');
+            query.$or = [
+                { name: searchRegex },
+                { email: searchRegex }
+            ];
+        }
+        
+        // Fetch users with selected fields only
+        const users = await User.find(query)
+            .select('name email role')
+            .sort({ name: 1 }); // Sort by name ascending
+        
+        res.status(200).json({
+            success: true,
+            count: users.length,
+            data: users
+        });
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching users',
+            error: error.message
+        });
+    }
+};
