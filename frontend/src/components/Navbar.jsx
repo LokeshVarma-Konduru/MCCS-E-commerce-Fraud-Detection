@@ -88,6 +88,7 @@ const Navbar = () => {
                 <li><Link to="/dashboard">Dashboard</Link></li>
                 <li><Link to="/transactions">Transactions</Link></li>
                 <li><Link to="/analytics">Analytics</Link></li>
+                <li><Link to="/admin">Admin Panel</Link></li>
               </ul>
             </div>
           </div>

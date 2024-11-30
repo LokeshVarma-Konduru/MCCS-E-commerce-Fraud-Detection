@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import TeamMembers from './TeamMembers.jsx';
 import Login from './Login.jsx';
 import Navbar from './components/Navbar.jsx';
+import AdminPanel from './pages/AdminPanel.jsx';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -49,6 +50,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <DashboardContent />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <AdminPanel />
               </ProtectedRoute>
             }
           />
