@@ -34,17 +34,18 @@ const AdminPanel = () => {
       let url = `${API_URL}/users`;
       const params = new URLSearchParams();
       
-      if (roleFilter) {
+      // Only add role parameter if a specific role is selected
+      if (roleFilter && roleFilter !== '') {
         params.append('role', roleFilter);
       }
-      if (searchTerm.trim()) {
+      
+      // Only add search parameter if there's a search term
+      if (searchTerm && searchTerm.trim()) {
         params.append('search', searchTerm.trim());
       }
 
       const queryString = params.toString();
-      if (queryString) {
-        url += `?${queryString}`;
-      }
+      url = queryString ? `${url}?${queryString}` : url;
 
       const response = await axios.get(url);
       if (response.data && response.data.data) {
@@ -73,16 +74,10 @@ const AdminPanel = () => {
       clearTimeout(searchTimeout.current);
     }
 
-    // Set searching state immediately for visual feedback
-    if (searchTerm || roleFilter) {
-      setIsSearching(true);
-    }
+    setIsSearching(true);
 
-    // Debounce the search/filter operation
     searchTimeout.current = setTimeout(() => {
-      if (searchTerm || roleFilter) {
-        fetchUsers();
-      }
+      fetchUsers();
       setIsSearching(false);
     }, 400);
 
@@ -91,7 +86,7 @@ const AdminPanel = () => {
         clearTimeout(searchTimeout.current);
       }
     };
-  }, [searchTerm, roleFilter, fetchUsers]);
+  }, [fetchUsers, searchTerm, roleFilter]);
 
   const checkAdminAccess = async () => {
     try {
@@ -116,7 +111,9 @@ const AdminPanel = () => {
   };
 
   const handleRoleFilterChange = (e) => {
-    setRoleFilter(e.target.value);
+    const newRole = e.target.value;
+    setRoleFilter(newRole);
+    setIsSearching(true);
   };
 
   const handleInputChange = (e) => {
