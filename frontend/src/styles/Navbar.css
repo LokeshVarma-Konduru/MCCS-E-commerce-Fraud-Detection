@@ -222,24 +222,40 @@
 }
 
 .profile-footer {
-  padding: 1rem;
+  padding: 10px;
+  border-top: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
+.change-password-button,
 .logout-button {
   width: 100%;
-  padding: 0.5rem;
-  background-color: #dc3545;
-  color: #ffffff;
+  padding: 8px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: background-color 0.3s ease;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.change-password-button {
+  background-color: #4a90e2;
+  color: white;
+}
+
+.change-password-button:hover {
+  background-color: #357abd;
+}
+
+.logout-button {
+  background-color: #f5f5f5;
+  color: #333;
 }
 
 .logout-button:hover {
-  background-color: #c82333;
+  background-color: #e8e8e8;
 }
 
 @media (max-width: 768px) {

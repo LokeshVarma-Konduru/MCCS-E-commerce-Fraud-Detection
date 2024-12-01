@@ -2,11 +2,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getUserInfo, logout } from '../api';
+import ChangePasswordModal from './ChangePasswordModal';
 import '../styles/Navbar.css';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
   const [user, setUser] = useState(null);
   const menuRef = useRef(null);
   const profileRef = useRef(null);
@@ -124,6 +126,15 @@ const Navbar = () => {
                   <div className="role-badge">{user ? (user.role || 'User') : 'User'}</div>
                 </div>
                 <div className="profile-footer">
+                  <button 
+                    className="change-password-button" 
+                    onClick={() => {
+                      setIsChangePasswordModalOpen(true);
+                      setIsProfileOpen(false);
+                    }}
+                  >
+                    Change Password
+                  </button>
                   <button className="logout-button" onClick={handleLogout}>
                     Logout
                   </button>
@@ -133,6 +144,11 @@ const Navbar = () => {
           </div>
         </div>
       </div>
+      <ChangePasswordModal
+        isOpen={isChangePasswordModalOpen}
+        onClose={() => setIsChangePasswordModalOpen(false)}
+        userId={user?._id}
+      />
     </nav>
   );
 };
