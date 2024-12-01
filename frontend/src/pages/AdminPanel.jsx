@@ -271,6 +271,7 @@ const AdminPanel = () => {
   return (
     <div className="admin-panel">
       <div className="admin-container">
+        <h1>Admin Panel</h1>
         <div className="admin-card">
           <h2>Add New Users</h2>
           {addUserMessage && (

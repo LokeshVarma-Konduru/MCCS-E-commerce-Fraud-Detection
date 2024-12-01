@@ -80,16 +80,6 @@ const DashboardContent = () => {
   );
 };
 
-const AdminPanelContent = () => {
-  return (
-    <div className="admin-content">
-      <h1>Admin Pannel</h1>
-      <AdminPanel />
-    </div>
-  );
-};
-
-
 const App = () => {
   return (
     <BrowserRouter>
@@ -109,7 +99,7 @@ const App = () => {
             path="/admin"
             element={
               <AdminRoute>
-                <AdminPanelContent />
+                <AdminPanel />
               </AdminRoute>
             }
           />

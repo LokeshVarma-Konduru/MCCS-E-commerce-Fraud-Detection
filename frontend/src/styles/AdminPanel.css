@@ -1,15 +1,20 @@
 .admin-panel {
   padding: 20px;
-  margin-left: 250px;
+  padding-top: 80px; /* Add padding for navbar */
   min-height: 100vh;
   background-color: #1a1a1a;
   color: #ffffff;
+  width: 100%;
 }
 
 .admin-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+}
+
+.admin-content {
+  width: 100%;
 }
 
 .admin-card {
