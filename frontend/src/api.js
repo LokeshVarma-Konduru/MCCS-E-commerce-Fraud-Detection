@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-catch */
 import axios from 'axios';
 
 const API_URL = 'http://localhost:9000/mccs';
@@ -42,10 +43,6 @@ export const getUsers = (searchTerm = '', roleFilter = '') => {
 
 // Delete a user
 export const deleteUser = async (userId) => {
-  try {
     const response = await axios.delete(`${API_URL}/admin/users/${userId}`);
     return response;
-  } catch (error) {
-    throw error;
-  }
 };

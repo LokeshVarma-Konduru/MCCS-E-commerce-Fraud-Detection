@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { addUsers, getUsers, getUserInfo, deleteUser } from '../api';
 import '../styles/AdminPanel.css';
@@ -9,7 +9,6 @@ const AdminPanel = () => {
     { email: '', name: '', role: 'Developer' }
   ]);
   const [users, setUsers] = useState([]);
-  const [filteredUsers, setFilteredUsers] = useState([]);
   
   // Separate messages for Add User and Users List
   const [addUserMessage, setAddUserMessage] = useState('');
@@ -38,7 +37,6 @@ const AdminPanel = () => {
         // Add a smooth transition by using setTimeout
         setTimeout(() => {
           setUsers(response.data.data);
-          setFilteredUsers(response.data.data);
           setIsLoading(false);
         }, 300);
       }
