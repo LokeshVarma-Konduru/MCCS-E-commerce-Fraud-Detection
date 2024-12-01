@@ -154,7 +154,7 @@
 }
 
 .profile-icon {
-  width: 36px;
+  width: 46px;
   height: 36px;
   background-color: #333;
   border: 2px solid #007bff;
@@ -238,15 +238,18 @@
   cursor: pointer;
   font-size: 14px;
   transition: background-color 0.2s;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
 }
 
 .change-password-button {
-  background-color: #4a90e2;
-  color: white;
+  background: linear-gradient(45deg, #0088ff, #00ffff);
 }
 
 .change-password-button:hover {
-  background-color: #357abd;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 255, 255, 0.2);
 }
 
 .logout-button {
@@ -255,7 +258,8 @@
 }
 
 .logout-button:hover {
-  background-color: #e8e8e8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 255, 255, 0.2);
 }
 
 @media (max-width: 768px) {
