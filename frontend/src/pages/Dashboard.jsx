@@ -2,9 +2,9 @@
 
 // eslint-disable-next-line no-unused-vars
 import React, { useEffect, useState } from 'react';
-import { getTeamMembers } from './api';
+import { getTeamMembers } from '../api';
 
-const TeamMembers = () => {
+const Dashboard = () => {
   const [teamMembers, setTeamMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -46,4 +46,4 @@ const TeamMembers = () => {
   );
 };
 
-export default TeamMembers;
+export default Dashboard;

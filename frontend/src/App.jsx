@@ -2,7 +2,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import TeamMembers from './TeamMembers.jsx';
+import Dashboard from './pages/Dashboard.jsx';
 import Login from './Login.jsx';
 import Navbar from './components/Navbar.jsx';
 import AdminPanel from './pages/AdminPanel.jsx';
@@ -75,10 +75,20 @@ const DashboardContent = () => {
   return (
     <div className="dashboard-content">
       <h1>Welcome to the Team Dashboard</h1>
-      <TeamMembers />
+      <Dashboard />
     </div>
   );
 };
+
+const AdminPanelContent = () => {
+  return (
+    <div className="admin-content">
+      <h1>Admin Pannel</h1>
+      <AdminPanel />
+    </div>
+  );
+};
+
 
 const App = () => {
   return (
@@ -99,7 +109,7 @@ const App = () => {
             path="/admin"
             element={
               <AdminRoute>
-                <AdminPanel />
+                <AdminPanelContent />
               </AdminRoute>
             }
           />
