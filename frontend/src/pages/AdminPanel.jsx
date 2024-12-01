@@ -1,53 +1,39 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { addUsers, getUsers, getUserInfo, deleteUser } from '../api';
 import '../styles/AdminPanel.css';
-
-const API_URL = 'http://localhost:9000/mccs';
-
-axios.defaults.withCredentials = true;
-axios.defaults.headers.common['Content-Type'] = 'application/json';
-axios.defaults.headers.common['Accept'] = 'application/json';
 
 const AdminPanel = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    email: '',
-    name: '',
-    role: 'Developer'
-  });
+  const [userEntries, setUserEntries] = useState([
+    { email: '', name: '', role: 'Developer' }
+  ]);
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
-  const [message, setMessage] = useState('');
-  const [messageType, setMessageType] = useState('');
-  const [messageVisible, setMessageVisible] = useState(false);
+  
+  // Separate messages for Add User and Users List
+  const [addUserMessage, setAddUserMessage] = useState('');
+  const [addUserMessageType, setAddUserMessageType] = useState('');
+  const [addUserMessageVisible, setAddUserMessageVisible] = useState(false);
+  
+  const [usersListMessage, setUsersListMessage] = useState('');
+  const [usersListMessageType, setUsersListMessageType] = useState('');
+  const [usersListMessageVisible, setUsersListMessageVisible] = useState(false);
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
   const searchTimeout = useRef(null);
-  const messageTimeoutRef = useRef(null);
+  const addUserMessageTimeoutRef = useRef(null);
+  const usersListMessageTimeoutRef = useRef(null);
 
   const fetchUsers = useCallback(async () => {
     try {
       setIsLoading(true);
-      let url = `${API_URL}/users`;
-      const params = new URLSearchParams();
-      
-      // Only add role parameter if a specific role is selected
-      if (roleFilter && roleFilter !== '') {
-        params.append('role', roleFilter);
-      }
-      
-      // Only add search parameter if there's a search term
-      if (searchTerm && searchTerm.trim()) {
-        params.append('search', searchTerm.trim());
-      }
-
-      const queryString = params.toString();
-      url = queryString ? `${url}?${queryString}` : url;
-
-      const response = await axios.get(url);
+      const response = await getUsers(searchTerm, roleFilter);
       if (response.data && response.data.data) {
         // Add a smooth transition by using setTimeout
         setTimeout(() => {
@@ -58,7 +44,7 @@ const AdminPanel = () => {
       }
     } catch (error) {
       console.error('Error fetching users:', error);
-      showMessage('Error fetching users', 'error');
+      showUsersListMessage('Error fetching users', 'error');
       setIsLoading(false);
     }
   }, [roleFilter, searchTerm]);
@@ -96,7 +82,7 @@ const AdminPanel = () => {
         return;
       }
 
-      const response = await axios.get(`${API_URL}/user/${userId}`);
+      const response = await getUserInfo(userId);
       if (!response.data.user || response.data.user.role !== 'Admin') {
         navigate('/dashboard');
       }
@@ -116,77 +102,168 @@ const AdminPanel = () => {
     setIsSearching(true);
   };
 
-  const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+  const handleInputChange = (index, e) => {
+    const { name, value } = e.target;
+    const newUserEntries = [...userEntries];
+    newUserEntries[index] = {
+      ...newUserEntries[index],
+      [name]: value
+    };
+    setUserEntries(newUserEntries);
+  };
+
+  const addUserEntry = () => {
+    setUserEntries([...userEntries, { email: '', name: '', role: 'Developer' }]);
+  };
+
+  const removeUserEntry = (index) => {
+    if (userEntries.length > 1) {
+      const newUserEntries = userEntries.filter((_, i) => i !== index);
+      setUserEntries(newUserEntries);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    try {
-      const userData = {
-        users: [{
-          email: formData.email,
-          name: formData.name,
-          role: formData.role
-        }]
-      };
+    // Validate all entries
+    const invalidEntries = userEntries.filter(entry => 
+      !entry.email || !entry.name || !entry.role
+    );
 
-      const response = await axios.post(
-        `${API_URL}/addUsers`,
-        userData,
-        {
-          withCredentials: true,
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+    if (invalidEntries.length > 0) {
+      showAddUserMessage('Please fill in all fields for all users', 'error');
+      return;
+    }
+
+    try {
+      const response = await addUsers({ users: userEntries });
 
       if (response.data) {
-        if (response.data.failedUsers && response.data.failedUsers.length > 0) {
-          showMessage(`Failed to add user: ${response.data.failedUsers[0].message}`, 'error');
+        const { addedUsers, failedUsers } = response.data;
+        
+        if (failedUsers.length > 0) {
+          // Create a detailed message for failed users
+          const failureMessages = failedUsers.map(user => 
+            `${user.email}: ${user.message}`
+          ).join('\n');
+          
+          if (addedUsers.length > 0) {
+            // Some users were added successfully
+            showAddUserMessage(
+              `Added ${addedUsers.length} user(s) successfully.\nFailed to add:\n${failureMessages}`,
+              'warning'
+            );
+            // Only remove the successfully added users
+            const failedEmails = failedUsers.map(user => user.email);
+            setUserEntries(prevEntries => 
+              prevEntries.filter(entry => failedEmails.includes(entry.email))
+            );
+          } else {
+            // All users failed
+            showAddUserMessage(
+              `Failed to add users:\n${failureMessages}`,
+              'error'
+            );
+          }
         } else {
-          showMessage('User added successfully', 'success');
-          setFormData({ email: '', name: '', role: 'Developer' });
-          fetchUsers();
+          // All users added successfully
+          showAddUserMessage(
+            `Successfully added ${addedUsers.length} user(s). Temporary passwords have been sent to their email addresses.`,
+            'success'
+          );
+          // Reset form to a single empty entry
+          setUserEntries([{ email: '', name: '', role: 'Developer' }]);
         }
+        
+        // Refresh user list
+        fetchUsers();
       }
     } catch (error) {
-      console.error('Error adding user:', error);
-      showMessage(error.response?.data?.message || 'Error adding user', 'error');
+      console.error('Error adding users:', error);
+      showAddUserMessage(error.response?.data?.message || 'Error adding users', 'error');
     }
   };
 
-  const showMessage = (text, type) => {
+  const showAddUserMessage = (text, type) => {
     // Clear any existing timeout
-    if (messageTimeoutRef.current) {
-      clearTimeout(messageTimeoutRef.current);
+    if (addUserMessageTimeoutRef.current) {
+      clearTimeout(addUserMessageTimeoutRef.current);
     }
 
-    setMessage(text);
-    setMessageType(type);
-    setMessageVisible(true);
+    setAddUserMessage(text);
+    setAddUserMessageType(type);
+    setAddUserMessageVisible(true);
 
-    // Set timeout to hide message
-    messageTimeoutRef.current = setTimeout(() => {
-      setMessageVisible(false);
+    // Set timeout to hide message - increased to 6 seconds
+    addUserMessageTimeoutRef.current = setTimeout(() => {
+      setAddUserMessageVisible(false);
       // Clear message after fade out animation
       setTimeout(() => {
-        setMessage('');
-        setMessageType('');
+        setAddUserMessage('');
+        setAddUserMessageType('');
       }, 300); // Match this with CSS transition duration
-    }, 3000); // Show message for 3 seconds
+    }, 6000); // Show message for 6 seconds
   };
 
-  // Clean up timeout on component unmount
+  const showUsersListMessage = (text, type) => {
+    // Clear any existing timeout
+    if (usersListMessageTimeoutRef.current) {
+      clearTimeout(usersListMessageTimeoutRef.current);
+    }
+
+    setUsersListMessage(text);
+    setUsersListMessageType(type);
+    setUsersListMessageVisible(true);
+
+    // Set timeout to hide message - increased to 6 seconds
+    usersListMessageTimeoutRef.current = setTimeout(() => {
+      setUsersListMessageVisible(false);
+      // Clear message after fade out animation
+      setTimeout(() => {
+        setUsersListMessage('');
+        setUsersListMessageType('');
+      }, 300); // Match this with CSS transition duration
+    }, 6000); // Show message for 6 seconds
+  };
+
+  const openDeleteModal = (user) => {
+    setUserToDelete(user);
+    setDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    setUserToDelete(null);
+    setDeleteModalOpen(false);
+  };
+
+  const handleDeleteUser = async () => {
+    try {
+      const response = await deleteUser(userToDelete._id);
+      if (response.data.success) {
+        showUsersListMessage('User deleted successfully', 'success');
+        // Refresh the users list
+        fetchUsers();
+      }
+      closeDeleteModal();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      showUsersListMessage(
+        error.response?.data?.message || 'Error deleting user',
+        'error'
+      );
+      closeDeleteModal();
+    }
+  };
+
+  // Clean up timeouts on component unmount
   useEffect(() => {
     return () => {
-      if (messageTimeoutRef.current) {
-        clearTimeout(messageTimeoutRef.current);
+      if (addUserMessageTimeoutRef.current) {
+        clearTimeout(addUserMessageTimeoutRef.current);
+      }
+      if (usersListMessageTimeoutRef.current) {
+        clearTimeout(usersListMessageTimeoutRef.current);
       }
     };
   }, []);
@@ -195,58 +272,86 @@ const AdminPanel = () => {
     <div className="admin-panel">
       <div className="admin-container">
         <div className="admin-card">
-          <h2>Add New User</h2>
-          {message && (
-            <div className={`message ${messageType} ${messageVisible ? 'visible' : ''}`}>
-              {message}
+          <h2>Add New Users</h2>
+          {addUserMessage && (
+            <div className={`message ${addUserMessageType} ${addUserMessageVisible ? 'visible' : ''}`}
+                 style={{ whiteSpace: 'pre-line' }}>
+              {addUserMessage}
             </div>
           )}
-          <form onSubmit={handleSubmit} className="admin-form">
-            <div className="form-fields">
-              <div className="form-group">
-                <label htmlFor="name">Name</label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  required
-                />
+          <form onSubmit={handleSubmit}>
+            {userEntries.map((entry, index) => (
+              <div key={index} className="user-entry">
+                {index > 0 && <hr className="entry-divider" />}
+                <div className="user-entry-content">
+                  <div className="user-entry-fields">
+                    <div className="form-group">
+                      <label htmlFor={`email-${index}`}>Email:</label>
+                      <input
+                        type="email"
+                        id={`email-${index}`}
+                        name="email"
+                        value={entry.email}
+                        onChange={(e) => handleInputChange(index, e)}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor={`name-${index}`}>Name:</label>
+                      <input
+                        type="text"
+                        id={`name-${index}`}
+                        name="name"
+                        value={entry.name}
+                        onChange={(e) => handleInputChange(index, e)}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor={`role-${index}`}>Role:</label>
+                      <select
+                        id={`role-${index}`}
+                        name="role"
+                        value={entry.role}
+                        onChange={(e) => handleInputChange(index, e)}
+                        required
+                      >
+                        <option value="Developer">Developer</option>
+                        <option value="Admin">Admin</option>
+                      </select>
+                    </div>
+                  </div>
+                  {userEntries.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeUserEntry(index)}
+                      className="remove-user-btn"
+                      aria-label="Remove user"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="form-group">
-                <label htmlFor="email">Email</label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="role">Role</label>
-                <select
-                  id="role"
-                  name="role"
-                  value={formData.role}
-                  onChange={handleInputChange}
-                  required
-                >
-                  <option value="Developer">Developer</option>
-                  <option value="Admin">Admin</option>
-                </select>
-              </div>
+            ))}
+            <div className="form-actions">
+              <button type="button" onClick={addUserEntry} className="add-user-btn">
+                Add Another User
+              </button>
+              <button type="submit" className="submit-btn">
+                Submit
+              </button>
             </div>
-            <button type="submit" className="add-user-btn">
-              Add User
-            </button>
           </form>
         </div>
 
-        <div className="admin-card user-list-card">
+        <div className="admin-card users-list">
           <h2>User List</h2>
+          {usersListMessageVisible && (
+            <div className={`message ${usersListMessageType} visible`}>
+              {usersListMessage}
+            </div>
+          )}
           <div className="filter-section">
             <div className="search-box">
               <input
@@ -285,20 +390,29 @@ const AdminPanel = () => {
                     <th>Name</th>
                     <th>Email</th>
                     <th>Role</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {users.length > 0 ? (
                     users.map((user) => (
-                      <tr key={user._id} className="user-row">
+                      <tr key={user._id}>
                         <td>{user.name}</td>
                         <td>{user.email}</td>
                         <td>{user.role}</td>
+                        <td>
+                          <button 
+                            className="delete-btn"
+                            onClick={() => openDeleteModal(user)}
+                          >
+                            Delete
+                          </button>
+                        </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="3" className="no-users">No users found</td>
+                      <td colSpan="4" className="no-users">No users found</td>
                     </tr>
                   )}
                 </tbody>
@@ -307,6 +421,34 @@ const AdminPanel = () => {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteModalOpen && userToDelete && (
+        <div className="modal-overlay">
+          <div className="modal-container">
+            <div className="modal-header">
+              <span className="warning-icon">⚠️</span>
+              <h3>Confirm Delete User</h3>
+            </div>
+            <div className="modal-content">
+              <p>Are you sure you want to delete this user? This action cannot be undone.</p>
+              <div className="user-info">
+                <strong>Name:</strong> {userToDelete.name}<br />
+                <strong>Email:</strong> {userToDelete.email}<br />
+                <strong>Role:</strong> {userToDelete.role}
+              </div>
+            </div>
+            <div className="modal-actions">
+              <button className="modal-btn cancel" onClick={closeDeleteModal}>
+                Cancel
+              </button>
+              <button className="modal-btn delete" onClick={handleDeleteUser}>
+                Delete User
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

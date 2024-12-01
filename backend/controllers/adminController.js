@@ -126,3 +126,42 @@ export const getAllUsers = async (req, res) => {
         });
     }
 };
+
+// Delete user by ID
+export const deleteUser = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        // Check if user exists
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'User not found' 
+            });
+        }
+
+        // Prevent admin from deleting themselves
+        if (user._id.toString() === req.user._id.toString()) {
+            return res.status(403).json({ 
+                success: false, 
+                message: 'Cannot delete your own admin account' 
+            });
+        }
+
+        // Delete the user
+        await User.findByIdAndDelete(userId);
+
+        res.status(200).json({ 
+            success: true, 
+            message: 'User deleted successfully' 
+        });
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error deleting user',
+            error: error.message 
+        });
+    }
+};
