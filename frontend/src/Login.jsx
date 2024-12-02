@@ -94,7 +94,7 @@ const Login = () => {
                 <p className="otp-message">Please check your email for OTP</p>
               </div>
             )}
-
+            <br></br>
             {error && (
               <div className="error-message">
                 {error}

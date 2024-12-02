@@ -46,3 +46,9 @@ export const deleteUser = async (userId) => {
     const response = await axios.delete(`${API_URL}/admin/users/${userId}`);
     return response;
 };
+
+// Toggle user status (activate/deactivate)
+export const toggleUserStatus = async (userId, status) => {
+    const response = await axios.post(`${API_URL}/admin/users/${userId}/toggle-status`, { status });
+    return response;
+};

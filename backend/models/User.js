@@ -9,6 +9,10 @@ const userSchema = new mongoose.Schema({
         required: true,
         enum: ["Admin", "Developer"],
     },
+    status: {
+        type: Boolean,
+        default: true
+    },
     otp: { type: String },
     otpExpiresAt: { type: Date },
 });

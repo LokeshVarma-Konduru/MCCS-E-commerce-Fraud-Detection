@@ -53,6 +53,7 @@ export const addUsers = async (req, res) => {
                 name,
                 role,
                 password: hashedPassword,
+                status: true
             });
 
             await newUser.save();
@@ -109,7 +110,7 @@ export const getAllUsers = async (req, res) => {
         
         // Fetch users with selected fields only
         const users = await User.find(query)
-            .select('name email role')
+            .select('name email role status')
             .sort({ name: 1 }); // Sort by name ascending
         
         res.status(200).json({
@@ -163,5 +164,43 @@ export const deleteUser = async (req, res) => {
             message: 'Error deleting user',
             error: error.message 
         });
+    }
+};
+
+// Toggle user status (activate/deactivate)
+export const toggleUserStatus = async (req, res) => {
+    const { userId } = req.params;
+    const { status } = req.body;
+
+    if (typeof status !== 'boolean') {
+        return res.status(400).json({ message: 'Status must be a boolean value' });
+    }
+
+    try {
+        const user = await User.findById(userId);
+        
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Prevent deactivating the last active admin
+        if (!status && user.role === 'Admin') {
+            const activeAdmins = await User.countDocuments({ role: 'Admin', status: true });
+            if (activeAdmins <= 1) {
+                return res.status(400).json({ message: 'Cannot deactivate the last active admin' });
+            }
+        }
+
+        user.status = status;
+        await user.save();
+
+        res.status(200).json({ 
+            message: `User ${status ? 'activated' : 'deactivated'} successfully`,
+            userId: user._id,
+            status: user.status
+        });
+    } catch (error) {
+        console.error('Toggle user status error:', error);
+        res.status(500).json({ message: 'Error updating user status', error: error.message });
     }
 };

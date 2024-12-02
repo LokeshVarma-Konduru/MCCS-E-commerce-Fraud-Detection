@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { addUsers, getUsers, getUserInfo, deleteUser } from '../api';
+import { addUsers, getUsers, getUserInfo, deleteUser, toggleUserStatus } from '../api';
 import '../styles/AdminPanel.css';
 
 const AdminPanel = () => {
@@ -25,6 +25,8 @@ const AdminPanel = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [userToToggle, setUserToToggle] = useState(null);
   const searchTimeout = useRef(null);
   const addUserMessageTimeoutRef = useRef(null);
   const usersListMessageTimeoutRef = useRef(null);
@@ -254,6 +256,26 @@ const AdminPanel = () => {
     }
   };
 
+  const handleToggleStatus = async (user) => {
+    setUserToToggle(user);
+    setStatusModalOpen(true);
+  };
+
+  const confirmToggleStatus = async () => {
+    if (!userToToggle) return;
+
+    try {
+      await toggleUserStatus(userToToggle._id, !userToToggle.status);
+      showUsersListMessage(`User ${!userToToggle.status ? 'activated' : 'deactivated'} successfully`, 'success');
+      fetchUsers();
+    } catch (error) {
+      showUsersListMessage(error.response?.data?.message || 'Error toggling user status', 'error');
+    } finally {
+      setStatusModalOpen(false);
+      setUserToToggle(null);
+    }
+  };
+
   // Clean up timeouts on component unmount
   useEffect(() => {
     return () => {
@@ -389,6 +411,7 @@ const AdminPanel = () => {
                     <th>Name</th>
                     <th>Email</th>
                     <th>Role</th>
+                    <th>Status</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -400,9 +423,20 @@ const AdminPanel = () => {
                         <td>{user.email}</td>
                         <td>{user.role}</td>
                         <td>
-                          <button 
-                            className="delete-btn"
+                          <span className={`status-badge ${user.status ? 'active' : 'inactive'}`}>
+                            {user.status ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td>
+                          <button
+                            onClick={() => handleToggleStatus(user)}
+                            className={`toggle-button ${user.status ? 'deactivate' : 'activate'}`}
+                          >
+                            {user.status ? 'Deactivate' : 'Activate'}
+                          </button>
+                          <button
                             onClick={() => openDeleteModal(user)}
+                            className="delete-btn"
                           >
                             Delete
                           </button>
@@ -411,7 +445,7 @@ const AdminPanel = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="4" className="no-users">No users found</td>
+                      <td colSpan="5" className="no-users">No users found</td>
                     </tr>
                   )}
                 </tbody>
@@ -443,6 +477,44 @@ const AdminPanel = () => {
               </button>
               <button className="modal-btn delete" onClick={handleDeleteUser}>
                 Delete User
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* User Status Toggle Modal */}
+      {statusModalOpen && userToToggle && (
+        <div className="modal-overlay">
+          <div className="modal-container">
+            <div className="modal-header">
+              <span className="warning-icon">⚠️</span>
+              <h3>Confirm {userToToggle.status ? 'Deactivate' : 'Activate'} User</h3>
+            </div>
+            <div className="modal-content">
+              <p>Are you sure you want to {userToToggle.status ? 'deactivate' : 'activate'} this user?</p>
+              <div className="user-info">
+                <strong>Name:</strong> {userToToggle.name}<br />
+                <strong>Email:</strong> {userToToggle.email}<br />
+                <strong>Role:</strong> {userToToggle.role}<br />
+                <strong>Current Status:</strong> {userToToggle.status ? 'Active' : 'Inactive'}
+              </div>
+            </div>
+            <div className="modal-actions">
+              <button 
+                className="modal-btn cancel" 
+                onClick={() => {
+                  setStatusModalOpen(false);
+                  setUserToToggle(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                className={`modal-btn ${userToToggle.status ? 'delete' : 'activate'}`}
+                onClick={confirmToggleStatus}
+              >
+                {userToToggle.status ? 'Deactivate' : 'Activate'} User
               </button>
             </div>
           </div>
