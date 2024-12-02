@@ -15,6 +15,8 @@ const userSchema = new mongoose.Schema({
     },
     otp: { type: String },
     otpExpiresAt: { type: Date },
-});
+},
+{ timestamps: true }
+);
 
 export default mongoose.model('User', userSchema);
