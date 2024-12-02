@@ -194,6 +194,19 @@ export const toggleUserStatus = async (req, res) => {
         user.status = status;
         await user.save();
 
+        // Send email notification
+        const subject = status ? 'Account Activated' : 'Account Deactivated';
+        const message = status
+            ? `Hello ${user.name},\n\nYour account has been activated. You can now log in and use your account.\n\nBest regards,\nMCCS Team`
+            : `Hello ${user.name},\n\nYour account has been deactivated. You will not be able to access your account until it is reactivated by an administrator.\n\nBest regards,\nMCCS Team`;
+
+        try {
+            await sendMail(user.email, subject, message);
+        } catch (emailError) {
+            console.error('Error sending status change email:', emailError);
+            // Continue with the response even if email fails
+        }
+
         res.status(200).json({ 
             message: `User ${status ? 'activated' : 'deactivated'} successfully`,
             userId: user._id,
@@ -204,3 +217,4 @@ export const toggleUserStatus = async (req, res) => {
         res.status(500).json({ message: 'Error updating user status', error: error.message });
     }
 };
+
