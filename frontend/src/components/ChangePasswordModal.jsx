@@ -10,6 +10,39 @@ const ChangePasswordModal = ({ isOpen, onClose, userId }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [passwordCriteria, setPasswordCriteria] = useState({
+    minLength: false,
+    hasUpperCase: false,
+    hasLowerCase: false,
+    hasNumber: false,
+    hasSpecialChar: false
+  });
+
+  const validatePassword = (password) => {
+    const minLength = password.length >= 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    return {
+      isValid: minLength && hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar,
+      criteria: {
+        minLength,
+        hasUpperCase,
+        hasLowerCase,
+        hasNumber,
+        hasSpecialChar
+      }
+    };
+  };
+
+  const handleNewPasswordChange = (e) => {
+    const password = e.target.value;
+    setNewPassword(password);
+    const validation = validatePassword(password);
+    setPasswordCriteria(validation.criteria);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,8 +60,9 @@ const ChangePasswordModal = ({ isOpen, onClose, userId }) => {
       return;
     }
 
-    if (newPassword.length < 6) {
-      setError('New password must be at least 6 characters long');
+    const validation = validatePassword(newPassword);
+    if (!validation.isValid) {
+      setError('Password does not meet all requirements');
       return;
     }
 
@@ -81,9 +115,29 @@ const ChangePasswordModal = ({ isOpen, onClose, userId }) => {
               type="password"
               id="newPassword"
               value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
+              onChange={handleNewPasswordChange}
               placeholder="Enter new password"
             />
+            <div className="password-criteria">
+              <p>Password must contain:</p>
+              <ul>
+                <li className={passwordCriteria.minLength ? 'met' : ''}>
+                  At least 8 characters
+                </li>
+                <li className={passwordCriteria.hasUpperCase ? 'met' : ''}>
+                  At least one uppercase letter
+                </li>
+                <li className={passwordCriteria.hasLowerCase ? 'met' : ''}>
+                  At least one lowercase letter
+                </li>
+                <li className={passwordCriteria.hasNumber ? 'met' : ''}>
+                  At least one number
+                </li>
+                <li className={passwordCriteria.hasSpecialChar ? 'met' : ''}>
+                  At least one special character (!@#$%^&*(),.?":{}|&lt;&gt;)
+                </li>
+              </ul>
+            </div>
           </div>
 
           <div className="form-group">
