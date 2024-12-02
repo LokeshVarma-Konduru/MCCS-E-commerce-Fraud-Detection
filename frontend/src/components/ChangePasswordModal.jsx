@@ -40,6 +40,7 @@ const ChangePasswordModal = ({ isOpen, onClose, userId }) => {
   const handleNewPasswordChange = (e) => {
     const password = e.target.value;
     setNewPassword(password);
+    // Always validate and update criteria, even if empty
     const validation = validatePassword(password);
     setPasswordCriteria(validation.criteria);
   };
@@ -118,7 +119,7 @@ const ChangePasswordModal = ({ isOpen, onClose, userId }) => {
               onChange={handleNewPasswordChange}
               placeholder="Enter new password"
             />
-            <div className="password-criteria">
+            <div className="password-criteria" aria-live="polite">
               <p>Password must contain:</p>
               <ul>
                 <li className={passwordCriteria.minLength ? 'met' : ''}>
