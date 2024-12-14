@@ -52,3 +52,30 @@ export const toggleUserStatus = async (userId, status) => {
     const response = await axios.post(`${API_URL}/admin/users/${userId}/toggle-status`, { status });
     return response;
 };
+
+// ML Model endpoints
+export const getMLModelMetrics = async () => {
+    try {
+        const response = await axios.get(`${API_URL}/models`);
+        return response;
+    } catch (error) {
+        console.error('Error fetching ML model metrics:', error);
+        throw {
+            message: error.response?.data?.message || 'Failed to fetch model metrics',
+            status: error.response?.status
+        };
+    }
+};
+
+export const getModelById = async (modelId) => {
+    try {
+        const response = await axios.get(`${API_URL}/model/${modelId}`);
+        return response;
+    } catch (error) {
+        console.error('Error fetching specific model:', error);
+        throw {
+            message: error.response?.data?.message || 'Failed to fetch model',
+            status: error.response?.status
+        };
+    }
+};

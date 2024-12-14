@@ -74,7 +74,6 @@ AdminRoute.propTypes = {
 const DashboardContent = () => {
   return (
     <div className="dashboard-content">
-      <h1>Welcome to the Team Dashboard</h1>
       <Dashboard />
     </div>
   );
