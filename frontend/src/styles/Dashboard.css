@@ -197,6 +197,40 @@
   margin-bottom: 1.5rem;  /* Space between heading and metrics content */
 }
 
+.model-selector {
+  margin: 1rem 0;
+  width: 100%;
+}
+
+.model-select {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 8px;
+  background-color: #383838;
+  border: 1px solid #4f4f4f;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.model-select:hover {
+  background-color: #404040;
+  border-color: #666666;
+}
+
+.model-select:focus {
+  outline: none;
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+.model-select option {
+  background-color: #2d2d2d;
+  color: white;
+  padding: 0.5rem;
+}
+
 /* Loading States */
 .loading-container {
   display: flex;

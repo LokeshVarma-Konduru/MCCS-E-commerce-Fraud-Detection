@@ -271,17 +271,21 @@ const PlotVisualization = ({ plot, actualVsPredicted }) => {
 
 const Dashboard = () => {
   const [modelMetrics, setModelMetrics] = useState(null);
+  const [allModels, setAllModels] = useState([]);
+  const [selectedModelId, setSelectedModelId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-    const fetchMetrics = async () => {
+    const fetchAllModels = async () => {
       try {
         setLoading(true);
         setError(null);
         const response = await getMLModelMetrics();
         if (response.data.success && response.data.data.length > 0) {
+          setAllModels(response.data.data);
+          setSelectedModelId(response.data.data[0]._id);
           setModelMetrics(response.data.data[0]);
         } else {
           setError('No model data available');
@@ -299,8 +303,14 @@ const Dashboard = () => {
       }
     };
 
-    fetchMetrics();
+    fetchAllModels();
   }, [retryCount]);
+
+  const handleModelChange = (modelId) => {
+    const selectedModel = allModels.find(model => model._id === modelId);
+    setSelectedModelId(modelId);
+    setModelMetrics(selectedModel);
+  };
 
   if (loading) {
     return (
@@ -357,6 +367,19 @@ const Dashboard = () => {
     <div className="dashboard-container">
       <div className="dashboard-header">
         <h1>ML Model Dashboard</h1>
+        <div className="model-selector">
+          <select 
+            value={selectedModelId} 
+            onChange={(e) => handleModelChange(e.target.value)}
+            className="model-select"
+          >
+            {allModels.map(model => (
+              <option key={model._id} value={model._id}>
+                {model.modelName} ({model.modelType})
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="model-info">
           <p>Model: {modelName}</p>
           <p>Type: {modelType}</p>
