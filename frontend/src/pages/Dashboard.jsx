@@ -55,62 +55,49 @@ const ConfusionMatrix = ({ matrix }) => {
   return (
     <div className="confusion-matrix">
       <h3>Confusion Matrix</h3>
-      <div className="matrix-plot" style={{ height: '400px', position: 'relative' }}>
+      <div className="matrix-plot" style={{ height: '500px', position: 'relative' }}>
         <ResponsiveHeatMap
           data={data}
-          margin={{ top: 80, right: 120, bottom: 80, left: 120 }}
+          margin={{ top: 80, right: 120, bottom: 80, left: 140 }}
           valueFormat=">-.2s"
           axisTop={{
             tickSize: 5,
-            tickPadding: 15,
-            tickRotation: -45,
+            tickPadding: 10,
+            tickRotation: 0, // Horizontal alignment
             legend: 'Predicted Class',
             legendPosition: 'middle',
             legendOffset: -60,
-            tickColor: '#ffffff',
-            textColor: '#ffffff'
-          }}
-          axisRight={null}
-          axisBottom={{
-            tickSize: 5,
-            tickPadding: 15,
-            tickRotation: -45,
-            legend: 'Predicted Class',
-            legendPosition: 'middle',
-            legendOffset: 60,
-            tickColor: '#ffffff',
-            textColor: '#ffffff'
+            textColor: 'black'
           }}
           axisLeft={{
             tickSize: 5,
-            tickPadding: 15,
-            tickRotation: 0,
+            tickPadding: 10,
+            tickRotation: 0, // Horizontal alignment
             legend: 'Actual Class',
             legendPosition: 'middle',
-            legendOffset: -60,
-            tickColor: '#ffffff',
-            textColor: '#ffffff'
+            legendOffset: -80,
+            textColor: 'black'
           }}
           theme={{
             axis: {
               ticks: {
                 text: {
-                  fill: '#ffffff',
+                  fill: 'black',
                   fontSize: 12
                 }
               },
               legend: {
                 text: {
-                  fill: '#ffffff',
-                  fontSize: 14,
+                  fill: 'black',
+                  fontSize: 15,
                   fontWeight: 'bold'
                 }
               }
             },
             legends: {
               text: {
-                fill: '#ffffff',
-                fontSize: 12
+                fill: 'black',
+                fontSize: 15
               }
             }
           }}
@@ -118,10 +105,13 @@ const ConfusionMatrix = ({ matrix }) => {
             type: 'sequential',
             scheme: 'blues'
           }}
-          emptyColor="#555555"
-          borderColor="#ffffff"
+          emptyColor="#ffffff"
+          borderColor="black"
           borderWidth={1}
-          labelTextColor={{ from: 'color', modifiers: [['darker', 2]] }}
+          cellOpacity={1}
+          labelTextColor={(d) => (d.color === '#000000' ? '#ffffff' : '#000000')} // Dynamic label color
+          label={(d) => `${d.value}`} // Format to show values directly
+          labelTextSize={20} // Increased text size
           legends={[
             {
               anchor: 'bottom',
@@ -135,7 +125,7 @@ const ConfusionMatrix = ({ matrix }) => {
               tickSpacing: 4,
               tickOverlap: false,
               title: 'Number of Predictions',
-              titleAlign: 'start',
+              titleAlign: 'middle',
               titleOffset: 4
             }
           ]}
@@ -148,12 +138,48 @@ const ConfusionMatrix = ({ matrix }) => {
   );
 };
 
-const PlotVisualization = ({ plot, actualVsPredicted }) => {
+const PlotVisualization = ({ plot }) => {
   const { data, layout, type } = plot;
   
-  // Create data array for both ROC curve and actual vs predicted line
-  const plotData = [
-    {
+  // Function to get formatted title based on plot type
+  const getPlotTitle = (plotType) => {
+    if (plotType.includes('Feature_Importance')) {
+      return 'Feature Importance Analysis';
+    } else if (plotType.includes('ROC_Curve')) {
+      return 'ROC Curve Analysis';
+    } else if (plotType.includes('Learning_Curve')) {
+      return 'Learning Curve Analysis';
+    } else if (plotType.includes('Confusion_Matrix')) {
+      return 'Confusion Matrix';
+    } else if (plotType.includes('Precision_Recall_Curve')) {
+      return 'Precision-Recall Curve';
+    } else {
+      // Convert type to title case and remove underscores
+      return plotType.split('_').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      ).join(' ');
+    }
+  };
+
+  // Create data array based on plot type
+  let plotData;
+  
+  if (type.includes('Feature_Importance')) {
+    // For Feature Importance, use bar chart
+    plotData = [{
+      x: data.x,
+      y: data.y,
+      name: data.name,
+      type: 'bar',
+      marker: {
+        color: '#4a90e2',
+        opacity: 0.8
+      },
+      orientation: 'h'  // Horizontal bars
+    }];
+  } else {
+    // For other plots, use line chart
+    plotData = [{
       x: data.x,
       y: data.y,
       name: data.name,
@@ -163,23 +189,23 @@ const PlotVisualization = ({ plot, actualVsPredicted }) => {
         color: '#4a90e2',
         width: 2
       }
-    }
-  ];
+    }];
 
-  // Add actual vs predicted line if it exists
-  if (actualVsPredicted && type === "Logistic Regression_ROC_Curve") {
-    plotData.push({
-      x: [0, 1],  // Diagonal line from (0,0) to (1,1)
-      y: [0, 1],
-      name: 'Random Classifier',
-      type: 'scatter',
-      mode: 'lines',
-      line: {
-        color: '#ff6b6b',
-        width: 2,
-        dash: 'dash'
-      }
-    });
+    // Add random classifier line for all ROC curves
+    if (type.includes('ROC_Curve')) {
+      plotData.push({
+        x: [0, 1],  // Diagonal line from (0,0) to (1,1)
+        y: [0, 1],
+        name: 'Random Classifier',
+        type: 'scatter',
+        mode: 'lines',
+        line: {
+          color: '#ff6b6b',
+          width: 2,
+          dash: 'dash'
+        }
+      });
+    }
   }
 
   // Create a deep copy of layout and modify it for dark theme
@@ -188,22 +214,26 @@ const PlotVisualization = ({ plot, actualVsPredicted }) => {
     paper_bgcolor: '#2d2d2d',
     plot_bgcolor: '#383838',
     margin: {
-      l: 80,  // left margin
-      r: 50,  // right margin
-      t: 100, // top margin
-      b: 80   // bottom margin
+      l: type.includes('Feature_Importance') ? 200 : 80,
+      r: 50,
+      t: 70,  // Increased top margin for title
+      b: 50
     },
     font: {
       color: '#ffffff',
       size: 12
     },
     title: {
-      ...layout.title,
+      text: getPlotTitle(type),
       font: {
         color: '#ffffff',
-        size: 16
+        size: 18,
+        weight: 'bold'
       },
-      y: 1.15  // Move title even higher
+      y: 1.05,
+      x: 0.5,
+      xanchor: 'center',
+      yanchor: 'top'
     },
     xaxis: {
       ...layout.xaxis,
@@ -213,7 +243,7 @@ const PlotVisualization = ({ plot, actualVsPredicted }) => {
           color: '#ffffff',
           size: 14
         },
-        standoff: 20  // Add space between axis and its label
+        standoff: 20
       },
       gridcolor: '#4f4f4f',
       zerolinecolor: '#4f4f4f',
@@ -230,7 +260,7 @@ const PlotVisualization = ({ plot, actualVsPredicted }) => {
           color: '#ffffff',
           size: 14
         },
-        standoff: 20  // Add space between axis and its label
+        standoff: 20
       },
       gridcolor: '#4f4f4f',
       zerolinecolor: '#4f4f4f',
@@ -249,11 +279,14 @@ const PlotVisualization = ({ plot, actualVsPredicted }) => {
         color: '#ffffff',
         size: 12
       }
-    }
+    },
+    // Additional layout for Feature Importance
+    bargap: type.includes('Feature_Importance') ? 0.2 : undefined,
+    height: type.includes('Feature_Importance') ? 600 : 400  // Increased height for feature importance
   };
 
   return (
-    <div className="plot-container">
+    <div className={`plot-container ${type.includes('Feature_Importance') ? 'feature-importance-plot' : ''}`}>
       <Plot
         data={plotData}
         layout={darkLayout}
@@ -263,7 +296,10 @@ const PlotVisualization = ({ plot, actualVsPredicted }) => {
           displaylogo: false,
           modeBarButtonsToRemove: ['lasso2d', 'select2d']
         }}
-        style={{ width: '100%', height: '400px' }}
+        style={{ 
+          width: '100%', 
+          height: type.includes('Feature_Importance') ? '600px' : '400px'  // Adjusted height for feature importance
+        }}
       />
     </div>
   );
@@ -424,11 +460,10 @@ const Dashboard = () => {
         <div className="plots-section">
           <h2>Model Performance Plots</h2>
           <div className="plots-grid">
-            {filteredPlots.filter(plot => !plot.type.includes('Actual_vs_Predicted')).map((plot, index) => (
+            {filteredPlots.map((plot, index) => (
               <PlotVisualization 
                 key={index} 
                 plot={plot} 
-                actualVsPredicted={plot.type === "Logistic Regression_ROC_Curve"}
               />
             ))}
           </div>
@@ -556,25 +591,40 @@ const Dashboard = () => {
       )}
 
       {classificationReport && (
-        <div className="classification-report">
+        <div className="report-section">
           <h3>Detailed Metrics</h3>
-          <div className="report-grid">
-            {Object.entries(classificationReport).map(([className, metrics]) => {
-              if (className !== 'accuracy' && className !== 'macro avg' && className !== 'weighted avg') {
-                return (
-                  <div key={className} className="report-card">
-                    <h4>Class {className}</h4>
-                    <div className="report-metrics">
-                      <p>Precision: {metrics.precision?.toFixed(4)}</p>
-                      <p>Recall: {metrics.recall?.toFixed(4)}</p>
-                      <p>F1-Score: {metrics['f1-score']?.toFixed(4)}</p>
-                      <p>Support: {metrics.support}</p>
-                    </div>
-                  </div>
-                );
-              }
-              return null;
-            })}
+          <div className="metrics-table-container">
+            <table className="metrics-table">
+              <thead>
+                <tr>
+                  <th>Class</th>
+                  <th>Precision</th>
+                  <th>Recall</th>
+                  <th>F1-Score</th>
+                  <th>Support</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(classificationReport).map(([className, metrics]) => {
+                  if (className !== 'accuracy') {
+                    const displayName =
+                      className === 'macro avg' ? 'Macro Average' :
+                      className === 'weighted avg' ? 'Weighted Average' :
+                      `Class ${className}`;
+                    return (
+                      <tr key={className}>
+                        <td>{displayName}</td>
+                        <td>{metrics.precision?.toFixed(4)}</td>
+                        <td>{metrics.recall?.toFixed(4)}</td>
+                        <td>{metrics['f1-score']?.toFixed(4)}</td>
+                        <td>{metrics.support}</td>
+                      </tr>
+                    );
+                  }
+                  return null;
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

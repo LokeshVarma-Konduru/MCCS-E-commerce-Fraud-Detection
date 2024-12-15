@@ -81,7 +81,7 @@
 }
 
 .matrix-plot {
-  background: #2d2d2d;
+  background: white;
   border-radius: 8px;
   padding: 1rem;
 }
@@ -91,7 +91,8 @@
   padding: 2rem;
   border-radius: 12px;
   color: white;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
+  margin-top: 1rem;
 }
 
 .classification-report h3 {
@@ -123,26 +124,33 @@
 
 /* Plot Styles */
 .plots-section {
-  margin-top: 2rem;
-  margin-bottom: 2.5rem;  /* Adjusted spacing between plots and metrics */
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .plots-section h2 {
   color: white;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   text-align: center;
 }
 
 .plots-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 2rem;
-  margin-bottom: 1.5rem;  /* Added space after plots grid */
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.plots-grid > div:nth-child(3).feature-importance-plot {
+  grid-column: 1 / -1;  /* Make it span full width */
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 1rem;
 }
 
 .plot-container {
   background: #2d2d2d;
-  padding: 1.5rem;
+  padding: 1rem;
   border-radius: 12px;
   color: white;
 }
@@ -189,8 +197,8 @@
 }
 
 .detailed-metrics {
-  margin-top: 1.5rem;  /* Added space before detailed metrics */
-  padding-top: 1rem;   /* Added padding for better visual separation */
+  margin-top: 1rem;
+  padding-top: 0.5rem;
 }
 
 .detailed-metrics h2 {
@@ -229,6 +237,141 @@
   background-color: #2d2d2d;
   color: white;
   padding: 0.5rem;
+}
+
+/* Detailed Metrics Styles */
+.report-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: #1e1e1e;
+  border-radius: 10px;
+}
+
+.report-section h3 {
+  color: #ffffff;
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.metrics-table-container {
+  overflow-x: auto;
+  margin-top: 1rem;
+  background-color: #2d2d2d;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.metrics-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  color: #e0e0e0;
+}
+
+.metrics-table th,
+.metrics-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #383838;
+}
+
+.metrics-table th {
+  background-color: #383838;
+  color: #ffffff;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+}
+
+.metrics-table td {
+  font-size: 1rem;
+}
+
+.metrics-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.metrics-table tbody tr:hover {
+  background-color: #383838;
+}
+
+/* Color the metric values */
+.metrics-table td:not(:first-child) {
+  color: #4a90e2;
+  font-weight: 500;
+}
+
+/* Make the first column (class names) stand out */
+.metrics-table td:first-child {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* Add some rounded corners to the table */
+.metrics-table thead tr:first-child th:first-child {
+  border-top-left-radius: 8px;
+}
+
+.metrics-table thead tr:first-child th:last-child {
+  border-top-right-radius: 8px;
+}
+
+.metrics-table tbody tr:last-child td:first-child {
+  border-bottom-left-radius: 8px;
+}
+
+.metrics-table tbody tr:last-child td:last-child {
+  border-bottom-right-radius: 8px;
+}
+
+.report-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.report-card {
+  background-color: #2d2d2d;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.report-card:hover {
+  transform: translateY(-2px);
+}
+
+.report-card h4 {
+  color: #ffffff;
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #4a90e2;
+}
+
+.report-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.report-metrics p {
+  color: #e0e0e0;
+  font-size: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  background-color: #383838;
+  border-radius: 4px;
+}
+
+.report-metrics p span {
+  font-weight: 500;
+  color: #4a90e2;
 }
 
 /* Loading States */
