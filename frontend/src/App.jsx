@@ -6,6 +6,8 @@ import Dashboard from './pages/Dashboard.jsx';
 import Login from './Login.jsx';
 import Navbar from './components/Navbar.jsx';
 import AdminPanel from './pages/AdminPanel.jsx';
+import AboutUs from './pages/AboutUs.jsx';
+import Contact from './pages/Contact.jsx';
 import { getUserInfo } from './api.js';
 
 // Protected Route Component
@@ -74,7 +76,6 @@ AdminRoute.propTypes = {
 const DashboardContent = () => {
   return (
     <div className="dashboard-content">
-      <h1>Welcome to the Team Dashboard</h1>
       <Dashboard />
     </div>
   );
@@ -101,6 +102,22 @@ const App = () => {
               <AdminRoute>
                 <AdminPanel />
               </AdminRoute>
+            }
+          />
+          <Route
+            path="/about"
+            element={
+              <ProtectedRoute>
+                <AboutUs />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/contact"
+            element={
+              <ProtectedRoute>
+                <Contact />
+              </ProtectedRoute>
             }
           />
         </Routes>

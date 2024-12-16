@@ -6,6 +6,7 @@ import { getUserInfo } from "../controllers/userController.js";
 import { addUsers, getAllUsers, deleteUser, toggleUserStatus } from '../controllers/adminController.js';
 import authMiddleware from '../middleware/auth.js';
 import adminMiddleware from '../middleware/admin.js';
+import { getAllModels, getModelById } from '../controllers/mlModelController.js';
 
 const router = express.Router();
 
@@ -21,5 +22,8 @@ router.post('/addUsers',authMiddleware, adminMiddleware, addUsers);
 router.get('/users', authMiddleware, adminMiddleware, getAllUsers);
 router.delete('/admin/users/:userId', authMiddleware, adminMiddleware, deleteUser);
 router.post('/admin/users/:userId/toggle-status', authMiddleware, adminMiddleware, toggleUserStatus);
+
+router.get('/models', authMiddleware,getAllModels);
+router.get('/model/:id', authMiddleware,getModelById);
 
 export default router;

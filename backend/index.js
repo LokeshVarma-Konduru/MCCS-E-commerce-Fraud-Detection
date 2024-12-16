@@ -23,6 +23,7 @@ app.get("/api/test", async (req, res) => {
     res.json({ message: "Hello from express " });
   });
   
+if (process.env.NODE_ENV !== "test") {
   mongoose
     .connect(process.env.MONGO_URI)
     .then(() => {
@@ -35,3 +36,6 @@ app.get("/api/test", async (req, res) => {
     .catch((error) => {
       console.log(`Error Connecting to Database : ${error}`);
     });
+}
+
+export default app;

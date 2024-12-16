@@ -3,7 +3,7 @@
   width: 100%;
   margin: 0;
   padding: 0;
-  height: 100vh;
+  min-height: 100vh;
 }
 
 .login-container {
@@ -178,12 +178,16 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 .dashboard-content {
-  margin-top: 80px; /* Height of navbar + some spacing */
-  padding: 20px;
+  margin-top: 60px;
+  padding: 1rem;
   flex-grow: 1;
+  width: 100%;
+  max-width: 100%;
 }
 
 @keyframes logo-spin {

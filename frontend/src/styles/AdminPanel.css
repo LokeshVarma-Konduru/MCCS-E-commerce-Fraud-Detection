@@ -1,6 +1,5 @@
 .admin-panel {
-  padding: 20px;
-  padding-top: 80px; /* Add padding for navbar */
+  padding-top: 60px; /* Reduced from 80px to match navbar height */
   min-height: 100vh;
   background-color: #1a1a1a;
   color: #ffffff;
@@ -8,21 +7,26 @@
 }
 
 .admin-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
+  padding: 1rem;
+  padding-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #1a1a1a;
 }
 
 .admin-content {
-  width: 100%;
+  flex: 1;
+  margin-bottom: 2rem; /* Add consistent spacing before footer */
 }
 
 .admin-card {
-  background-color: #2d2d2d;
+  background: #222222;
   border-radius: 10px;
-  padding: 25px;
-  margin-bottom: 30px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 100%;
 }
 
 .admin-card h2 {
@@ -193,25 +197,56 @@
   .form-group {
     width: 100%;
   }
+  
+  .admin-card {
+    padding: 1.25rem;
+  }
 }
 
 @media (max-width: 768px) {
   .admin-panel {
-    margin-left: 0;
+    padding-top: 4rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
   }
   
   .admin-container {
-    padding: 10px;
+    padding: 0.5rem;
+  }
+  
+  .admin-card {
+    padding: 1rem;
+  }
+  
+  .user-entry-content {
+    padding: 15px;
+    flex-direction: column;
   }
   
   .form-actions {
     flex-direction: column;
+    align-items: stretch;
   }
   
   .add-user-btn,
   .submit-btn {
     width: 100%;
-    height: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-panel {
+    padding-top: 3.5rem;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+  }
+  
+  .admin-container {
+    padding: 0.25rem;
+  }
+  
+  .admin-card {
+    padding: 0.75rem;
   }
 }
 

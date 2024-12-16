@@ -5,6 +5,7 @@ frontend/node_modules/
 # Environment variables
 backend/.env
 frontend/.env
+ML-Models/.env
 
 # Build files
 frontend/dist/
@@ -23,3 +24,7 @@ Thumbs.db               # Windows
 .vscode/                # VS Code
 .idea/                  # JetBrains IDEs
 *.swp                   # Vim swap files
+
+# ML models csv files
+ML-Models/Fraudulent_E-Commerce_Transaction_Data.csv
+ML-Models/Fraudulent_E-Commerce_Transaction_Data_2.csv

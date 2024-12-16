@@ -1,0 +1,110 @@
+/* Custom styles for Contact page */
+.contact-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: 100vh;
+  background-color: #1a1a1a;
+  padding: 0; /* Remove padding to fill the screen */
+  margin: 0; /* Remove margin to fill the screen */
+}
+
+.contact-content {
+  flex: 1;
+  display: flex;
+  justify-content: space-between; /* Distribute space */
+  align-items: stretch;
+  padding: 2rem;
+  width: 100%; /* Ensure it fills the width */
+  gap: 2rem;
+}
+
+.contact-section {
+  width: 100%;
+  max-width: none; /* Allow full width */
+  margin: 0; /* Remove margin to fill the screen */
+  padding: 2rem;
+  background-color: #222222;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.contact-grid {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  gap: 2rem;
+}
+
+.logo-section {
+  display: flex;
+  flex: 1; /* Logo section fills left space */
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  background-color: #1a1a1a;
+  border-radius: 8px;
+}
+
+.logo-section img {
+  width: 100%;
+  max-width: 400px;
+  height: auto;
+  margin-bottom: 1.5rem;
+}
+
+.contact-details {
+  display: flex;
+  flex: 2; /* Increase flex to fill right side */
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2rem;
+  background-color: #1a1a1a;
+  border-radius: 8px;
+  border: 1px solid #333;
+  justify-content: space-around; /* Spread content evenly */
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.contact-icon {
+  font-size: 1.5rem;
+  color: #666;
+}
+
+.contact-text {
+  flex: 1;
+}
+
+h1 {
+  margin-top: 40px; /* Reduce gap between header and navbar */
+  text-align: center;
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .contact-grid {
+    flex-direction: column;
+  }
+  
+  .contact-section {
+    height: auto;
+    padding: 1rem;
+  }
+
+  .contact-content {
+    flex-direction: column;
+    padding: 1rem;
+  }
+
+  .logo-section img {
+    max-width: 300px;
+  }
+}
