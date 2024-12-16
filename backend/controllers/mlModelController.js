@@ -1,14 +1,17 @@
 import MLModel from "../models/MLModel.js";
+
 // Controller to get all models
 export const getAllModels = async (req, res) => {
     try {
         const models = await MLModel.find();
         res.status(200).json({
             success: true,
-            data: models
+            data: models,
         });
     } catch (error) {
-        console.error('Error fetching models:', error);
+        if (process.env.NODE_ENV !== 'test') {
+            console.error('Error fetching models:', error);
+        }
         res.status(500).json({
             success: false,
             message: 'Server Error',
@@ -31,7 +34,9 @@ export const getModelById = async (req, res) => {
             data: model,
         });
     } catch (error) {
-        console.error('Error fetching model:', error);
+        if (process.env.NODE_ENV !== 'test') {
+            console.error('Error fetching model:', error);
+        }
         res.status(500).json({
             success: false,
             message: 'Server Error',
