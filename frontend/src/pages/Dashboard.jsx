@@ -401,234 +401,236 @@ const Dashboard = () => {
   );
 
   return (
-    <div className="dashboard-container min-h-screen bg-black">
-      <div className="dashboard-header">
-        <h1>ML Model Dashboard</h1>
-        <div className="model-selector">
-          <select 
-            value={selectedModelId} 
-            onChange={(e) => handleModelChange(e.target.value)}
-            className="model-select"
-          >
-            {allModels.map(model => (
-              <option key={model._id} value={model._id}>
-                {model.modelName} ({model.modelType})
-              </option>
-            ))}
-          </select>
+    <div className="dashboard-container">
+      <div className="dashboard-content">
+        <div className="dashboard-header">
+          <h1>ML Model Dashboard</h1>
+          <div className="model-selector">
+            <select 
+              value={selectedModelId} 
+              onChange={(e) => handleModelChange(e.target.value)}
+              className="model-select"
+            >
+              {allModels.map(model => (
+                <option key={model._id} value={model._id}>
+                  {model.modelName} ({model.modelType})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="model-info">
+            <p>Model: {modelName}</p>
+            <p>Type: {modelType}</p>
+            <p>Last Updated: {new Date(createdAt).toLocaleString()}</p>
+          </div>
         </div>
-        <div className="model-info">
-          <p>Model: {modelName}</p>
-          <p>Type: {modelType}</p>
-          <p>Last Updated: {new Date(createdAt).toLocaleString()}</p>
-        </div>
-      </div>
 
-      <div className="metrics-grid">
-        <MetricCard
-          title="Accuracy"
-          value={accuracyMetric?.value || 0}
-          icon="📊"
-        />
+        <div className="metrics-grid">
+          <MetricCard
+            title="Accuracy"
+            value={accuracyMetric?.value || 0}
+            icon="📊"
+          />
+          {classificationReport && (
+            <>
+              <MetricCard
+                title="Precision (Class 0)"
+                value={classificationReport['0']?.precision}
+                icon="🎯"
+              />
+              <MetricCard
+                title="Recall (Class 0)"
+                value={classificationReport['0']?.recall}
+                icon="📈"
+              />
+              <MetricCard
+                title="F1-Score (Class 0)"
+                value={classificationReport['0']?.['f1-score']}
+                icon="⚖️"
+              />
+            </>
+          )}
+        </div>
+
+        {confusionMatrix && (
+          <div className="matrix-container">
+            <ConfusionMatrix matrix={confusionMatrix} />
+          </div>
+        )}
+
+        {filteredPlots.length > 0 && (
+          <div className="plots-section">
+            <h2>Model Performance Plots</h2>
+            <div className="plots-grid">
+              {filteredPlots.map((plot, index) => (
+                <PlotVisualization 
+                  key={index} 
+                  plot={plot} 
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {rocCurve && (
+          <div className="roc-curve-container">
+            <h3>ROC Curve</h3>
+            <Plot
+              data={[
+                {
+                  x: rocCurve.fpr,
+                  y: rocCurve.tpr,
+                  type: 'scatter',
+                  mode: 'lines',
+                  line: {
+                    color: '#4a90e2'
+                  }
+                }
+              ]}
+              layout={{
+                paper_bgcolor: '#2d2d2d',
+                plot_bgcolor: '#383838',
+                font: {
+                  color: '#ffffff'
+                },
+                title: {
+                  text: 'ROC Curve',
+                  font: {
+                    color: '#ffffff',
+                    size: 16
+                  }
+                },
+                xaxis: {
+                  title: {
+                    text: 'False Positive Rate'
+                  },
+                  gridcolor: '#4a4a4a',
+                  zerolinecolor: '#4a4a4a',
+                  tickfont: {
+                    color: '#ffffff'
+                  }
+                },
+                yaxis: {
+                  title: {
+                    text: 'True Positive Rate'
+                  },
+                  gridcolor: '#4a4a4a',
+                  zerolinecolor: '#4a4a4a',
+                  tickfont: {
+                    color: '#ffffff'
+                  }
+                }
+              }}
+              config={{
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false,
+                modeBarButtonsToRemove: ['lasso2d', 'select2d']
+              }}
+              style={{ width: '100%', height: '400px' }}
+            />
+          </div>
+        )}
+
+        {precisionRecallCurve && (
+          <div className="precision-recall-curve-container">
+            <h3>Precision-Recall Curve</h3>
+            <Plot
+              data={[
+                {
+                  x: precisionRecallCurve.recall,
+                  y: precisionRecallCurve.precision,
+                  type: 'scatter',
+                  mode: 'lines',
+                  line: {
+                    color: '#4a90e2'
+                  }
+                }
+              ]}
+              layout={{
+                paper_bgcolor: '#2d2d2d',
+                plot_bgcolor: '#383838',
+                font: {
+                  color: '#ffffff'
+                },
+                title: {
+                  text: 'Precision-Recall Curve',
+                  font: {
+                    color: '#ffffff',
+                    size: 16
+                  }
+                },
+                xaxis: {
+                  title: {
+                    text: 'Recall'
+                  },
+                  gridcolor: '#4a4a4a',
+                  zerolinecolor: '#4a4a4a',
+                  tickfont: {
+                    color: '#ffffff'
+                  }
+                },
+                yaxis: {
+                  title: {
+                    text: 'Precision'
+                  },
+                  gridcolor: '#4a4a4a',
+                  zerolinecolor: '#4a4a4a',
+                  tickfont: {
+                    color: '#ffffff'
+                  }
+                }
+              }}
+              config={{
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false,
+                modeBarButtonsToRemove: ['lasso2d', 'select2d']
+              }}
+              style={{ width: '100%', height: '400px' }}
+            />
+          </div>
+        )}
+
         {classificationReport && (
-          <>
-            <MetricCard
-              title="Precision (Class 0)"
-              value={classificationReport['0']?.precision}
-              icon="🎯"
-            />
-            <MetricCard
-              title="Recall (Class 0)"
-              value={classificationReport['0']?.recall}
-              icon="📈"
-            />
-            <MetricCard
-              title="F1-Score (Class 0)"
-              value={classificationReport['0']?.['f1-score']}
-              icon="⚖️"
-            />
-          </>
+          <div className="report-section">
+            <h3>Detailed Metrics</h3>
+            <div className="metrics-table-container">
+              <table className="metrics-table">
+                <thead>
+                  <tr>
+                    <th>Class</th>
+                    <th>Precision</th>
+                    <th>Recall</th>
+                    <th>F1-Score</th>
+                    <th>Support</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(classificationReport).map(([className, metrics]) => {
+                    if (className !== 'accuracy') {
+                      const displayName =
+                        className === 'macro avg' ? 'Macro Average' :
+                        className === 'weighted avg' ? 'Weighted Average' :
+                        `Class ${className}`;
+                      return (
+                        <tr key={className}>
+                          <td>{displayName}</td>
+                          <td>{metrics.precision?.toFixed(4)}</td>
+                          <td>{metrics.recall?.toFixed(4)}</td>
+                          <td>{metrics['f1-score']?.toFixed(4)}</td>
+                          <td>{metrics.support}</td>
+                        </tr>
+                      );
+                    }
+                    return null;
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
       </div>
-
-      {confusionMatrix && (
-        <div className="matrix-container">
-          <ConfusionMatrix matrix={confusionMatrix} />
-        </div>
-      )}
-
-      {filteredPlots.length > 0 && (
-        <div className="plots-section">
-          <h2>Model Performance Plots</h2>
-          <div className="plots-grid">
-            {filteredPlots.map((plot, index) => (
-              <PlotVisualization 
-                key={index} 
-                plot={plot} 
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {rocCurve && (
-        <div className="roc-curve-container">
-          <h3>ROC Curve</h3>
-          <Plot
-            data={[
-              {
-                x: rocCurve.fpr,
-                y: rocCurve.tpr,
-                type: 'scatter',
-                mode: 'lines',
-                line: {
-                  color: '#4a90e2'
-                }
-              }
-            ]}
-            layout={{
-              paper_bgcolor: '#2d2d2d',
-              plot_bgcolor: '#383838',
-              font: {
-                color: '#ffffff'
-              },
-              title: {
-                text: 'ROC Curve',
-                font: {
-                  color: '#ffffff',
-                  size: 16
-                }
-              },
-              xaxis: {
-                title: {
-                  text: 'False Positive Rate'
-                },
-                gridcolor: '#4a4a4a',
-                zerolinecolor: '#4a4a4a',
-                tickfont: {
-                  color: '#ffffff'
-                }
-              },
-              yaxis: {
-                title: {
-                  text: 'True Positive Rate'
-                },
-                gridcolor: '#4a4a4a',
-                zerolinecolor: '#4a4a4a',
-                tickfont: {
-                  color: '#ffffff'
-                }
-              }
-            }}
-            config={{
-              responsive: true,
-              displayModeBar: true,
-              displaylogo: false,
-              modeBarButtonsToRemove: ['lasso2d', 'select2d']
-            }}
-            style={{ width: '100%', height: '400px' }}
-          />
-        </div>
-      )}
-
-      {precisionRecallCurve && (
-        <div className="precision-recall-curve-container">
-          <h3>Precision-Recall Curve</h3>
-          <Plot
-            data={[
-              {
-                x: precisionRecallCurve.recall,
-                y: precisionRecallCurve.precision,
-                type: 'scatter',
-                mode: 'lines',
-                line: {
-                  color: '#4a90e2'
-                }
-              }
-            ]}
-            layout={{
-              paper_bgcolor: '#2d2d2d',
-              plot_bgcolor: '#383838',
-              font: {
-                color: '#ffffff'
-              },
-              title: {
-                text: 'Precision-Recall Curve',
-                font: {
-                  color: '#ffffff',
-                  size: 16
-                }
-              },
-              xaxis: {
-                title: {
-                  text: 'Recall'
-                },
-                gridcolor: '#4a4a4a',
-                zerolinecolor: '#4a4a4a',
-                tickfont: {
-                  color: '#ffffff'
-                }
-              },
-              yaxis: {
-                title: {
-                  text: 'Precision'
-                },
-                gridcolor: '#4a4a4a',
-                zerolinecolor: '#4a4a4a',
-                tickfont: {
-                  color: '#ffffff'
-                }
-              }
-            }}
-            config={{
-              responsive: true,
-              displayModeBar: true,
-              displaylogo: false,
-              modeBarButtonsToRemove: ['lasso2d', 'select2d']
-            }}
-            style={{ width: '100%', height: '400px' }}
-          />
-        </div>
-      )}
-
-      {classificationReport && (
-        <div className="report-section">
-          <h3>Detailed Metrics</h3>
-          <div className="metrics-table-container">
-            <table className="metrics-table">
-              <thead>
-                <tr>
-                  <th>Class</th>
-                  <th>Precision</th>
-                  <th>Recall</th>
-                  <th>F1-Score</th>
-                  <th>Support</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(classificationReport).map(([className, metrics]) => {
-                  if (className !== 'accuracy') {
-                    const displayName =
-                      className === 'macro avg' ? 'Macro Average' :
-                      className === 'weighted avg' ? 'Weighted Average' :
-                      `Class ${className}`;
-                    return (
-                      <tr key={className}>
-                        <td>{displayName}</td>
-                        <td>{metrics.precision?.toFixed(4)}</td>
-                        <td>{metrics.recall?.toFixed(4)}</td>
-                        <td>{metrics['f1-score']?.toFixed(4)}</td>
-                        <td>{metrics.support}</td>
-                      </tr>
-                    );
-                  }
-                  return null;
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
       <Footer />
     </div>
   );
