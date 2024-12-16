@@ -1,0 +1,24 @@
+/* Custom styles for About Us page */
+.about-container {
+  padding: 1rem;
+  padding-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #1a1a1a;
+}
+
+.about-content {
+  flex: 1;
+  margin-bottom: 2rem; /* Add consistent spacing before footer */
+}
+
+/* Card and section backgrounds */
+.about-card {
+  background-color: #222222;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 1.0rem;
+}
+
+/* Additional custom styles can be added here */

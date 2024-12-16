@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { addUsers, getUsers, getUserInfo, deleteUser, toggleUserStatus } from '../api';
+import Footer from '../components/Footer';
 import '../styles/AdminPanel.css';
 
 const AdminPanel = () => {
@@ -289,7 +290,7 @@ const AdminPanel = () => {
   }, []);
 
   return (
-    <div className="admin-panel">
+    <div className="admin-panel-container min-h-screen bg-black">
       <div className="admin-container">
         <h1>Admin Panel</h1>
         <div className="admin-card">
@@ -520,6 +521,7 @@ const AdminPanel = () => {
           </div>
         </div>
       )}
+      <Footer />
     </div>
   );
 };

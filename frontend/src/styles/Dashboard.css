@@ -1,7 +1,15 @@
 .dashboard-container {
   padding: 1rem;
-  width: 100%;
-  margin: 0 auto;
+  padding-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #1a1a1a;
+}
+
+.dashboard-content {
+  flex: 1;
+  margin-bottom: 2rem;
 }
 
 .dashboard-header {
@@ -35,7 +43,7 @@
 }
 
 .metric-card {
-  background: #2d2d2d;
+  background: #222222;
   padding: 1.5rem;
   border-radius: 12px;
   display: flex;
@@ -66,7 +74,7 @@
 }
 
 .matrix-container {
-  background: #2d2d2d;
+  background: #222222;
   padding: 2rem;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -91,7 +99,7 @@
 }
 
 .classification-report {
-  background: #2d2d2d;
+  background: #222222;
   padding: 2rem;
   border-radius: 12px;
   color: white;
@@ -163,7 +171,7 @@
 }
 
 .plot-container {
-  background: #2d2d2d;
+  background: #222222;
   padding: 1.5rem;
   border-radius: 12px;
   color: white;
@@ -180,7 +188,7 @@
 }
 
 .plot-content {
-  background: #383838;
+  background: #1a1a1a;
   border-radius: 8px;
   padding: 1rem;
   flex: 1;
@@ -288,7 +296,7 @@
 .report-section {
   margin-top: 2rem;
   padding: 1.5rem;
-  background-color: #1e1e1e;
+  background-color: #222222;
   border-radius: 10px;
   width: 100%;
 }

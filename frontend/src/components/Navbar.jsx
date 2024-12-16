@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-unused-vars
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { getUserInfo, logout } from '../api';
 import ChangePasswordModal from './ChangePasswordModal';
 import '../styles/Navbar.css';
@@ -13,6 +13,7 @@ const Navbar = () => {
   const menuRef = useRef(null);
   const profileRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -89,7 +90,6 @@ const Navbar = () => {
               <ul className="sidebar-menu">
                 <li><Link to="/dashboard">Dashboard</Link></li>
                 <li><Link to="/transactions">Transactions</Link></li>
-                <li><Link to="/analytics">Analytics</Link></li>
                 {user && user.role === 'Admin' && (
                   <li><Link to="/admin">Admin Panel</Link></li>
                 )}
@@ -103,9 +103,9 @@ const Navbar = () => {
 
         <div className="center-section">
           <div className="nav-links">
-            <Link to="/dashboard" className="nav-link">Home</Link>
-            <Link to="/contact" className="nav-link">Contact Us</Link>
-            <Link to="/about" className="nav-link">About Us</Link>
+            <Link to="/dashboard" className={`nav-link ${location.pathname === '/dashboard' ? 'active' : ''}`}>Home</Link>
+            <Link to="/contact" className={`nav-link ${location.pathname === '/contact' ? 'active' : ''}`}>Contact Us</Link>
+            <Link to="/about" className={`nav-link ${location.pathname === '/about' ? 'active' : ''}`}>About Us</Link>
           </div>
         </div>
 
