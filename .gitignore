@@ -8,7 +8,7 @@ frontend/.env
 ML-Models/.env
 
 # Build files
-# frontend/dist/
+frontend/dist/
 backend/build/
 
 # Logs
