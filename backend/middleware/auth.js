@@ -7,7 +7,6 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const authMiddleware = async (req, res, next) => {
-    console.log(req.cookies)
     const token = req.cookies.authonlycookie || '';
     if (!token) {
         return res.status(401).json({ message: 'Authentication token missing' });
