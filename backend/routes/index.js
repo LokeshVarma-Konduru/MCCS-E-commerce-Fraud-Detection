@@ -23,7 +23,7 @@ router.get('/users', authMiddleware, adminMiddleware, getAllUsers);
 router.delete('/admin/users/:userId', authMiddleware, adminMiddleware, deleteUser);
 router.post('/admin/users/:userId/toggle-status', authMiddleware, adminMiddleware, toggleUserStatus);
 
-router.get('/models', getAllModels);
-router.get('/model/:id', getModelById);
+router.get('/models', authMiddleware,getAllModels);
+router.get('/model/:id', authMiddleware,getModelById);
 
 export default router;

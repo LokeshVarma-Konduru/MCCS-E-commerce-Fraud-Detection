@@ -1,15 +1,16 @@
 .dashboard-container {
-  padding: 2rem;
-  max-width: 1200px;
+  padding: 1rem;
+  width: 100%;
   margin: 0 auto;
 }
 
 .dashboard-header {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   padding: 1rem;
   background: #2d2d2d;
   border-radius: 12px;
   color: white;
+  width: 100%;
 }
 
 .dashboard-header h1 {
@@ -22,13 +23,15 @@
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
   color: #e0e0e0;
+  width: 100%;
 }
 
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
 }
 
 .metric-card {
@@ -68,6 +71,7 @@
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   margin-bottom: 2rem;
+  width: 100%;
 }
 
 .confusion-matrix {
@@ -93,6 +97,7 @@
   color: white;
   margin-bottom: 1rem;
   margin-top: 1rem;
+  width: 100%;
 }
 
 .classification-report h3 {
@@ -104,6 +109,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1.5rem;
+  width: 100%;
 }
 
 .report-card {
@@ -126,6 +132,7 @@
 .plots-section {
   margin-top: 1.5rem;
   margin-bottom: 1rem;
+  width: 100%;
 }
 
 .plots-section h2 {
@@ -136,23 +143,33 @@
 
 .plots-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
   margin-bottom: 1rem;
+  width: 100%;
 }
 
+/* Style for the first two plots */
+.plots-grid > div:nth-child(-n+2) {
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Style specifically for the feature importance plot */
 .plots-grid > div:nth-child(3).feature-importance-plot {
-  grid-column: 1 / -1;  /* Make it span full width */
-  max-width: 100%;
-  height: auto;
-  margin-bottom: 1rem;
+  grid-column: 1 / -1;
+  margin-top: 1.5rem;
 }
 
 .plot-container {
   background: #2d2d2d;
-  padding: 1rem;
+  padding: 1.5rem;
   border-radius: 12px;
   color: white;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .plot-container h3 {
@@ -166,19 +183,46 @@
   background: #383838;
   border-radius: 8px;
   padding: 1rem;
-}
-
-.plot-summary {
+  flex: 1;
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem;
+  align-items: center;
+  justify-content: center;
 }
 
-.plot-summary p {
-  margin: 0;
-  color: #e0e0e0;
-  font-size: 0.9rem;
+.plot-content img {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+@media (max-width: 1024px) {
+  .plots-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .plots-grid > div:nth-child(-n+2) {
+    min-height: 350px;
+  }
+}
+
+@media (max-width: 768px) {
+  .plots-grid > div:nth-child(-n+2) {
+    min-height: 300px;
+  }
+
+  .plot-container {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .plots-grid > div:nth-child(-n+2) {
+    min-height: 250px;
+  }
+
+  .plot-container {
+    padding: 0.75rem;
+  }
 }
 
 .roc-curve-container,
@@ -187,6 +231,7 @@
   padding: 1.5rem;
   border-radius: 12px;
   margin-top: 2rem;
+  width: 100%;
 }
 
 .roc-curve-container h3,
@@ -245,6 +290,7 @@
   padding: 1.5rem;
   background-color: #1e1e1e;
   border-radius: 10px;
+  width: 100%;
 }
 
 .report-section h3 {
@@ -260,6 +306,7 @@
   background-color: #2d2d2d;
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 100%;
 }
 
 .metrics-table {
@@ -330,6 +377,7 @@
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1.5rem;
   margin-top: 1rem;
+  width: 100%;
 }
 
 .report-card {
@@ -444,4 +492,41 @@
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 0.5rem;
+  }
+  
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .plots-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .plot-container {
+    padding: 0.75rem;
+  }
+  
+  .matrix-container,
+  .classification-report {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-container {
+    padding: 0.25rem;
+  }
+  
+  .dashboard-header {
+    padding: 0.75rem;
+  }
+  
+  .metric-card {
+    padding: 1rem;
+  }
 }
