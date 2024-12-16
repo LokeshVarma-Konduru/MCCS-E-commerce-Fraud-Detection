@@ -1,35 +1,129 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+// eslint-disable-next-line no-unused-vars
+import React from 'react';
+import PropTypes from 'prop-types';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import Dashboard from './pages/Dashboard.jsx';
+import Login from './Login.jsx';
+import Navbar from './components/Navbar.jsx';
+import AdminPanel from './pages/AdminPanel.jsx';
+import AboutUs from './pages/AboutUs.jsx';
+import Contact from './pages/Contact.jsx';
+import { getUserInfo } from './api.js';
 
-function App() {
-  const [count, setCount] = useState(0)
+// Protected Route Component
+const ProtectedRoute = ({ children }) => {
+  const isAuthenticated = localStorage.getItem('token');
+  const location = useLocation();
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <Navbar />
+      {children}
     </>
-  )
-}
+  );
+};
 
-export default App
+// Admin Route Component
+const AdminRoute = ({ children }) => {
+  const [isAdmin, setIsAdmin] = React.useState(null);
+  const location = useLocation();
+  
+  React.useEffect(() => {
+    const checkAdminStatus = async () => {
+      try {
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+          setIsAdmin(false);
+          return;
+        }
+        
+        const response = await getUserInfo(userId);
+        setIsAdmin(response.data.user.role === 'Admin');
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        setIsAdmin(false);
+      }
+    };
+    
+    checkAdminStatus();
+  }, []);
+  
+  if (isAdmin === null) {
+    return <div>Loading...</div>;
+  }
+  
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" state={{ from: location }} replace />;
+  }
+  
+  return <ProtectedRoute>{children}</ProtectedRoute>;
+};
+
+// Add PropTypes validation
+ProtectedRoute.propTypes = {
+  children: PropTypes.node.isRequired
+};
+
+AdminRoute.propTypes = {
+  children: PropTypes.node.isRequired
+};
+
+// Dashboard Content
+const DashboardContent = () => {
+  return (
+    <div className="dashboard-content">
+      <Dashboard />
+    </div>
+  );
+};
+
+const App = () => {
+  return (
+    <BrowserRouter>
+      <div className="app">
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <DashboardContent />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminPanel />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/about"
+            element={
+              <ProtectedRoute>
+                <AboutUs />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/contact"
+            element={
+              <ProtectedRoute>
+                <Contact />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </div>
+    </BrowserRouter>
+  );
+};
+
+export default App;
