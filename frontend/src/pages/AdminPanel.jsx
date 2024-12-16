@@ -290,237 +290,241 @@ const AdminPanel = () => {
   }, []);
 
   return (
-    <div className="admin-panel-container min-h-screen bg-black">
-      <div className="admin-container">
-        <h1>Admin Panel</h1>
-        <div className="admin-card">
-          <h2>Add New Users</h2>
-          {addUserMessage && (
-            <div className={`message ${addUserMessageType} ${addUserMessageVisible ? 'visible' : ''}`}
-                 style={{ whiteSpace: 'pre-line' }}>
-              {addUserMessage}
-            </div>
-          )}
-          <form onSubmit={handleSubmit}>
-            {userEntries.map((entry, index) => (
-              <div key={index} className="user-entry">
-                {index > 0 && <hr className="entry-divider" />}
-                <div className="user-entry-content">
-                  <div className="user-entry-fields">
-                    <div className="form-group">
-                      <label htmlFor={`email-${index}`}>Email:</label>
-                      <input
-                        type="email"
-                        id={`email-${index}`}
-                        name="email"
-                        value={entry.email}
-                        onChange={(e) => handleInputChange(index, e)}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label htmlFor={`name-${index}`}>Name:</label>
-                      <input
-                        type="text"
-                        id={`name-${index}`}
-                        name="name"
-                        value={entry.name}
-                        onChange={(e) => handleInputChange(index, e)}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label htmlFor={`role-${index}`}>Role:</label>
-                      <select
-                        id={`role-${index}`}
-                        name="role"
-                        value={entry.role}
-                        onChange={(e) => handleInputChange(index, e)}
-                        required
-                      >
-                        <option value="Developer">Developer</option>
-                        <option value="Admin">Admin</option>
-                      </select>
+    <div className="admin-container">
+      <div className="admin-content">
+        <div className="admin-panel-container min-h-screen bg-black">
+          <div className="admin-container">
+            <h1>Admin Panel</h1>
+            <div className="admin-card">
+              <h2>Add New Users</h2>
+              {addUserMessage && (
+                <div className={`message ${addUserMessageType} ${addUserMessageVisible ? 'visible' : ''}`}
+                     style={{ whiteSpace: 'pre-line' }}>
+                  {addUserMessage}
+                </div>
+              )}
+              <form onSubmit={handleSubmit}>
+                {userEntries.map((entry, index) => (
+                  <div key={index} className="user-entry">
+                    {index > 0 && <hr className="entry-divider" />}
+                    <div className="user-entry-content">
+                      <div className="user-entry-fields">
+                        <div className="form-group">
+                          <label htmlFor={`email-${index}`}>Email:</label>
+                          <input
+                            type="email"
+                            id={`email-${index}`}
+                            name="email"
+                            value={entry.email}
+                            onChange={(e) => handleInputChange(index, e)}
+                            required
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label htmlFor={`name-${index}`}>Name:</label>
+                          <input
+                            type="text"
+                            id={`name-${index}`}
+                            name="name"
+                            value={entry.name}
+                            onChange={(e) => handleInputChange(index, e)}
+                            required
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label htmlFor={`role-${index}`}>Role:</label>
+                          <select
+                            id={`role-${index}`}
+                            name="role"
+                            value={entry.role}
+                            onChange={(e) => handleInputChange(index, e)}
+                            required
+                          >
+                            <option value="Developer">Developer</option>
+                            <option value="Admin">Admin</option>
+                          </select>
+                        </div>
+                      </div>
+                      {userEntries.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeUserEntry(index)}
+                          className="remove-user-btn"
+                          aria-label="Remove user"
+                        >
+                          Remove
+                        </button>
+                      )}
                     </div>
                   </div>
-                  {userEntries.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeUserEntry(index)}
-                      className="remove-user-btn"
-                      aria-label="Remove user"
-                    >
-                      Remove
-                    </button>
-                  )}
+                ))}
+                <div className="form-actions">
+                  <button type="button" onClick={addUserEntry} className="add-user-btn">
+                    Add Another User
+                  </button>
+                  <button type="submit" className="submit-btn">
+                    Submit
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <div className="admin-card users-list">
+              <h2>User List</h2>
+              {usersListMessageVisible && (
+                <div className={`message ${usersListMessageType} visible`}>
+                  {usersListMessage}
+                </div>
+              )}
+              <div className="filter-section">
+                <div className="search-box">
+                  <input
+                    type="text"
+                    placeholder="Search by name or email..."
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                    className={`search-input ${isSearching ? 'searching' : ''}`}
+                  />
+                </div>
+                <div className="role-filter">
+                  <select
+                    value={roleFilter}
+                    onChange={handleRoleFilterChange}
+                    className={`role-select ${isSearching ? 'searching' : ''}`}
+                  >
+                    <option value="">All Roles</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Developer">Developer</option>
+                  </select>
                 </div>
               </div>
-            ))}
-            <div className="form-actions">
-              <button type="button" onClick={addUserEntry} className="add-user-btn">
-                Add Another User
-              </button>
-              <button type="submit" className="submit-btn">
-                Submit
-              </button>
-            </div>
-          </form>
-        </div>
 
-        <div className="admin-card users-list">
-          <h2>User List</h2>
-          {usersListMessageVisible && (
-            <div className={`message ${usersListMessageType} visible`}>
-              {usersListMessage}
+              <div className={`table-container ${isLoading || isSearching ? 'loading' : ''}`}>
+                {isLoading || isSearching ? (
+                  <div className="loading">
+                    <div className="loading-spinner"></div>
+                    <div className="loading-text">
+                      {isSearching ? 'Searching...' : 'Loading users...'}
+                    </div>
+                  </div>
+                ) : (
+                  <table className="user-table">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.length > 0 ? (
+                        users.map((user) => (
+                          <tr key={user._id}>
+                            <td>{user.name}</td>
+                            <td>{user.email}</td>
+                            <td>{user.role}</td>
+                            <td>
+                              <span className={`status-badge ${user.status ? 'active' : 'inactive'}`}>
+                                {user.status ? 'Active' : 'Inactive'}
+                              </span>
+                            </td>
+                            <td>
+                              <button
+                                onClick={() => handleToggleStatus(user)}
+                                className={`toggle-button ${user.status ? 'deactivate' : 'activate'}`}
+                              >
+                                {user.status ? 'Deactivate' : 'Activate'}
+                              </button>
+                              <button
+                                onClick={() => openDeleteModal(user)}
+                                className="delete-btn"
+                              >
+                                Delete
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="5" className="no-users">No users found</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Delete Confirmation Modal */}
+          {deleteModalOpen && userToDelete && (
+            <div className="modal-overlay">
+              <div className="modal-container">
+                <div className="modal-header">
+                  <span className="warning-icon">⚠️</span>
+                  <h3>Confirm Delete User</h3>
+                </div>
+                <div className="modal-content">
+                  <p>Are you sure you want to delete this user? This action cannot be undone.</p>
+                  <div className="user-info">
+                    <strong>Name:</strong> {userToDelete.name}<br />
+                    <strong>Email:</strong> {userToDelete.email}<br />
+                    <strong>Role:</strong> {userToDelete.role}
+                  </div>
+                </div>
+                <div className="modal-actions">
+                  <button className="modal-btn cancel" onClick={closeDeleteModal}>
+                    Cancel
+                  </button>
+                  <button className="modal-btn delete" onClick={handleDeleteUser}>
+                    Delete User
+                  </button>
+                </div>
+              </div>
             </div>
           )}
-          <div className="filter-section">
-            <div className="search-box">
-              <input
-                type="text"
-                placeholder="Search by name or email..."
-                value={searchTerm}
-                onChange={handleSearchChange}
-                className={`search-input ${isSearching ? 'searching' : ''}`}
-              />
-            </div>
-            <div className="role-filter">
-              <select
-                value={roleFilter}
-                onChange={handleRoleFilterChange}
-                className={`role-select ${isSearching ? 'searching' : ''}`}
-              >
-                <option value="">All Roles</option>
-                <option value="Admin">Admin</option>
-                <option value="Developer">Developer</option>
-              </select>
-            </div>
-          </div>
 
-          <div className={`table-container ${isLoading || isSearching ? 'loading' : ''}`}>
-            {isLoading || isSearching ? (
-              <div className="loading">
-                <div className="loading-spinner"></div>
-                <div className="loading-text">
-                  {isSearching ? 'Searching...' : 'Loading users...'}
+          {/* User Status Toggle Modal */}
+          {statusModalOpen && userToToggle && (
+            <div className="modal-overlay">
+              <div className="modal-container">
+                <div className="modal-header">
+                  <span className="warning-icon">⚠️</span>
+                  <h3>Confirm {userToToggle.status ? 'Deactivate' : 'Activate'} User</h3>
+                </div>
+                <div className="modal-content">
+                  <p>Are you sure you want to {userToToggle.status ? 'deactivate' : 'activate'} this user?</p>
+                  <div className="user-info">
+                    <strong>Name:</strong> {userToToggle.name}<br />
+                    <strong>Email:</strong> {userToToggle.email}<br />
+                    <strong>Role:</strong> {userToToggle.role}<br />
+                    <strong>Current Status:</strong> {userToToggle.status ? 'Active' : 'Inactive'}
+                  </div>
+                </div>
+                <div className="modal-actions">
+                  <button 
+                    className="modal-btn cancel" 
+                    onClick={() => {
+                      setStatusModalOpen(false);
+                      setUserToToggle(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    className={`modal-btn ${userToToggle.status ? 'delete' : 'activate'}`}
+                    onClick={confirmToggleStatus}
+                  >
+                    {userToToggle.status ? 'Deactivate' : 'Activate'} User
+                  </button>
                 </div>
               </div>
-            ) : (
-              <table className="user-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.length > 0 ? (
-                    users.map((user) => (
-                      <tr key={user._id}>
-                        <td>{user.name}</td>
-                        <td>{user.email}</td>
-                        <td>{user.role}</td>
-                        <td>
-                          <span className={`status-badge ${user.status ? 'active' : 'inactive'}`}>
-                            {user.status ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                        <td>
-                          <button
-                            onClick={() => handleToggleStatus(user)}
-                            className={`toggle-button ${user.status ? 'deactivate' : 'activate'}`}
-                          >
-                            {user.status ? 'Deactivate' : 'Activate'}
-                          </button>
-                          <button
-                            onClick={() => openDeleteModal(user)}
-                            className="delete-btn"
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="5" className="no-users">No users found</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Delete Confirmation Modal */}
-      {deleteModalOpen && userToDelete && (
-        <div className="modal-overlay">
-          <div className="modal-container">
-            <div className="modal-header">
-              <span className="warning-icon">⚠️</span>
-              <h3>Confirm Delete User</h3>
-            </div>
-            <div className="modal-content">
-              <p>Are you sure you want to delete this user? This action cannot be undone.</p>
-              <div className="user-info">
-                <strong>Name:</strong> {userToDelete.name}<br />
-                <strong>Email:</strong> {userToDelete.email}<br />
-                <strong>Role:</strong> {userToDelete.role}
-              </div>
-            </div>
-            <div className="modal-actions">
-              <button className="modal-btn cancel" onClick={closeDeleteModal}>
-                Cancel
-              </button>
-              <button className="modal-btn delete" onClick={handleDeleteUser}>
-                Delete User
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* User Status Toggle Modal */}
-      {statusModalOpen && userToToggle && (
-        <div className="modal-overlay">
-          <div className="modal-container">
-            <div className="modal-header">
-              <span className="warning-icon">⚠️</span>
-              <h3>Confirm {userToToggle.status ? 'Deactivate' : 'Activate'} User</h3>
-            </div>
-            <div className="modal-content">
-              <p>Are you sure you want to {userToToggle.status ? 'deactivate' : 'activate'} this user?</p>
-              <div className="user-info">
-                <strong>Name:</strong> {userToToggle.name}<br />
-                <strong>Email:</strong> {userToToggle.email}<br />
-                <strong>Role:</strong> {userToToggle.role}<br />
-                <strong>Current Status:</strong> {userToToggle.status ? 'Active' : 'Inactive'}
-              </div>
-            </div>
-            <div className="modal-actions">
-              <button 
-                className="modal-btn cancel" 
-                onClick={() => {
-                  setStatusModalOpen(false);
-                  setUserToToggle(null);
-                }}
-              >
-                Cancel
-              </button>
-              <button 
-                className={`modal-btn ${userToToggle.status ? 'delete' : 'activate'}`}
-                onClick={confirmToggleStatus}
-              >
-                {userToToggle.status ? 'Deactivate' : 'Activate'} User
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       <Footer />
     </div>
   );
