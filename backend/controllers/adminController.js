@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt';
 import User from '../models/User.js';
 import sendMail from '../utils/functions.js';
 import { v4 as uuidv4 } from 'uuid';
+import mongoose from 'mongoose';
 
 // Function to generate a random temporary password
 const generateTempPassword = () => {
@@ -130,35 +131,44 @@ export const getAllUsers = async (req, res) => {
 
 // Delete user by ID
 export const deleteUser = async (req, res) => {
-    try {
-        const { userId } = req.params;
+    const { userId } = req.params;
 
-        // Check if user exists
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Invalid user ID format'
+        });
+    }
+
+    try {
         const user = await User.findById(userId);
+        
         if (!user) {
             return res.status(404).json({ 
                 success: false, 
-                message: 'User not found' 
+                message: 'User not found'
             });
         }
 
-        // Prevent admin from deleting themselves
-        if (user._id.toString() === req.user._id.toString()) {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'Cannot delete your own admin account' 
-            });
+        // Prevent deleting the last admin
+        if (user.role === 'Admin') {
+            const activeAdmins = await User.countDocuments({ role: 'Admin' });
+            if (activeAdmins <= 1) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Cannot delete the last admin user'
+                });
+            }
         }
 
-        // Delete the user
         await User.findByIdAndDelete(userId);
-
+        
         res.status(200).json({ 
             success: true, 
-            message: 'User deleted successfully' 
+            message: 'User deleted successfully'
         });
     } catch (error) {
-        console.error('Error deleting user:', error);
         res.status(500).json({ 
             success: false, 
             message: 'Error deleting user',
@@ -174,6 +184,11 @@ export const toggleUserStatus = async (req, res) => {
 
     if (typeof status !== 'boolean') {
         return res.status(400).json({ message: 'Status must be a boolean value' });
+    }
+
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(400).json({ message: 'Invalid user ID format' });
     }
 
     try {
@@ -213,8 +228,6 @@ export const toggleUserStatus = async (req, res) => {
             status: user.status
         });
     } catch (error) {
-        console.error('Toggle user status error:', error);
         res.status(500).json({ message: 'Error updating user status', error: error.message });
     }
 };
-
