@@ -5,6 +5,7 @@ import { sendMail, generateOTP } from '../utils/functions.js';
 
 export const login = async (req, res) => {
     const { email, password } = req.body;
+    console.log(req.body);
     try {
         // Validate input
         if (!email || !password) {
