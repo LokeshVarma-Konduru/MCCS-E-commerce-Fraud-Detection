@@ -106,8 +106,8 @@ const APIIntegration = () => {
 
   return (
     <div className="developer-container">
-      <div className="side-panel">
-        <div className="nav-menu">
+      <div className="top-navigation">
+        <nav className="nav-menu">
           <Link to="/developer" className="nav-item">
             <FaHome className="nav-icon" />
             <span>Dashboard</span>
@@ -124,7 +124,7 @@ const APIIntegration = () => {
             <FaBook className="nav-icon" />
             <span>Documentation</span>
           </Link>
-        </div>
+        </nav>
       </div>
 
       <div className="main-content">

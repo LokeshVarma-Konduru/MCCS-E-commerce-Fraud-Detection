@@ -148,9 +148,9 @@ const Developer = () => {
 
   return (
     <div className="developer-container">
-      <div className="side-panel">
+      <div className="top-navigation">
         <nav className="nav-menu">
-          <Link to="/dashboard" className="nav-item">
+          <Link to="/developer" className="nav-item">
             <FaHome className="nav-icon" />
             <span>Dashboard</span>
           </Link>
@@ -172,111 +172,99 @@ const Developer = () => {
       <div className="main-content">
         {/* Stats Cards */}
         <div className="stats-grid">
-          <div className="stat-card" style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)' }}>
+          <div className="stat-card">
             <h3>Total Transactions</h3>
-            <div className="stat-value" style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '8px' }}>
+            <div className="stat-value">
               {stats.totalTransactions.value.toLocaleString()}
             </div>
-            <div className="stat-change positive" style={{ color: '#10b981', fontSize: '14px' }}>
+            <div className="stat-change positive">
               {stats.totalTransactions.change}
             </div>
           </div>
-          <div className="stat-card" style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)' }}>
+          <div className="stat-card">
             <h3>Fraud Detection Rate</h3>
-            <div className="stat-value" style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '8px' }}>
+            <div className="stat-value">
               {stats.fraudDetectionRate.value}
             </div>
-            <div className="stat-change positive" style={{ color: '#10b981', fontSize: '14px' }}>
+            <div className="stat-change positive">
               {stats.fraudDetectionRate.change}
             </div>
           </div>
-          <div className="stat-card" style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)' }}>
+          <div className="stat-card">
             <h3>API Response Time</h3>
-            <div className="stat-value" style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '8px' }}>
+            <div className="stat-value">
               {stats.apiResponseTime.value}
             </div>
-            <div className="stat-change negative" style={{ color: '#ef4444', fontSize: '14px' }}>
+            <div className="stat-change negative">
               {stats.apiResponseTime.change}
             </div>
           </div>
         </div>
 
-        {/* Transaction History and API Performance */}
-        <div className="dashboard-grid">
-          <div className="card transaction-history">
-            <div className="card-header">
-              <h3>Transaction History</h3>
-              <Link to="/transactions" className="view-all">View All</Link>
-            </div>
-            <div className="transaction-list">
-              {transactions.map((transaction, index) => (
-                <div key={index} className="transaction-item">
-                  <div className="transaction-icon">
-                    {transaction.status === 'Legitimate' ? '✅' : '⚠️'}
-                  </div>
-                  <div className="transaction-details">
-                    <div className="transaction-id">
-                      Transaction {transaction.id} - {transaction.amount}
-                    </div>
-                    <div className="transaction-time">
-                      {transaction.merchant} • {transaction.time}
-                    </div>
-                  </div>
-                  <div className={`transaction-status ${transaction.status.toLowerCase()}`}>
-                    {transaction.status}
-                  </div>
-                </div>
-              ))}
+        {/* Chart Section */}
+        <div className="chart-section">
+          <div className="chart-header">
+            <h3>API Performance</h3>
+            <div className="time-scale-buttons">
+              <button
+                className={timeScale === '1H' ? 'active' : ''}
+                onClick={() => setTimeScale('1H')}
+              >
+                1H
+              </button>
+              <button
+                className={timeScale === '24H' ? 'active' : ''}
+                onClick={() => setTimeScale('24H')}
+              >
+                24H
+              </button>
+              <button
+                className={timeScale === '7D' ? 'active' : ''}
+                onClick={() => setTimeScale('7D')}
+              >
+                7D
+              </button>
             </div>
           </div>
+          <div className="chart-container">
+            <Line data={chartData} options={chartOptions} />
+          </div>
+        </div>
 
-          <div className="card api-performance">
-            <div className="card-header">
-              <h3>API Performance</h3>
-              <div className="time-scale-buttons">
-                <button 
-                  className={`scale-btn ${timeScale === '1H' ? 'active' : ''}`}
-                  onClick={() => setTimeScale('1H')}
-                >
-                  1H
-                </button>
-                <button 
-                  className={`scale-btn ${timeScale === '24H' ? 'active' : ''}`}
-                  onClick={() => setTimeScale('24H')}
-                >
-                  24H
-                </button>
-                <button 
-                  className={`scale-btn ${timeScale === '7D' ? 'active' : ''}`}
-                  onClick={() => setTimeScale('7D')}
-                >
-                  7D
-                </button>
+        {/* Recent Transactions */}
+        <div className="transactions-section">
+          <div className="section-header">
+            <h3>Recent Transactions</h3>
+          </div>
+          <div className="transactions-list">
+            {transactions.map((transaction, index) => (
+              <div key={index} className="transaction-item">
+                <div className="transaction-id">#{transaction.id.replace('#', '')}</div>
+                <div className="transaction-merchant">{transaction.merchant}</div>
+                <div className="transaction-time">{transaction.time}</div>
+                <div className="transaction-amount">${transaction.amount.replace('$', '')}</div>
+                <div className={`transaction-status ${transaction.status.toLowerCase()}`}>
+                  {transaction.status}
+                </div>
               </div>
-            </div>
-            <div className="chart-container">
-              <Line data={chartData} options={chartOptions} />
-            </div>
+            ))}
           </div>
         </div>
 
         {/* Recent Logs */}
-        <div className="card recent-logs">
-          <div className="card-header">
+        <div className="logs-section">
+          <div className="section-header">
             <h3>Recent Logs</h3>
-            <button className="export-btn">Export Logs</button>
           </div>
           <div className="logs-list">
             {recentLogs.map((log, index) => (
-              <div key={index} className="log-item">
-                <div className={`log-icon ${log.type}`}>
-                  {log.icon}
-                </div>
-                <div className="log-details">
+              <div key={index} className={`log-item ${log.type.toLowerCase()}`}>
+                <div className="log-icon">{log.icon}</div>
+                <div className="log-content">
                   <div className="log-title">{log.title}</div>
                   <div className="log-subtitle">{log.subtitle}</div>
-                  <div className="log-time">{log.time}</div>
                 </div>
+                <div className="log-time">{log.time}</div>
               </div>
             ))}
           </div>

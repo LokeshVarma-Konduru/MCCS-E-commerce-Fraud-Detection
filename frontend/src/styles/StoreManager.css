@@ -11,11 +11,10 @@
   margin-bottom: 24px;
   border-bottom: 1px solid #e2e8f0;
   padding-bottom: 8px;
-  position: sticky;
-  top: 64px;
   background-color: #f8fafc;
+  position: sticky;
+  top: 64px; /* Match navbar height */
   z-index: 10;
-  padding-top: 8px;
 }
 
 .tab {
@@ -35,16 +34,18 @@
 
 .filters {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 16px; /* Add consistent gap between filter elements */
   margin-bottom: 24px;
-  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .filter-group {
   display: flex;
-  gap: 16px;
-  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 200px;
+  max-width: 300px;
 }
 
 .filter-select {
@@ -54,7 +55,7 @@
   background-color: white;
   color: #1e293b;
   font-size: 14px;
-  min-width: 150px;
+  width: 100%;
 }
 
 .export-btn {
@@ -66,6 +67,7 @@
   cursor: pointer;
   font-size: 14px;
   transition: background-color 0.2s;
+  margin-left: auto; /* Push button to the right */
   white-space: nowrap;
 }
 
@@ -87,8 +89,7 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  min-height: 160px;
+  height: 100%; /* Ensure consistent height */
 }
 
 .stat-card h3 {
@@ -106,6 +107,7 @@
 
 .stat-change {
   font-size: 14px;
+  margin-top: auto; /* Push change text to bottom */
 }
 
 .stat-change.positive {
@@ -128,7 +130,7 @@
   padding: 24px;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  height: 400px; /* Fixed height for both cards */
+  height: 100%; /* Ensure consistent height */
   display: flex;
   flex-direction: column;
 }
@@ -153,12 +155,11 @@
   background-color: white;
   color: #64748b;
   font-size: 14px;
-  min-width: 120px;
 }
 
 .chart-wrapper {
-  flex: 1;
-  min-height: 0; /* Important for chart sizing */
+  flex: 1; /* Take remaining space */
+  min-height: 300px; /* Minimum height */
   position: relative;
 }
 
@@ -167,7 +168,6 @@
   padding: 24px;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  margin-top: 24px;
 }
 
 .recent-alerts h3 {
@@ -217,30 +217,4 @@ td {
 .risk-badge.low {
   background-color: #bbf7d0;
   color: #16a34a;
-}
-
-/* Responsive adjustments */
-@media (max-width: 1024px) {
-  .charts-section {
-    grid-template-columns: 1fr;
-  }
-  
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .filters {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .filter-group {
-    flex-direction: column;
-  }
 }

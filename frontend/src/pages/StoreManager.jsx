@@ -143,6 +143,8 @@ const StoreManager = () => {
               <option>Last 7 days</option>
               <option>Last 30 days</option>
             </select>
+          </div>
+          <div className="filter-group">
             <select 
               value={transactionType}
               onChange={(e) => setTransactionType(e.target.value)}

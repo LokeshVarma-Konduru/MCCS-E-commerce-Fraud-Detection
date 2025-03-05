@@ -51,6 +51,15 @@ const Navbar = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // Check if the click is on a navigation item
+      const isNavigationItem = event.target.closest('.sidebar-menu li');
+      if (isNavigationItem) {
+        // Don't close the sidebar if clicking on a navigation item
+        // The handleNavigation function will handle this
+        return;
+      }
+      
+      // Otherwise, close menus when clicking outside
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setIsOpen(false);
       }
@@ -75,12 +84,27 @@ const Navbar = () => {
     }
   };
 
+  const handleNavigation = (path, event) => {
+    // Prevent the default behavior and stop propagation
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    
+    // Close the sidebar
+    setIsOpen(false);
+    
+    // Navigate to the selected path
+    navigate(path);
+  };
+
   const getInitials = (name) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
   const isDeveloperDashboard = location.pathname === '/developer';
+  const currentPath = location.pathname;
 
   return (
     <nav className="navbar">
@@ -97,19 +121,48 @@ const Navbar = () => {
               <h3>Menu</h3>
             </div>
             <ul className="sidebar-menu">
-              <li><Link to="/dashboard">Dashboard</Link></li>
-              <li><Link to="/transactions">Transactions</Link></li>
+              <li 
+                className={currentPath === '/dashboard' ? 'active' : ''}
+                onClick={(e) => handleNavigation('/dashboard', e)}
+              >
+                Dashboard
+              </li>
               {user && user.role === 'Admin' && (
-                <li><Link to="/admin">Admin Panel</Link></li>
+                <li 
+                  className={currentPath === '/admin' ? 'active' : ''}
+                  onClick={(e) => handleNavigation('/admin', e)}
+                >
+                  Admin Panel
+                </li>
               )}
               {user && user.role === 'Developer' && (
-                <li><Link to="/developer">Developer Dashboard</Link></li>
+                <li 
+                  className={currentPath === '/developer' ? 'active' : ''}
+                  onClick={(e) => handleNavigation('/developer', e)}
+                >
+                  Developer Dashboard
+                </li>
               )}
               {user && ['StoreManager', 'Admin', 'Developer'].includes(user.role) && (
-                <li><Link to="/store-manager">Store Manager</Link></li>
+                <li 
+                  className={currentPath === '/store-manager' ? 'active' : ''}
+                  onClick={(e) => handleNavigation('/store-manager', e)}
+                >
+                  Store Manager
+                </li>
               )}
-              <li><Link to="/about">About Us</Link></li>
-              <li><Link to="/contact">Contact</Link></li>
+              <li 
+                className={currentPath === '/about' ? 'active' : ''}
+                onClick={(e) => handleNavigation('/about', e)}
+              >
+                About Us
+              </li>
+              <li 
+                className={currentPath === '/contact' ? 'active' : ''}
+                onClick={(e) => handleNavigation('/contact', e)}
+              >
+                Contact
+              </li>
             </ul>
           </div>
         </div>
