@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { getUserInfo, logout } from '../api';
 import ChangePasswordModal from './ChangePasswordModal';
 import '../styles/Navbar.css';
+import { FaSearch, FaBars } from 'react-icons/fa';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,6 +29,10 @@ const Navbar = () => {
         console.log('User Info Response:', response.data); // Debug log
         if (response && response.data && response.data.user) {
           setUser(response.data.user);
+          // Redirect developer to developer dashboard if they're on admin page
+          if (response.data.user.role === 'Developer' && location.pathname === '/admin') {
+            navigate('/developer');
+          }
         }
       } catch (error) {
         console.error('Error fetching user info:', error);
@@ -40,7 +45,9 @@ const Navbar = () => {
     };
 
     fetchUserInfo();
-  }, [navigate]);
+  }, [navigate, location.pathname]);
+
+  console.log('User:', user); 
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -73,47 +80,59 @@ const Navbar = () => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
+  const isDeveloperDashboard = location.pathname === '/developer';
+
   return (
     <nav className="navbar">
       <div className="navbar-container">
-        <div className="left-section">
-          <div className="hamburger-menu" onClick={() => setIsOpen(!isOpen)} ref={menuRef}>
-            <div className={`hamburger-icon ${isOpen ? 'open' : ''}`}>
-              <span></span>
-              <span></span>
-              <span></span>
+        <div className="navbar-left">
+          <button className="menu-button" onClick={() => setIsOpen(!isOpen)} ref={menuRef}>
+            <FaBars />
+          </button>
+          <Link to="/" className="navbar-brand">
+            MCCS Fraud Detection
+          </Link>
+          <div className={`sidebar ${isOpen ? 'open' : ''}`}>
+            <div className="sidebar-header">
+              <h3>Menu</h3>
             </div>
-            <div className={`sidebar ${isOpen ? 'open' : ''}`}>
-              <div className="sidebar-header">
-                <h3>Menu</h3>
-              </div>
-              <ul className="sidebar-menu">
-                <li><Link to="/dashboard">Dashboard</Link></li>
-                <li><Link to="/transactions">Transactions</Link></li>
-                {user && user.role === 'Admin' && (
-                  <li><Link to="/admin">Admin Panel</Link></li>
-                )}
-              </ul>
-            </div>
-          </div>
-          <div className="brand">
-            <span className="brand-name">MCCS Fraud Detection</span>
-          </div>
-        </div>
-
-        <div className="center-section">
-          <div className="nav-links">
-            <Link to="/dashboard" className={`nav-link ${location.pathname === '/dashboard' ? 'active' : ''}`}>Home</Link>
-            <Link to="/contact" className={`nav-link ${location.pathname === '/contact' ? 'active' : ''}`}>Contact Us</Link>
-            <Link to="/about" className={`nav-link ${location.pathname === '/about' ? 'active' : ''}`}>About Us</Link>
+            <ul className="sidebar-menu">
+              <li><Link to="/dashboard">Dashboard</Link></li>
+              <li><Link to="/transactions">Transactions</Link></li>
+              {user && user.role === 'Admin' && (
+                <li><Link to="/admin">Admin Panel</Link></li>
+              )}
+              {user && user.role === 'Developer' && (
+                <li><Link to="/developer">Developer Dashboard</Link></li>
+              )}
+              <li><Link to="/about">About Us</Link></li>
+              <li><Link to="/contact">Contact</Link></li>
+            </ul>
           </div>
         </div>
 
-        <div className="right-section" ref={profileRef}>
-          <div className="profile-menu" onClick={() => setIsProfileOpen(!isProfileOpen)}>
-            <div className="profile-icon">
-              <span>{user ? getInitials(user.name) : 'U'}</span>
+        {isDeveloperDashboard && (
+          <div className="navbar-center">
+            <div className="search-bar">
+              <FaSearch className="search-icon" />
+              <input 
+                type="text" 
+                placeholder="Search logs, transactions..." 
+                className="search-input"
+              />
             </div>
+          </div>
+        )}
+
+        <div className="navbar-right">
+          {isDeveloperDashboard && (
+            <div className="api-status">
+              <span className="status-dot"></span>
+              <span className="status-text">API Connected</span>
+            </div>
+          )}
+          <div className="profile-container" ref={profileRef} onClick={() => setIsProfileOpen(!isProfileOpen)}>
+            <span className="profile-text">{user ? getInitials(user.name) : 'U'}</span>
             {isProfileOpen && (
               <div className="profile-dropdown">
                 <div className="profile-header">
