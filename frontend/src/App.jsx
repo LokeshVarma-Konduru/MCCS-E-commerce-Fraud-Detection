@@ -8,6 +8,9 @@ import Navbar from './components/Navbar.jsx';
 import AdminPanel from './pages/AdminPanel.jsx';
 import AboutUs from './pages/AboutUs.jsx';
 import Contact from './pages/Contact.jsx';
+import Developer from './pages/Developer.jsx';
+import APIIntegration from './pages/APIIntegration';
+import StoreManager from './pages/StoreManager.jsx';
 import { getUserInfo } from './api.js';
 
 // Protected Route Component
@@ -63,12 +66,100 @@ const AdminRoute = ({ children }) => {
   return <ProtectedRoute>{children}</ProtectedRoute>;
 };
 
+// Developer Route Component
+const DeveloperRoute = ({ children }) => {
+  const [isDeveloper, setIsDeveloper] = React.useState(null);
+  const location = useLocation();
+
+  React.useEffect(() => {
+    const checkDeveloperStatus = async () => {
+      try {
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+          console.log('No userId found in localStorage');
+          setIsDeveloper(false);
+          return;
+        }
+        
+        console.log('Checking developer status for userId:', userId);
+        const response = await getUserInfo(userId);
+        console.log('Developer check response:', response.data);
+        setIsDeveloper(response.data.user.role === 'Developer');
+      } catch (error) {
+        console.error('Error checking developer status:', error);
+        setIsDeveloper(false);
+      }
+    };
+    
+    checkDeveloperStatus();
+  }, []);
+  
+  if (isDeveloper === null) {
+    console.log('Developer status is still loading...');
+    return <div>Loading...</div>;
+  }
+  
+  if (!isDeveloper) {
+    console.log('User is not a developer, redirecting to dashboard...');
+    return <Navigate to="/dashboard" state={{ from: location }} replace />;
+  }
+  
+  console.log('User is a developer, rendering developer dashboard...');
+  return <ProtectedRoute>{children}</ProtectedRoute>;
+};
+
+// Store Manager Route Component
+const StoreManagerRoute = ({ children }) => {
+  const [isStoreManager, setIsStoreManager] = React.useState(null);
+  const location = useLocation();
+
+  React.useEffect(() => {
+    const checkStoreManagerStatus = async () => {
+      try {
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+          setIsStoreManager(false);
+          return;
+        }
+        
+        const response = await getUserInfo(userId);
+        const userRole = response.data.user.role;
+        // Allow access to Store Manager, Admin, and Developer roles
+        setIsStoreManager(['StoreManager', 'Admin', 'Developer'].includes(userRole));
+      } catch (error) {
+        console.error('Error checking store manager status:', error);
+        setIsStoreManager(false);
+      }
+    };
+    
+    checkStoreManagerStatus();
+  }, []);
+  
+  if (isStoreManager === null) {
+    return <div>Loading...</div>;
+  }
+  
+  if (!isStoreManager) {
+    return <Navigate to="/dashboard" state={{ from: location }} replace />;
+  }
+  
+  return <ProtectedRoute>{children}</ProtectedRoute>;
+};
+
 // Add PropTypes validation
 ProtectedRoute.propTypes = {
   children: PropTypes.node.isRequired
 };
 
 AdminRoute.propTypes = {
+  children: PropTypes.node.isRequired
+};
+
+DeveloperRoute.propTypes = {
+  children: PropTypes.node.isRequired
+};
+
+StoreManagerRoute.propTypes = {
   children: PropTypes.node.isRequired
 };
 
@@ -102,6 +193,30 @@ const App = () => {
               <AdminRoute>
                 <AdminPanel />
               </AdminRoute>
+            }
+          />
+          <Route
+            path="/developer"
+            element={
+              <DeveloperRoute>
+                <Developer />
+              </DeveloperRoute>
+            }
+          />
+          <Route
+            path="/store-manager"
+            element={
+              <StoreManagerRoute>
+                <StoreManager />
+              </StoreManagerRoute>
+            }
+          />
+          <Route
+            path="/api-integration"
+            element={
+              <ProtectedRoute>
+                <APIIntegration />
+              </ProtectedRoute>
             }
           />
           <Route

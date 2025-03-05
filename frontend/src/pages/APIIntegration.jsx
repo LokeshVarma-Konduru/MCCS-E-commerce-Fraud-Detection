@@ -1,0 +1,281 @@
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { FaHome, FaKey, FaHistory, FaBook, FaCopy, FaSync } from 'react-icons/fa';
+import '../styles/Developer.css';
+
+const APIIntegration = () => {
+  // Hard-coded data for testing
+  const testData = {
+    sampleApiKey: 'sk_live_4eC39HqLyjWDarjtT1zdp7dc',
+    recentCalls: [
+      {
+        requestId: 'req_5f23e59b8c4213',
+        timestamp: '2025-02-27 10:51:12',
+        inputData: 'user_789, $1,234.56, Visa',
+        status: 'Success',
+        details: {
+          fraudScore: 0.12,
+          riskLevel: 'low',
+          transactionId: 'txn_1234567890',
+          merchantName: 'Amazon',
+          cardLast4: '4242'
+        }
+      },
+      {
+        requestId: 'req_5f23e58a7b3214',
+        timestamp: '2025-02-27 10:50:45',
+        inputData: 'user_456, $789.99, Mastercard',
+        status: 'Failed',
+        details: {
+          fraudScore: 0.89,
+          riskLevel: 'high',
+          transactionId: 'txn_0987654321',
+          merchantName: 'Best Buy',
+          cardLast4: '5555'
+        }
+      }
+    ],
+    cardTypes: [
+      { value: 'Visa', label: 'Visa' },
+      { value: 'Mastercard', label: 'Mastercard' },
+      { value: 'Amex', label: 'American Express' }
+    ]
+  };
+
+  const [apiKey] = useState(testData.sampleApiKey);
+  const [userId, setUserId] = useState('');
+  const [amount, setAmount] = useState('');
+  const [cardType, setCardType] = useState(testData.cardTypes[0].value);
+  const [response, setResponse] = useState('Response will appear here...');
+  const [recentCalls, setRecentCalls] = useState(testData.recentCalls);
+
+  const handleCopyKey = () => {
+    navigator.clipboard.writeText(apiKey);
+  };
+
+  const handleRegenerateKey = () => {
+    alert('API key regeneration would be implemented in production');
+  };
+
+  const handleTestRequest = (e) => {
+    e.preventDefault();
+    
+    if (!userId || !amount) {
+      setResponse(JSON.stringify({
+        error: 'Please fill in all required fields',
+        status: 'error'
+      }, null, 2));
+      return;
+    }
+
+    const timestamp = Date.now().toString(36);
+    const random = Math.random().toString(36).substring(2, 8);
+    const newRequestId = `req_${timestamp}${random}`;
+
+    const newCall = {
+      requestId: newRequestId,
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+      inputData: `${userId}, $${Number(amount).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })}, ${cardType}`,
+      status: Math.random() > 0.5 ? 'Success' : 'Failed',
+      details: {
+        fraudScore: Math.random().toFixed(2),
+        riskLevel: Math.random() > 0.7 ? 'high' : 'low',
+        transactionId: `txn_${Date.now().toString(36)}`,
+        merchantName: userId.includes('_') ? userId.split('_')[1] : 'Unknown',
+        cardLast4: Math.floor(1000 + Math.random() * 9000).toString()
+      }
+    };
+
+    setRecentCalls([newCall, recentCalls[0]]);
+
+    const responseData = {
+      success: newCall.status === 'Success',
+      requestId: newCall.requestId,
+      message: newCall.status === 'Success' ? 'Transaction processed successfully' : 'Transaction failed',
+      details: {
+        timestamp: new Date().toISOString(),
+        ...newCall.details
+      }
+    };
+
+    setResponse(JSON.stringify(responseData, null, 2));
+  };
+
+  return (
+    <div className="developer-container">
+      <div className="top-navigation">
+        <nav className="nav-menu">
+          <Link to="/developer" className="nav-item">
+            <FaHome className="nav-icon" />
+            <span>Dashboard</span>
+          </Link>
+          <Link to="/api-integration" className="nav-item active">
+            <FaKey className="nav-icon" />
+            <span>API Integration</span>
+          </Link>
+          <Link to="/api-logs" className="nav-item">
+            <FaHistory className="nav-icon" />
+            <span>API Logs</span>
+          </Link>
+          <Link to="/documentation" className="nav-item">
+            <FaBook className="nav-icon" />
+            <span>Documentation</span>
+          </Link>
+        </nav>
+      </div>
+
+      <div className="main-content">
+        <div className="content-header">
+          <h1 style={{ color: '#2c3e50', fontSize: '24px', fontWeight: 600 }}>API Integration</h1>
+        </div>
+
+        <div className="api-integration-grid">
+          {/* API Keys Section */}
+          <div className="card">
+            <div className="card-header">
+              <h3>API Keys</h3>
+            </div>
+            <div className="api-key-content">
+              <div className="api-key-input">
+                <input 
+                  type="text" 
+                  value={apiKey} 
+                  readOnly 
+                  className="key-field"
+                />
+                <div className="api-key-buttons">
+                  <button className="api-button" onClick={handleCopyKey}>
+                    <FaCopy /> Copy
+                  </button>
+                  <button className="api-button" onClick={handleRegenerateKey}>
+                    <FaSync /> Regenerate
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Test API Calls Section */}
+          <div className="card">
+            <div className="card-header">
+              <h3>Test API Calls</h3>
+            </div>
+            <div className="test-api-content">
+              <form className="test-form" onSubmit={handleTestRequest}>
+                <div className="form-group">
+                  <label>User ID</label>
+                  <input
+                    type="text"
+                    placeholder="Enter user ID"
+                    value={userId}
+                    onChange={(e) => setUserId(e.target.value)}
+                    className="form-input"
+                    style={{ backgroundColor: '#f5f5f5', color: '#333' }}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Amount</label>
+                  <input
+                    type="text"
+                    placeholder="Enter amount"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="form-input"
+                    style={{ backgroundColor: '#f5f5f5', color: '#333' }}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Card Type</label>
+                  <select 
+                    value={cardType}
+                    onChange={(e) => setCardType(e.target.value)}
+                    className="form-select"
+                    style={{ backgroundColor: '#f5f5f5', color: '#333' }}
+                  >
+                    {testData.cardTypes.map(card => (
+                      <option key={card.value} value={card.value}>
+                        {card.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button type="submit" className="primary-button">
+                  Send Test Request
+                </button>
+              </form>
+              <div className="response-section">
+                <label>Response</label>
+                <textarea 
+                  className="response-field"
+                  value={response || "Response will appear here..."}
+                  readOnly
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Recent API Calls Section */}
+          <div className="card">
+            <div className="card-header">
+              <h3>Recent API Calls</h3>
+            </div>
+            <div className="card-content">
+              <table className="api-calls-table">
+                <thead>
+                  <tr>
+                    <th>Request ID</th>
+                    <th>Timestamp</th>
+                    <th>Input Data</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentCalls && recentCalls.length > 0 ? (
+                    recentCalls.map((call) => (
+                      <tr key={call.requestId}>
+                        <td>{call.requestId}</td>
+                        <td>{call.timestamp}</td>
+                        <td>{call.inputData}</td>
+                        <td>
+                          <span className={`status-badge ${call.status.toLowerCase()}`}>
+                            {call.status}
+                          </span>
+                        </td>
+                        <td>
+                          <a 
+                            href="#" 
+                            className="view-details-link"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setResponse(JSON.stringify(call.details, null, 2));
+                            }}
+                          >
+                            View Details
+                          </a>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5" style={{ textAlign: 'center' }}>
+                        No recent API calls
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default APIIntegration;
