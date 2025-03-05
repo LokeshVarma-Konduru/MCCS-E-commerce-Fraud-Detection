@@ -105,6 +105,9 @@ const Navbar = () => {
               {user && user.role === 'Developer' && (
                 <li><Link to="/developer">Developer Dashboard</Link></li>
               )}
+              {user && ['StoreManager', 'Admin', 'Developer'].includes(user.role) && (
+                <li><Link to="/store-manager">Store Manager</Link></li>
+              )}
               <li><Link to="/about">About Us</Link></li>
               <li><Link to="/contact">Contact</Link></li>
             </ul>
