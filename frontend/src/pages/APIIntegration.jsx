@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaHome, FaKey, FaHistory, FaBook, FaCopy, FaSync } from 'react-icons/fa';
+import { FaHome, FaKey, FaHistory, FaBook, FaCopy, FaSync, FaChartLine, FaExchangeAlt } from 'react-icons/fa';
 import '../styles/Developer.css';
 
 const APIIntegration = () => {
@@ -116,13 +116,13 @@ const APIIntegration = () => {
             <FaKey className="nav-icon" />
             <span>API Integration</span>
           </Link>
-          <Link to="/api-logs" className="nav-item">
-            <FaHistory className="nav-icon" />
-            <span>API Logs</span>
+          <Link to="/model-performance" className="nav-item">
+            <FaChartLine className="nav-icon" />
+            <span>Model Performance</span>
           </Link>
-          <Link to="/documentation" className="nav-item">
-            <FaBook className="nav-icon" />
-            <span>Documentation</span>
+          <Link to="/transaction-monitoring" className="nav-item">
+            <FaExchangeAlt className="nav-icon" />
+            <span>Transaction Monitoring</span>
           </Link>
         </nav>
       </div>

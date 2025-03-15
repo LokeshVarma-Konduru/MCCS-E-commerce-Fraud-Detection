@@ -16,8 +16,30 @@ export const predictTransaction = async (req, res) => {
         return res.status(400).json({ error: "Please specify ?model=logistic-regression, bernoulli-nb, xgboost, or decision-tree" });
       }
   
+      // Validate that we have data to predict
+      if (!req.body || Object.keys(req.body).length === 0) {
+        return res.status(400).json({ error: "No transaction data provided in request body" });
+      }
+
+      // Check if we have the expected fields
+      const requiredFields = [
+        "Transaction Amount", "Payment Method", "Product Category", 
+        "Quantity", "Customer Age", "Device Used", "Account Age Days",
+        "Transaction Hour", "Transaction Day", "Transaction DOW", 
+        "Transaction Month", "Is Address Match"
+      ];
+
+      for (const field of requiredFields) {
+        if (!req.body[field] || !Array.isArray(req.body[field]) || req.body[field].length === 0) {
+          return res.status(400).json({ 
+            error: `Missing or invalid field: ${field}. All fields must be arrays with at least one value.` 
+          });
+        }
+      }
+
       // 2) Convert request body to JSON string for Python
       const dataToSend = JSON.stringify(req.body);
+      console.log("Sending data to Python:", dataToSend);
   
       // 3) Build absolute path to predict.py
       const pythonScriptPath = path.join(__dirname, '../ml_models', 'predict.py');
@@ -47,11 +69,19 @@ export const predictTransaction = async (req, res) => {
         if (code !== 0) {
           console.error('Python script failed, exit code:', code);
           console.error('Error Data:', errorData);
-          return res.status(500).json({ error: 'Python script failed.' });
+          return res.status(500).json({ error: 'Python script failed.', details: errorData });
         }
         try {
           // 8) Parse JSON from Python
+          console.log("Raw result from Python:", resultData);
           const parsed = JSON.parse(resultData); // should be { "predictions": [...], "probabilities": [...] }
+          
+          if (!parsed.predictions || !Array.isArray(parsed.predictions)) {
+            return res.status(500).json({ 
+              error: 'Invalid predictions format from Python script.',
+              rawOutput: resultData
+            });
+          }
   
           // 9) Save the transaction + predictions in MongoDB
           const newTransaction = new Transaction({
