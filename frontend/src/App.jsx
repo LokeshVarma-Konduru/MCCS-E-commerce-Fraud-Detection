@@ -10,6 +10,8 @@ import AboutUs from './pages/AboutUs.jsx';
 import Contact from './pages/Contact.jsx';
 import Developer from './pages/Developer.jsx';
 import APIIntegration from './pages/APIIntegration';
+import ModelPerformance from './pages/ModelPerformance';
+import TransactionMonitoring from './pages/TransactionMonitoring';
 import { getUserInfo } from './api.js';
 
 // Protected Route Component
@@ -135,12 +137,13 @@ const App = () => {
       <div className="app">
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<Navigate to="/developer" replace />} />
+          <Route path="/dashboard" element={<Navigate to="/developer" replace />} />
           <Route
-            path="/dashboard"
+            path="/developer"
             element={
               <ProtectedRoute>
-                <DashboardContent />
+                <Developer />
               </ProtectedRoute>
             }
           />
@@ -153,18 +156,18 @@ const App = () => {
             }
           />
           <Route
-            path="/developer"
-            element={
-              <ProtectedRoute>
-                <Developer />
-              </ProtectedRoute>
-            }
-          />
-          <Route
             path="/api-integration"
             element={
               <ProtectedRoute>
                 <APIIntegration />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/model-performance"
+            element={
+              <ProtectedRoute>
+                <ModelPerformance />
               </ProtectedRoute>
             }
           />
@@ -181,6 +184,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <Contact />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/transaction-monitoring"
+            element={
+              <ProtectedRoute>
+                <TransactionMonitoring />
               </ProtectedRoute>
             }
           />

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaHome, FaKey, FaHistory, FaBook, FaCopy, FaSync } from 'react-icons/fa';
+import { FaHome, FaCode, FaChartLine, FaExchangeAlt, FaCopy, FaSync } from 'react-icons/fa';
+import PageHeader from '../components/PageHeader';
 import '../styles/Developer.css';
 
 const APIIntegration = () => {
@@ -89,7 +90,7 @@ const APIIntegration = () => {
       }
     };
 
-    setRecentCalls([newCall, recentCalls[0]]);
+    setRecentCalls([newCall, ...recentCalls]);
 
     const responseData = {
       success: newCall.status === 'Success',
@@ -107,32 +108,29 @@ const APIIntegration = () => {
   return (
     <div className="developer-container">
       <div className="side-panel">
-        <div className="nav-menu">
+        <nav className="nav-menu">
           <Link to="/developer" className="nav-item">
             <FaHome className="nav-icon" />
             <span>Dashboard</span>
           </Link>
           <Link to="/api-integration" className="nav-item active">
-            <FaKey className="nav-icon" />
+            <FaCode className="nav-icon" />
             <span>API Integration</span>
           </Link>
-          <Link to="/api-logs" className="nav-item">
-            <FaHistory className="nav-icon" />
-            <span>API Logs</span>
+          <Link to="/model-performance" className="nav-item">
+            <FaChartLine className="nav-icon" />
+            <span>Model Performance</span>
           </Link>
-          <Link to="/documentation" className="nav-item">
-            <FaBook className="nav-icon" />
-            <span>Documentation</span>
+          <Link to="/transaction-monitoring" className="nav-item">
+            <FaExchangeAlt className="nav-icon" />
+            <span>Transaction Monitoring</span>
           </Link>
-        </div>
+        </nav>
       </div>
 
       <div className="main-content">
-        <div className="content-header">
-          <h1 style={{ color: '#2c3e50', fontSize: '24px', fontWeight: 600 }}>API Integration</h1>
-        </div>
-
-        <div className="api-integration-grid">
+        <PageHeader title="API Integration" />
+        <div className="api-content">
           {/* API Keys Section */}
           <div className="card">
             <div className="card-header">
