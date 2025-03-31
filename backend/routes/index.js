@@ -8,6 +8,9 @@ import { predictTransaction, getTransactions, getTransactionById } from '../cont
 import authMiddleware from '../middleware/auth.js';
 import adminMiddleware from '../middleware/admin.js';
 import { getAllModels, getModelById } from '../controllers/mlModelController.js';
+import { getApiKey, generateApiKey, regenerateApiKey, validateApiKey } from '../controllers/apiKeyController.js';
+import { logApiCall, getApiLogs, getApiUsageStats, getApiLogById } from '../controllers/apiLogController.js';
+import { getDashboardStats } from '../controllers/dashboardController.js';
 
 const router = express.Router();
 
@@ -30,8 +33,22 @@ router.post('/admin/users/:userId/toggle-status', authMiddleware, adminMiddlewar
 router.get('/models', authMiddleware,getAllModels);
 router.get('/model/:id', authMiddleware,getModelById);
 
+// API Key routes
+router.get('/api-key', authMiddleware, getApiKey);
+router.post('/api-key/generate', authMiddleware, generateApiKey);
+router.post('/api-key/regenerate', authMiddleware, regenerateApiKey);
+
+// API Logs routes
+router.get('/api-logs', authMiddleware, getApiLogs);
+router.get('/api-logs/:id', authMiddleware, getApiLogById);
+router.get('/api-usage-stats', authMiddleware, getApiUsageStats);
+
+// Dashboard routes
+router.get('/dashboard-stats', authMiddleware, getDashboardStats);
+
 // Transaction routes
-router.post('/predict', predictTransaction);
+router.post('/predict', validateApiKey, logApiCall, predictTransaction);
 router.get('/transactions', getTransactions);
 router.get('/transaction/:id', getTransactionById);
+
 export default router;

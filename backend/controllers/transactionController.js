@@ -100,34 +100,46 @@ export const predictTransaction = async (req, res) => {
   
             modelUsed: modelName,
             predictions: parsed.predictions,
-            probabilities: parsed.probabilities
+            probabilities: parsed.probabilities,
+            userId: req.apiKeyUserId // This is set by the validateApiKey middleware
           });
   
           const savedTransaction = await newTransaction.save();
   
           // 10) Return predictions + saved doc
           return res.json({
+            success: true,
             predictions: parsed.predictions,
             probabilities: parsed.probabilities,
             savedTransaction
           });
         } catch (err) {
           console.error('Error parsing Python output:', err);
-          return res.status(500).send('Invalid JSON from Python script.');
+          return res.status(500).json({
+            success: false,
+            error: 'Invalid JSON from Python script.'
+          });
         }
       });
     } catch (err) {
       console.error('Error spawning Python script:', err);
-      return res.status(500).send('Internal server error.');
+      return res.status(500).json({
+        success: false,
+        error: 'Internal server error.'
+      });
     }
   };
 
 
   export const getTransactions = async (req, res) => {
     try {
-      // Allow filtering by model and prediction value via query parameters.
-      // For example: /api/transactions?model=lr&prediction=0
-      const { model, prediction } = req.query;
+      // Extract pagination parameters
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const skip = (page - 1) * limit;
+
+      // Allow filtering by model, prediction value, and other parameters
+      const { model, prediction, userId, startDate, endDate, productCategory, paymentMethod } = req.query;
       const filter = {};
   
       if (model) {
@@ -137,12 +149,52 @@ export const predictTransaction = async (req, res) => {
         // Filter transactions that have a prediction array containing the specified value.
         filter.predictions = { $in: [Number(prediction)] };
       }
+      if (userId) {
+        filter.userId = userId;
+      }
+      if (productCategory) {
+        filter.productCategory = productCategory;
+      }
+      if (paymentMethod) {
+        filter.paymentMethod = paymentMethod;
+      }
       
-      const transactions = await Transaction.find(filter);
-      res.json({ transactions });
+      // Date range filter
+      if (startDate || endDate) {
+        filter.createdAt = {};
+        if (startDate) {
+          filter.createdAt.$gte = new Date(startDate);
+        }
+        if (endDate) {
+          filter.createdAt.$lte = new Date(endDate);
+        }
+      }
+      
+      // Get transactions with pagination
+      const transactions = await Transaction.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+      
+      // Get total count for pagination
+      const totalCount = await Transaction.countDocuments(filter);
+      
+      res.json({ 
+        success: true,
+        transactions,
+        pagination: {
+          total: totalCount,
+          page,
+          limit,
+          pages: Math.ceil(totalCount / limit)
+        }
+      });
     } catch (error) {
       console.error(error);
-      res.status(500).json({ error: 'Server error' });
+      res.status(500).json({ 
+        success: false,
+        error: 'Server error' 
+      });
     }
   };
   
@@ -151,11 +203,20 @@ export const predictTransaction = async (req, res) => {
       const { id } = req.params;
       const transaction = await Transaction.findById(id);
       if (!transaction) {
-        return res.status(404).json({ error: 'Transaction not found' });
+        return res.status(404).json({ 
+          success: false,
+          error: 'Transaction not found' 
+        });
       }
-      res.json({ transaction });
+      res.json({ 
+        success: true,
+        transaction 
+      });
     } catch (error) {
       console.error(error);
-      res.status(500).json({ error: 'Server error' });
+      res.status(500).json({ 
+        success: false,
+        error: 'Server error' 
+      });
     }
   };

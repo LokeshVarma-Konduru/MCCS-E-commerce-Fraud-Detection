@@ -16,6 +16,13 @@ const transactionSchema = new mongoose.Schema({
   isAddressMatch: { type: Number, required: true },
   modelUsed: { type: String, required: true },
   
+  // Reference to the user who made the API call
+  userId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User',
+    required: false // Not required because some transactions might be from the test system
+  },
+  
   // The model's prediction (XGBoost output). Default is an empty array, but it is still "required."
   predictions: {
     type: [Number],
