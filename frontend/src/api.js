@@ -167,8 +167,52 @@ export const getTransactionById = (id) => {
 
 // Dashboard statistics
 export const getDashboardStats = (period = 'month') => {
+  try {
     return axios.get(`${API_URL}/dashboard-stats`, { 
-        params: { period },
-        withCredentials: true  // Explicitly ensure credentials are sent
+      params: { period } 
     });
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Store Manager endpoints
+export const getStoreManagerStats = (period = 'day', transactionType = 'All Transactions') => {
+  try {
+    return axios.get(`${API_URL}/store-manager/stats`, { 
+      params: { period, transactionType } 
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getFraudTrends = (period = 'week', transactionType = 'All Transactions') => {
+  try {
+    return axios.get(`${API_URL}/store-manager/fraud-trends`, { 
+      params: { period, transactionType } 
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getTransactionTypeDistribution = (period = 'day') => {
+  try {
+    return axios.get(`${API_URL}/store-manager/transaction-types`, { 
+      params: { period } 
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getRecentAlerts = (limit = 5, transactionType = 'All Transactions') => {
+  try {
+    return axios.get(`${API_URL}/store-manager/alerts`, { 
+      params: { limit, transactionType } 
+    });
+  } catch (error) {
+    throw error;
+  }
 };

@@ -109,7 +109,10 @@ export const getDashboardStats = async (req, res) => {
     
     // 3. API Response Time
     // Create a match object for API logs
-    const apiLogMatch = { requestTime: { $gte: currentPeriodStart } };
+    const apiLogMatch = { 
+      requestTime: { $gte: currentPeriodStart },
+      endpoint: { $regex: '/predict' } // Only include logs for the /predict endpoint
+    };
     // Only filter by userId if it's provided
     if (userId) {
       try {
@@ -132,7 +135,8 @@ export const getDashboardStats = async (req, res) => {
     
     // Create a match object for previous period API logs
     const prevApiLogMatch = { 
-      requestTime: { $gte: previousPeriodStart, $lt: previousPeriodEnd }
+      requestTime: { $gte: previousPeriodStart, $lt: previousPeriodEnd },
+      endpoint: { $regex: '/predict' } // Only include logs for the /predict endpoint
     };
     if (userId) {
       try {

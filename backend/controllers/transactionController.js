@@ -29,6 +29,9 @@ export const predictTransaction = async (req, res) => {
         "Transaction Month", "Is Address Match"
       ];
 
+      // Optional fields that we'll check if provided
+      const optionalFields = ["Transaction Type"];
+
       for (const field of requiredFields) {
         if (!req.body[field] || !Array.isArray(req.body[field]) || req.body[field].length === 0) {
           return res.status(400).json({ 
@@ -36,10 +39,24 @@ export const predictTransaction = async (req, res) => {
           });
         }
       }
+      
+      // Validate optional fields if they are provided
+      for (const field of optionalFields) {
+        if (req.body[field] && (!Array.isArray(req.body[field]) || req.body[field].length === 0)) {
+          return res.status(400).json({ 
+            error: `Invalid optional field: ${field}. If provided, it must be an array with at least one value.` 
+          });
+        }
+      }
 
       // 2) Convert request body to JSON string for Python
-      const dataToSend = JSON.stringify(req.body);
-      console.log("Sending data to Python:", dataToSend);
+      // Create a copy of the request body without the Transaction Type field
+      const predictionData = { ...req.body };
+      if (predictionData["Transaction Type"]) {
+        delete predictionData["Transaction Type"]; // Remove transaction type as it's not used for prediction
+      }
+      
+      const dataToSend = JSON.stringify(predictionData);
   
       // 3) Build absolute path to predict.py
       const pythonScriptPath = path.join(__dirname, '../ml_models', 'predict.py');
@@ -83,22 +100,26 @@ export const predictTransaction = async (req, res) => {
             });
           }
   
-          // 9) Save the transaction + predictions in MongoDB
+          // 9) Save transaction to database
           const newTransaction = new Transaction({
-            transactionAmount: req.body["Transaction Amount"]?.[0] || 0,
-            paymentMethod: req.body["Payment Method"]?.[0] || "",
-            productCategory: req.body["Product Category"]?.[0] || "",
-            quantity: req.body["Quantity"]?.[0] || 0,
-            customerAge: req.body["Customer Age"]?.[0] || 0,
-            deviceUsed: req.body["Device Used"]?.[0] || "",
-            accountAgeDays: req.body["Account Age Days"]?.[0] || 0,
-            transactionHour: req.body["Transaction Hour"]?.[0] || 0,
-            transactionDay: req.body["Transaction Day"]?.[0] || 0,
-            transactionDOW: req.body["Transaction DOW"]?.[0] || 0,
-            transactionMonth: req.body["Transaction Month"]?.[0] || 0,
-            isAddressMatch: req.body["Is Address Match"]?.[0] || 0,
-  
+            transactionAmount: req.body["Transaction Amount"][0],
+            paymentMethod: req.body["Payment Method"][0],
+            productCategory: req.body["Product Category"][0],
+            quantity: req.body["Quantity"][0],
+            customerAge: req.body["Customer Age"][0],
+            deviceUsed: req.body["Device Used"][0],
+            accountAgeDays: req.body["Account Age Days"][0],
+            transactionHour: req.body["Transaction Hour"][0],
+            transactionDay: req.body["Transaction Day"][0],
+            transactionDOW: req.body["Transaction DOW"][0],
+            transactionMonth: req.body["Transaction Month"][0],
+            isAddressMatch: req.body["Is Address Match"][0],
             modelUsed: modelName,
+            // Get transaction type if provided, ensure it's one of the valid values
+            transactionType: req.body["Transaction Type"] ? 
+              (req.body["Transaction Type"][0] === 'online' || req.body["Transaction Type"][0] === 'in-store' ? 
+                req.body["Transaction Type"][0] : 'online') : 
+              'online',
             predictions: parsed.predictions,
             probabilities: parsed.probabilities,
             userId: req.apiKeyUserId // This is set by the validateApiKey middleware
@@ -139,7 +160,7 @@ export const predictTransaction = async (req, res) => {
       const skip = (page - 1) * limit;
 
       // Allow filtering by model, prediction value, and other parameters
-      const { model, prediction, userId, startDate, endDate, productCategory, paymentMethod } = req.query;
+      const { model, prediction, userId, startDate, endDate, productCategory, paymentMethod, transactionType } = req.query;
       const filter = {};
   
       if (model) {
@@ -157,6 +178,9 @@ export const predictTransaction = async (req, res) => {
       }
       if (paymentMethod) {
         filter.paymentMethod = paymentMethod;
+      }
+      if (transactionType) {
+        filter.transactionType = transactionType;
       }
       
       // Date range filter

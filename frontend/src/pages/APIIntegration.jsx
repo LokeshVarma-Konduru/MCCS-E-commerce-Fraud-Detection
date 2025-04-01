@@ -16,6 +16,7 @@ const APIIntegration = () => {
   const [deviceUsed, setDeviceUsed] = useState('mobile');
   const [accountAgeDays, setAccountAgeDays] = useState(365);
   const [isAddressMatch, setIsAddressMatch] = useState(1);
+  const [transactionType, setTransactionType] = useState('online');
   const [response, setResponse] = useState('');
   const [recentCalls, setRecentCalls] = useState([]);
   const [models, setModels] = useState([]);
@@ -210,7 +211,8 @@ const APIIntegration = () => {
         "Transaction Day": [new Date().getDate()],
         "Transaction DOW": [new Date().getDay()],
         "Transaction Month": [new Date().getMonth() + 1],
-        "Is Address Match": [isAddressMatch]
+        "Is Address Match": [isAddressMatch],
+        "Transaction Type": [transactionType]
       };
 
       const result = await predictTransaction(transactionData, apiKey, selectedModel);
@@ -456,7 +458,8 @@ const APIIntegration = () => {
   "Transaction Day": [15],
   "Transaction DOW": [2],
   "Transaction Month": [3],
-  "Is Address Match": [1]
+  "Is Address Match": [1],
+  "Transaction Type": ["online"] // Optional: 'online' or 'in-store'
 }`}
                     </pre>
                   </div>
@@ -577,6 +580,18 @@ const APIIntegration = () => {
                       style={{ backgroundColor: '#f5f5f5', color: '#333' }}
                       required
                     />
+                  </div>
+                  <div className="form-group">
+                    <label>Transaction Type</label>
+                    <select 
+                      value={transactionType}
+                      onChange={(e) => setTransactionType(e.target.value)}
+                      className="form-select"
+                      style={{ backgroundColor: '#f5f5f5', color: '#333' }}
+                    >
+                      <option value="online">Online</option>
+                      <option value="in-store">In-store</option>
+                    </select>
                   </div>
                   <div className="form-group">
                     <label>Model</label>

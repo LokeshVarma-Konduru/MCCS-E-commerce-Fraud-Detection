@@ -11,6 +11,7 @@ import { getAllModels, getModelById } from '../controllers/mlModelController.js'
 import { getApiKey, generateApiKey, regenerateApiKey, validateApiKey } from '../controllers/apiKeyController.js';
 import { logApiCall, getApiLogs, getApiUsageStats, getApiLogById } from '../controllers/apiLogController.js';
 import { getDashboardStats } from '../controllers/dashboardController.js';
+import { getStoreManagerStats, getFraudTrends, getTransactionTypeDistribution, getRecentAlerts } from '../controllers/storeManagerController.js';
 
 const router = express.Router();
 
@@ -45,6 +46,12 @@ router.get('/api-usage-stats', authMiddleware, getApiUsageStats);
 
 // Dashboard routes
 router.get('/dashboard-stats', authMiddleware, getDashboardStats);
+
+// Store Manager routes
+router.get('/store-manager/stats', authMiddleware, getStoreManagerStats);
+router.get('/store-manager/fraud-trends', authMiddleware, getFraudTrends);
+router.get('/store-manager/transaction-types', authMiddleware, getTransactionTypeDistribution);
+router.get('/store-manager/alerts', authMiddleware, getRecentAlerts);
 
 // Transaction routes
 router.post('/predict', validateApiKey, logApiCall, predictTransaction);

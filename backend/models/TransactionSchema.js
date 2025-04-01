@@ -16,6 +16,13 @@ const transactionSchema = new mongoose.Schema({
   isAddressMatch: { type: Number, required: true },
   modelUsed: { type: String, required: true },
   
+  // Add transaction type (online or in-store)
+  transactionType: { 
+    type: String, 
+    enum: ['online', 'in-store'],
+    default: 'online' // Default to online if not specified
+  },
+  
   // Reference to the user who made the API call
   userId: { 
     type: mongoose.Schema.Types.ObjectId, 

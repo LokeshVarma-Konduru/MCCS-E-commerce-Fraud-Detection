@@ -4,6 +4,11 @@ import mongoose from 'mongoose';
 
 // Create a new API log entry
 export const logApiCall = async (req, res, next) => {
+  // Only log calls to the /predict endpoint
+  if (!req.originalUrl.includes('/predict')) {
+    return next();
+  }
+
   // Store the start time to calculate response time
   const startTime = Date.now();
   
@@ -38,9 +43,15 @@ export const logApiCall = async (req, res, next) => {
         const apiKey = req.query.apikey || req.headers['x-api-key'] || 'none';
         const userId = req.apiKeyUserId || (req.user ? req.user._id : null);
         
-        // Create a log entry even if userId is not available
+        // Skip creating log entry if userId is not available
+        if (!userId) {
+          console.warn('Skipping API log creation: No userId available');
+          return;
+        }
+        
+        // Create a log entry
         const logEntry = new ApiLog({
-          userId: userId || null, // Allow null userId
+          userId, // userId is guaranteed to be non-null here
           endpoint: req.originalUrl || req.url,
           method: req.method,
           statusCode,
@@ -54,11 +65,6 @@ export const logApiCall = async (req, res, next) => {
         });
         
         await logEntry.save();
-        
-        // Only log a warning if we're expecting a userId (for authenticated routes)
-        if (!userId && req.originalUrl.includes('/predict')) {
-          console.warn('API call logged without userId');
-        }
       } catch (error) {
         console.error('Error logging API call:', error);
       }
@@ -80,59 +86,38 @@ export const logApiCall = async (req, res, next) => {
 export const getApiLogs = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { limit = 50, page = 1, startDate, endDate, endpoint, statusCode } = req.query;
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (page - 1) * limit;
     
-    const query = { userId };
+    // Only get logs for the /predict endpoint
+    const filter = { 
+      userId, 
+      endpoint: { $regex: '/predict' }
+    };
     
-    // Add date range filter if provided
-    if (startDate || endDate) {
-      query.requestTime = {};
-      if (startDate) {
-        query.requestTime.$gte = new Date(startDate);
-      }
-      if (endDate) {
-        query.requestTime.$lte = new Date(endDate);
-      }
-    }
-    
-    // Add endpoint filter if provided
-    if (endpoint) {
-      query.endpoint = { $regex: endpoint, $options: 'i' };
-    }
-    
-    // Add status code filter if provided
-    if (statusCode) {
-      query.statusCode = parseInt(statusCode);
-    }
-    
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    
-    // Get logs with pagination
-    const logs = await ApiLog.find(query)
+    const logs = await ApiLog.find(filter)
       .sort({ requestTime: -1 })
       .skip(skip)
       .limit(parseInt(limit));
     
-    // Get total count for pagination
-    const totalCount = await ApiLog.countDocuments(query);
+    const total = await ApiLog.countDocuments(filter);
     
-    return res.status(200).json({
+    res.json({
       success: true,
       data: {
         logs,
         pagination: {
-          total: totalCount,
+          total,
           page: parseInt(page),
-          limit: parseInt(limit),
-          pages: Math.ceil(totalCount / parseInt(limit))
+          pages: Math.ceil(total / limit)
         }
       }
     });
   } catch (error) {
     console.error('Error fetching API logs:', error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
-      message: 'Server error while fetching API logs'
+      message: 'Error fetching API logs'
     });
   }
 };
@@ -140,6 +125,14 @@ export const getApiLogs = async (req, res) => {
 // Get API usage statistics
 export const getApiUsageStats = async (req, res) => {
   try {
+    // Check if user is authenticated
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required to access API usage statistics'
+      });
+    }
+
     const userId = req.user._id;
     const { period = 'week' } = req.query;
     
@@ -163,49 +156,71 @@ export const getApiUsageStats = async (req, res) => {
       dateFilter = { $gte: startOfYear };
     }
     
+    // Only include logs for the /predict endpoint
+    const endpointFilter = { endpoint: { $regex: '/predict' } };
+    
     // Get total API calls
     const totalCalls = await ApiLog.countDocuments({ 
       userId,
-      requestTime: dateFilter
+      requestTime: dateFilter,
+      ...endpointFilter
     });
-    
-    // Get calls by endpoint
-    const callsByEndpoint = await ApiLog.aggregate([
-      { $match: { userId: new mongoose.Types.ObjectId(userId), requestTime: dateFilter } },
-      { $group: { _id: '$endpoint', count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $limit: 5 }
-    ]);
     
     // Get calls by status code
     const callsByStatus = await ApiLog.aggregate([
-      { $match: { userId: new mongoose.Types.ObjectId(userId), requestTime: dateFilter } },
+      { 
+        $match: { 
+          userId: new mongoose.Types.ObjectId(userId), 
+          requestTime: dateFilter,
+          ...endpointFilter
+        } 
+      },
       { $group: { _id: '$statusCode', count: { $sum: 1 } } },
       { $sort: { _id: 1 } }
     ]);
     
     // Get calls by model
     const callsByModel = await ApiLog.aggregate([
-      { $match: { userId: new mongoose.Types.ObjectId(userId), requestTime: dateFilter, modelUsed: { $ne: '' } } },
+      { 
+        $match: { 
+          userId: new mongoose.Types.ObjectId(userId), 
+          requestTime: dateFilter,
+          modelUsed: { $ne: '' },
+          ...endpointFilter
+        } 
+      },
       { $group: { _id: '$modelUsed', count: { $sum: 1 } } },
       { $sort: { count: -1 } }
     ]);
     
     // Get average response time
     const avgResponseTime = await ApiLog.aggregate([
-      { $match: { userId: new mongoose.Types.ObjectId(userId), requestTime: dateFilter } },
+      { 
+        $match: { 
+          userId: new mongoose.Types.ObjectId(userId), 
+          requestTime: dateFilter,
+          ...endpointFilter
+        } 
+      },
       { $group: { _id: null, average: { $avg: '$responseTime' } } }
     ]);
     
     // Get calls over time (daily)
     const callsOverTime = await ApiLog.aggregate([
-      { $match: { userId: new mongoose.Types.ObjectId(userId), requestTime: dateFilter } },
+      { 
+        $match: { 
+          userId: new mongoose.Types.ObjectId(userId), 
+          requestTime: dateFilter,
+          ...endpointFilter
+        } 
+      },
       { 
         $group: { 
           _id: { 
             $dateToString: { format: '%Y-%m-%d', date: '$requestTime' } 
           }, 
-          count: { $sum: 1 } 
+          count: { $sum: 1 },
+          avgResponseTime: { $avg: '$responseTime' }
         } 
       },
       { $sort: { _id: 1 } }
@@ -215,11 +230,14 @@ export const getApiUsageStats = async (req, res) => {
       success: true,
       data: {
         totalCalls,
-        callsByEndpoint,
         callsByStatus,
         callsByModel,
-        averageResponseTime: avgResponseTime.length > 0 ? avgResponseTime[0].average : 0,
-        callsOverTime
+        averageResponseTime: avgResponseTime.length > 0 ? Math.round(avgResponseTime[0].average) : 0,
+        callsOverTime: callsOverTime.map(item => ({
+          date: item._id,
+          count: item.count,
+          avgResponseTime: Math.round(item.avgResponseTime || 0)
+        }))
       }
     });
   } catch (error) {
