@@ -44,10 +44,10 @@ const APIIntegration = () => {
   };
 
   const [apiKey] = useState(testData.sampleApiKey);
-  const [userId, setUserId] = useState('');
-  const [amount, setAmount] = useState('');
-  const [cardType, setCardType] = useState(testData.cardTypes[0].value);
-  const [response, setResponse] = useState('Response will appear here...');
+  const [testUserId, setTestUserId] = useState('');
+  const [testAmount, setTestAmount] = useState('');
+  const [testCardType, setTestCardType] = useState('visa');
+  const [testResponse, setTestResponse] = useState('Response will appear here...');
   const [recentCalls, setRecentCalls] = useState(testData.recentCalls);
 
   const handleCopyKey = () => {
@@ -61,8 +61,8 @@ const APIIntegration = () => {
   const handleTestRequest = (e) => {
     e.preventDefault();
     
-    if (!userId || !amount) {
-      setResponse(JSON.stringify({
+    if (!testUserId || !testAmount) {
+      setTestResponse(JSON.stringify({
         error: 'Please fill in all required fields',
         status: 'error'
       }, null, 2));
@@ -76,16 +76,16 @@ const APIIntegration = () => {
     const newCall = {
       requestId: newRequestId,
       timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-      inputData: `${userId}, $${Number(amount).toLocaleString('en-US', {
+      inputData: `${testUserId}, $${Number(testAmount).toLocaleString('en-US', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
-      })}, ${cardType}`,
+      })}, ${testCardType}`,
       status: Math.random() > 0.5 ? 'Success' : 'Failed',
       details: {
         fraudScore: Math.random().toFixed(2),
         riskLevel: Math.random() > 0.7 ? 'high' : 'low',
         transactionId: `txn_${Date.now().toString(36)}`,
-        merchantName: userId.includes('_') ? userId.split('_')[1] : 'Unknown',
+        merchantName: testUserId.includes('_') ? testUserId.split('_')[1] : 'Unknown',
         cardLast4: Math.floor(1000 + Math.random() * 9000).toString()
       }
     };
@@ -102,7 +102,7 @@ const APIIntegration = () => {
       }
     };
 
-    setResponse(JSON.stringify(responseData, null, 2));
+    setTestResponse(JSON.stringify(responseData, null, 2));
   };
 
   return (
@@ -134,9 +134,9 @@ const APIIntegration = () => {
           {/* API Keys Section */}
           <div className="card">
             <div className="card-header">
-              <h3>API Keys</h3>
+              <h2>API Keys</h2>
             </div>
-            <div className="api-key-content">
+            <div className="api-keys">
               <div className="api-key-input">
                 <input 
                   type="text" 
@@ -156,73 +156,65 @@ const APIIntegration = () => {
             </div>
           </div>
 
-          {/* Test API Calls Section */}
+          {/* Integration Steps Section */}
           <div className="card">
             <div className="card-header">
-              <h3>Test API Calls</h3>
+              <h2>Integration Steps</h2>
             </div>
-            <div className="test-api-content">
+            <div className="integration-steps">
               <form className="test-form" onSubmit={handleTestRequest}>
                 <div className="form-group">
                   <label>User ID</label>
-                  <input
+                  <input 
                     type="text"
                     placeholder="Enter user ID"
-                    value={userId}
-                    onChange={(e) => setUserId(e.target.value)}
-                    className="form-input"
-                    style={{ backgroundColor: '#f5f5f5', color: '#333' }}
-                    required
+                    value={testUserId}
+                    onChange={(e) => setTestUserId(e.target.value)}
                   />
                 </div>
+
                 <div className="form-group">
                   <label>Amount</label>
-                  <input
-                    type="text"
+                  <input 
+                    type="number"
                     placeholder="Enter amount"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    className="form-input"
-                    style={{ backgroundColor: '#f5f5f5', color: '#333' }}
-                    required
+                    value={testAmount}
+                    onChange={(e) => setTestAmount(e.target.value)}
                   />
                 </div>
+
                 <div className="form-group">
                   <label>Card Type</label>
                   <select 
-                    value={cardType}
-                    onChange={(e) => setCardType(e.target.value)}
-                    className="form-select"
-                    style={{ backgroundColor: '#f5f5f5', color: '#333' }}
+                    value={testCardType}
+                    onChange={(e) => setTestCardType(e.target.value)}
                   >
-                    {testData.cardTypes.map(card => (
-                      <option key={card.value} value={card.value}>
-                        {card.label}
-                      </option>
-                    ))}
+                    <option value="visa">Visa</option>
+                    <option value="mastercard">Mastercard</option>
+                    <option value="amex">American Express</option>
                   </select>
                 </div>
-                <button type="submit" className="primary-button">
+
+                <button type="submit" className="send-test-button">
                   Send Test Request
                 </button>
+
+                <div className="response-area">
+                  <label>Response</label>
+                  <div className="response-content">
+                    {testResponse || 'Response will appear here...'}
+                  </div>
+                </div>
               </form>
-              <div className="response-section">
-                <label>Response</label>
-                <textarea 
-                  className="response-field"
-                  value={response || "Response will appear here..."}
-                  readOnly
-                />
-              </div>
             </div>
           </div>
 
-          {/* Recent API Calls Section */}
+          {/* Code Examples Section */}
           <div className="card">
             <div className="card-header">
-              <h3>Recent API Calls</h3>
+              <h2>Code Examples</h2>
             </div>
-            <div className="card-content">
+            <div className="code-examples">
               <table className="api-calls-table">
                 <thead>
                   <tr>
@@ -251,7 +243,7 @@ const APIIntegration = () => {
                             className="view-details-link"
                             onClick={(e) => {
                               e.preventDefault();
-                              setResponse(JSON.stringify(call.details, null, 2));
+                              setTestResponse(JSON.stringify(call.details, null, 2));
                             }}
                           >
                             View Details

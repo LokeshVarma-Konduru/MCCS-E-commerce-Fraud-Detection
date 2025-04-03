@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaHome, FaCode, FaChartLine, FaExchangeAlt } from 'react-icons/fa';
+import { FaHome, FaCode, FaChartLine, FaExchangeAlt, FaChartPie } from 'react-icons/fa';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -12,7 +12,9 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
+import Report from '../components/Report';
 import '../styles/Developer.css';
+import '../styles/Report.css';
 
 ChartJS.register(
   CategoryScale,
@@ -26,6 +28,11 @@ ChartJS.register(
 
 const Developer = () => {
   const [timeScale, setTimeScale] = useState('24H');
+  const [exportDateRange, setExportDateRange] = useState('last7days');
+  const [exportFormat, setExportFormat] = useState('csv');
+  const [isExporting, setIsExporting] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [reportPeriod, setReportPeriod] = useState('7d');
 
   // Hardcoded data
   const stats = {
@@ -146,6 +153,74 @@ const Developer = () => {
     }
   ];
 
+  const reportData = {
+    period: reportPeriod,
+    timeline: {
+      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      transactions: [245, 312, 287, 342, 398, 456, 321]
+    },
+    metrics: {
+      total: 2361,
+      legitimate: 2298,
+      fraudulent: 42,
+      suspicious: 21,
+      detectionRate: 97.5,
+      avgResponseTime: 185,
+      avgTransactionValue: 68.75
+    },
+    merchantCategories: {
+      'Exchange': 1250,
+      'Commissary': 580,
+      'Food & Hospitality': 320,
+      'Recreation': 150,
+      'Marine Mart': 61
+    },
+    insights: {
+      fraudPatterns: 'Recent analysis shows an increase in fraud attempts targeting PX/Exchange online purchases. Most attempts occur during deployment cycles and involve gift card purchases.',
+      riskAssessment: 'Current risk level is LOW to MODERATE. Key factors include increased online transaction volume at Camp Lejeune and Camp Pendleton locations.',
+      recommendations: 'Implement additional verification for gift card purchases over $100. Consider enhanced monitoring during PCS season when transaction patterns change significantly.',
+      riskScore: 72
+    },
+    anomalies: [
+      {
+        id: 'A001',
+        time: '08:45 AM',
+        description: 'Unusual transaction pattern detected at Camp Pendleton Exchange',
+        severity: 'medium'
+      },
+      {
+        id: 'A002',
+        time: '11:23 AM',
+        description: 'Multiple failed authentication attempts at Commissary online store',
+        severity: 'high'
+      },
+      {
+        id: 'A003',
+        time: '02:17 PM',
+        description: 'Suspicious gift card purchases at Marine Mart',
+        severity: 'medium'
+      }
+    ],
+    financialImpact: {
+      preventedLoss: 2887.50,
+      operationalSavings: 1250.00,
+      roi: 327
+    }
+  };
+
+  const toggleReport = () => {
+    setShowReport(!showReport);
+  };
+
+  const getPeriodLabel = (period) => {
+    const labels = {
+      'last24h': 'Last 24 Hours',
+      'last7days': 'Last 7 Days',
+      'last30days': 'Last 30 Days'
+    };
+    return labels[period] || period;
+  };
+
   return (
     <div className="developer-container">
       <div className="side-panel">
@@ -264,7 +339,6 @@ const Developer = () => {
         <div className="card recent-logs">
           <div className="card-header">
             <h3>Recent Logs</h3>
-            <button className="export-btn">Export Logs</button>
           </div>
           <div className="logs-list">
             {recentLogs.map((log, index) => (
@@ -281,6 +355,51 @@ const Developer = () => {
             ))}
           </div>
         </div>
+
+        {/* Report Generation */}
+        <div className="card report-generation-section">
+          <div className="card-header">
+            <h3>Generate Reports</h3>
+          </div>
+          <div className="card-body">
+            <div className="report-controls">
+              <div className="control-group">
+                <label>Report Period:</label>
+                <select 
+                  value={reportPeriod}
+                  onChange={(e) => setReportPeriod(e.target.value)}
+                  className="select-input"
+                >
+                  <option value="24h">Last 24 Hours</option>
+                  <option value="7d">Last 7 Days</option>
+                  <option value="30d">Last 30 Days</option>
+                </select>
+              </div>
+              <button 
+                className="generate-report-button"
+                onClick={toggleReport}
+              >
+                <FaChartPie className="button-icon" />
+                {showReport ? 'Hide Report' : 'Generate Report'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Report View */}
+        {showReport && (
+          <div className="report-view" style={{ 
+            background: 'white', 
+            padding: '32px', 
+            borderRadius: '12px',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
+            margin: '24px 0'
+          }}>
+            <Report 
+              data={reportData} 
+            />
+          </div>
+        )}
       </div>
     </div>
   );
