@@ -79,3 +79,140 @@ export const getModelById = async (modelId) => {
         };
     }
 };
+
+// API Key management endpoints
+export const getApiKey = async () => {
+    try {
+        const response = await axios.get(`${API_URL}/api-key`);
+        return response;
+    } catch (error) {
+        console.error('Error fetching API key:', error);
+        throw {
+            message: error.response?.data?.message || 'Failed to fetch API key',
+            status: error.response?.status
+        };
+    }
+};
+
+export const generateApiKey = async () => {
+    try {
+        const response = await axios.post(`${API_URL}/api-key/generate`);
+        return response;
+    } catch (error) {
+        console.error('Error generating API key:', error);
+        throw {
+            message: error.response?.data?.message || 'Failed to generate API key',
+            status: error.response?.status
+        };
+    }
+};
+
+export const regenerateApiKey = async () => {
+    try {
+        const response = await axios.post(`${API_URL}/api-key/regenerate`);
+        return response;
+    } catch (error) {
+        console.error('Error regenerating API key:', error);
+        throw {
+            message: error.response?.data?.message || 'Failed to regenerate API key',
+            status: error.response?.status
+        };
+    }
+};
+
+// Transaction prediction with API key
+export const predictTransaction = async (data, apiKey, model) => {
+    try {
+        const response = await axios.post(`${API_URL}/predict?apikey=${apiKey}&model=${model}`, data);
+        return response;
+    } catch (error) {
+        console.error('Error predicting transaction:', error);
+        throw {
+            message: error.response?.data?.message || 'Failed to predict transaction',
+            status: error.response?.status
+        };
+    }
+};
+
+// API Logs and Usage Statistics
+export const getApiLogs = (params = {}) => {
+    return axios.get(`${API_URL}/api-logs`, { params });
+};
+
+export const getApiLogById = (id) => {
+    return axios.get(`${API_URL}/api-logs/${id}`);
+};
+
+export const getApiUsageStats = (period = 'week') => {
+    return axios.get(`${API_URL}/api-usage-stats`, {
+        params: { period },
+        withCredentials: true  // Explicitly ensure credentials are sent
+    });
+};
+
+// Transaction data
+export const getTransactions = (params = {}) => {
+    // Add default pagination parameters if not provided
+    const queryParams = {
+        page: params.page || 1,
+        limit: params.limit || 10,
+        ...params
+    };
+    return axios.get(`${API_URL}/transactions`, { params: queryParams });
+};
+
+export const getTransactionById = (id) => {
+    return axios.get(`${API_URL}/transaction/${id}`);
+};
+
+// Dashboard statistics
+export const getDashboardStats = (period = 'month') => {
+  try {
+    return axios.get(`${API_URL}/dashboard-stats`, { 
+      params: { period } 
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Store Manager endpoints
+export const getStoreManagerStats = (period = 'day', transactionType = 'All Transactions') => {
+  try {
+    return axios.get(`${API_URL}/store-manager/stats`, { 
+      params: { period, transactionType } 
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getFraudTrends = (period = 'week', transactionType = 'All Transactions') => {
+  try {
+    return axios.get(`${API_URL}/store-manager/fraud-trends`, { 
+      params: { period, transactionType } 
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getTransactionTypeDistribution = (period = 'day') => {
+  try {
+    return axios.get(`${API_URL}/store-manager/transaction-types`, { 
+      params: { period } 
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getRecentAlerts = (limit = 5, transactionType = 'All Transactions') => {
+  try {
+    return axios.get(`${API_URL}/store-manager/alerts`, { 
+      params: { limit, transactionType } 
+    });
+  } catch (error) {
+    throw error;
+  }
+};

@@ -40,7 +40,7 @@ If you did not request this, please contact support.
 
 Best regards,
 Your Company Name`;
-
+        console.log(otp);
         await sendMail(email, subject, text);
 
         res.status(200).json({ message: 'Login OTP sent to email', userId: user._id });

@@ -12,6 +12,7 @@ import Developer from './pages/Developer.jsx';
 import APIIntegration from './pages/APIIntegration';
 import ModelPerformance from './pages/ModelPerformance';
 import TransactionMonitoring from './pages/TransactionMonitoring';
+import StoreManager from './pages/StoreManager.jsx';
 import { getUserInfo } from './api.js';
 
 // Protected Route Component
@@ -109,6 +110,44 @@ const DeveloperRoute = ({ children }) => {
   return <ProtectedRoute>{children}</ProtectedRoute>;
 };
 
+// Store Manager Route Component
+const StoreManagerRoute = ({ children }) => {
+  const [isStoreManager, setIsStoreManager] = React.useState(null);
+  const location = useLocation();
+
+  React.useEffect(() => {
+    const checkStoreManagerStatus = async () => {
+      try {
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+          setIsStoreManager(false);
+          return;
+        }
+        
+        const response = await getUserInfo(userId);
+        const userRole = response.data.user.role;
+        // Allow access to Store Manager, Admin, and Developer roles
+        setIsStoreManager(['StoreManager', 'Admin', 'Developer'].includes(userRole));
+      } catch (error) {
+        console.error('Error checking store manager status:', error);
+        setIsStoreManager(false);
+      }
+    };
+    
+    checkStoreManagerStatus();
+  }, []);
+  
+  if (isStoreManager === null) {
+    return <div>Loading...</div>;
+  }
+  
+  if (!isStoreManager) {
+    return <Navigate to="/dashboard" state={{ from: location }} replace />;
+  }
+  
+  return <ProtectedRoute>{children}</ProtectedRoute>;
+};
+
 // Add PropTypes validation
 ProtectedRoute.propTypes = {
   children: PropTypes.node.isRequired
@@ -119,6 +158,10 @@ AdminRoute.propTypes = {
 };
 
 DeveloperRoute.propTypes = {
+  children: PropTypes.node.isRequired
+};
+
+StoreManagerRoute.propTypes = {
   children: PropTypes.node.isRequired
 };
 
@@ -161,6 +204,18 @@ const App = () => {
               <ProtectedRoute>
                 <APIIntegration />
               </ProtectedRoute>
+
+              <DeveloperRoute>
+                <Developer />
+              </DeveloperRoute>
+            }
+          />
+          <Route
+            path="/store-manager"
+            element={
+              <StoreManagerRoute>
+                <StoreManager />
+              </StoreManagerRoute>
             }
           />
           <Route

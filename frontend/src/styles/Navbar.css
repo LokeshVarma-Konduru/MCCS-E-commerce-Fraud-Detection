@@ -104,7 +104,24 @@
 }
 
 .sidebar-menu li {
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1.25rem;
+  color: #ffffff;
+  cursor: pointer;
+  display: block;
+  transition: all 0.3s ease;
+  border-left: 3px solid transparent;
+  margin-bottom: 4px;
+}
+
+.sidebar-menu li:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-left-color: #4299e1;
+}
+
+.sidebar-menu li.active {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-left-color: #4299e1;
+  font-weight: 500;
 }
 
 .sidebar-menu li a {
