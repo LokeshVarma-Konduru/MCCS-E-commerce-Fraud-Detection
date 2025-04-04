@@ -180,8 +180,15 @@ const App = () => {
       <div className="app">
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/" element={<Navigate to="/developer" replace />} />
-          <Route path="/dashboard" element={<Navigate to="/developer" replace />} />
+          <Route path="/" element={<Navigate to="/ddashboard" replace />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <DashboardContent />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/developer"
             element={
@@ -204,10 +211,6 @@ const App = () => {
               <ProtectedRoute>
                 <APIIntegration />
               </ProtectedRoute>
-
-              <DeveloperRoute>
-                <Developer />
-              </DeveloperRoute>
             }
           />
           <Route

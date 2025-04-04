@@ -593,7 +593,7 @@ const Dashboard = () => {
         )}
 
         {classificationReport && (
-          <div className="report-section">
+          <div className="Dashboard-report-section">
             <h3>Detailed Metrics</h3>
             <div className="metrics-table-container">
               <table className="metrics-table">

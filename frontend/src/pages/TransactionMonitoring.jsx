@@ -15,6 +15,7 @@ import {
 import TransactionReviewModal from '../components/TransactionReviewModal';
 import PageHeader from '../components/PageHeader';
 import '../styles/Developer.css';
+import '../styles/TransactionMonitoring.css';
 
 ChartJS.register(
   CategoryScale,
@@ -145,8 +146,8 @@ const TransactionMonitoring = () => {
   };
 
   return (
-    <div className="developer-container">
-      <div className="side-panel">
+    <div className="developer-container transaction-monitoring">
+      <div className="top-navigation">
         <nav className="nav-menu">
           <Link to="/developer" className="nav-item">
             <FaHome className="nav-icon" />

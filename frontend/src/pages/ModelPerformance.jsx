@@ -14,6 +14,7 @@ import {
   Colors
 } from 'chart.js';
 import '../styles/Developer.css';
+import '../styles/ModelPerformance.css';
 import PageHeader from '../components/PageHeader';
 
 ChartJS.register(
@@ -226,8 +227,8 @@ const ModelPerformance = () => {
   };
 
   return (
-    <div className="developer-container">
-      <div className="side-panel">
+    <div className="developer-container model-performance">
+      <div className="top-navigation">
         <nav className="nav-menu">
           <Link to="/developer" className="nav-item">
             <FaHome className="nav-icon" />

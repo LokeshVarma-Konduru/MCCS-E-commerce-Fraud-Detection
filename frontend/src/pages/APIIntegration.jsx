@@ -156,12 +156,10 @@ const APIIntegration = () => {
     }
   };
 
-  const [apiKey] = useState(testData.sampleApiKey);
   const [testUserId, setTestUserId] = useState('');
   const [testAmount, setTestAmount] = useState('');
   const [testCardType, setTestCardType] = useState('visa');
   const [testResponse, setTestResponse] = useState('Response will appear here...');
-  const [recentCalls, setRecentCalls] = useState(testData.recentCalls);
 
   const handleRegenerateKey = async () => {
     if (window.confirm('Are you sure you want to regenerate your API key? This will invalidate your current key.')) {
@@ -196,9 +194,6 @@ const APIIntegration = () => {
   const handleTestRequest = async (e) => {
     e.preventDefault();
     
-
-    if (!testUserId || !testAmount) {
-      setTestResponse(JSON.stringify({
     if (!amount || !selectedModel) {
       setResponse(JSON.stringify({
         error: 'Please fill in all required fields',
@@ -207,28 +202,6 @@ const APIIntegration = () => {
       return;
     }
 
-    const timestamp = Date.now().toString(36);
-    const random = Math.random().toString(36).substring(2, 8);
-    const newRequestId = `req_${timestamp}${random}`;
-
-    const newCall = {
-      requestId: newRequestId,
-      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-      inputData: `${testUserId}, $${Number(testAmount).toLocaleString('en-US', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      })}, ${testCardType}`,
-      status: Math.random() > 0.5 ? 'Success' : 'Failed',
-      details: {
-        fraudScore: Math.random().toFixed(2),
-        riskLevel: Math.random() > 0.7 ? 'high' : 'low',
-        transactionId: `txn_${Date.now().toString(36)}`,
-        merchantName: testUserId.includes('_') ? testUserId.split('_')[1] : 'Unknown',
-        cardLast4: Math.floor(1000 + Math.random() * 9000).toString()
-      }
-    };
-
-    setRecentCalls([newCall, ...recentCalls]);
     setIsLoading(true);
     try {
       // Prepare transaction data
@@ -262,7 +235,6 @@ const APIIntegration = () => {
         details: result.data
       };
 
-    setTestResponse(JSON.stringify(responseData, null, 2));
       setRecentCalls(prevCalls => [newCall, ...prevCalls.slice(0, 4)]);
     } catch (error) {
       console.error('Error making test request:', error);
@@ -277,7 +249,6 @@ const APIIntegration = () => {
 
   return (
     <div className="developer-container">
-      <div className="side-panel">
       <div className="top-navigation">
         <nav className="nav-menu">
           <Link to="/developer" className="nav-item">
@@ -285,7 +256,7 @@ const APIIntegration = () => {
             <span>Dashboard</span>
           </Link>
           <Link to="/api-integration" className="nav-item active">
-            <FaCode className="nav-icon" />
+            <FaKey className="nav-icon" />
             <span>API Integration</span>
           </Link>
           <Link to="/model-performance" className="nav-item">
@@ -300,8 +271,6 @@ const APIIntegration = () => {
       </div>
 
       <div className="main-content">
-        <PageHeader title="API Integration" />
-        <div className="api-content">
         <div className="content-header">
           <h1 style={{ color: '#2c3e50', fontSize: '24px', fontWeight: 600 }}>API Integration</h1>
         </div>
@@ -322,23 +291,8 @@ const APIIntegration = () => {
           {/* API Keys Section */}
           <div className="card">
             <div className="card-header">
-              <h2>API Keys</h2>
+              <h3>API Keys</h3>
             </div>
-
-            <div className="api-keys">
-              <div className="api-key-input">
-                <input 
-                  type="text" 
-                  value={apiKey} 
-                  readOnly 
-                  className="key-field"
-                />
-                <div className="api-key-buttons">
-                  <button className="api-button" onClick={handleCopyKey}>
-                    <FaCopy /> Copy
-                  </button>
-                  <button className="api-button" onClick={handleRegenerateKey}>
-                    <FaSync /> Regenerate
             <div className="api-key-content">
               {isLoading ? (
                 <p>Loading...</p>
@@ -370,34 +324,6 @@ const APIIntegration = () => {
             </div>
           </div>
 
-
-          {/* Integration Steps Section */}
-          <div className="card">
-            <div className="card-header">
-              <h2>Integration Steps</h2>
-            </div>
-            <div className="integration-steps">
-              <form className="test-form" onSubmit={handleTestRequest}>
-                <div className="form-group">
-                  <label>User ID</label>
-                  <input 
-                    type="text"
-                    placeholder="Enter user ID"
-                    value={testUserId}
-                    onChange={(e) => setTestUserId(e.target.value)}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Amount</label>
-                  <input 
-                    type="number"
-                    placeholder="Enter amount"
-                    value={testAmount}
-                    onChange={(e) => setTestAmount(e.target.value)}
-                  />
-                </div>
-
           {/* API URL Generator */}
           {hasApiKey && (
             <div className="card">
@@ -408,26 +334,6 @@ const APIIntegration = () => {
                 <div className="form-group">
                   <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#333' }}>Select Model</label>
                   <select 
-                    value={testCardType}
-                    onChange={(e) => setTestCardType(e.target.value)}
-                  >
-                    <option value="visa">Visa</option>
-                    <option value="mastercard">Mastercard</option>
-                    <option value="amex">American Express</option>
-                  </select>
-                </div>
-
-                <button type="submit" className="send-test-button">
-                  Send Test Request
-                </button>
-
-                <div className="response-area">
-                  <label>Response</label>
-                  <div className="response-content">
-                    {testResponse || 'Response will appear here...'}
-                  </div>
-                </div>
-              </form>
                     value={selectedModel}
                     onChange={(e) => {
                       console.log("Model selected:", e.target.value);
@@ -738,12 +644,12 @@ const APIIntegration = () => {
             </div>
           )}
 
-          {/* Code Examples Section */}
+          {/* Recent API Calls Section */}
           <div className="card">
             <div className="card-header">
-              <h2>Code Examples</h2>
+              <h3>Recent API Calls</h3>
             </div>
-            <div className="code-examples">
+            <div className="card-content">
               <table className="api-calls-table">
                 <thead>
                   <tr>
@@ -772,7 +678,7 @@ const APIIntegration = () => {
                             className="view-details-link"
                             onClick={(e) => {
                               e.preventDefault();
-                              setTestResponse(JSON.stringify(call.details, null, 2));
+                              setResponse(JSON.stringify(call.details, null, 2));
                             }}
                           >
                             View Details
