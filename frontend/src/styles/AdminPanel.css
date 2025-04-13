@@ -70,8 +70,9 @@
 .form-group label {
   display: block;
   margin-bottom: 8px;
-  color: #00ffff;
+  color: #ffffff;
   font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .form-group input,
@@ -84,6 +85,7 @@
   color: #ffffff;
   font-size: 1rem;
   transition: all 0.3s ease;
+  font-weight: 400;
 }
 
 .form-group input:focus,

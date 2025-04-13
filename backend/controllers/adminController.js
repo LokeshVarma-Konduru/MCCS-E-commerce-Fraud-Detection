@@ -31,8 +31,8 @@ export const addUsers = async (req, res) => {
             continue;
         }
 
-        if (!['Admin', 'Developer'].includes(role)) {
-            failedUsers.push({ email, message: 'Invalid role specified (must be Admin or Developer)' });
+        if (!['Admin', 'Developer', 'StoreManager'].includes(role)) {
+            failedUsers.push({ email, message: 'Invalid role specified (must be Admin, Developer, or StoreManager)' });
             continue;
         }
 

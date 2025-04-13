@@ -310,38 +310,42 @@ const AdminPanel = () => {
                     <div className="user-entry-content">
                       <div className="user-entry-fields">
                         <div className="form-group">
-                          <label htmlFor={`email-${index}`}>Email:</label>
+                          <label htmlFor={`email-${index}`} style={{ color: 'white', fontWeight: '500' }}>Email:</label>
                           <input
                             type="email"
                             id={`email-${index}`}
                             name="email"
                             value={entry.email}
                             onChange={(e) => handleInputChange(index, e)}
+                            style={{ color: 'white', backgroundColor: '#2d2d2d', border: '1px solid #404040' }}
                             required
                           />
                         </div>
                         <div className="form-group">
-                          <label htmlFor={`name-${index}`}>Name:</label>
+                          <label htmlFor={`name-${index}`} style={{ color: 'white', fontWeight: '500' }}>Name:</label>
                           <input
                             type="text"
                             id={`name-${index}`}
                             name="name"
                             value={entry.name}
                             onChange={(e) => handleInputChange(index, e)}
+                            style={{ color: 'white', backgroundColor: '#2d2d2d', border: '1px solid #404040' }}
                             required
                           />
                         </div>
                         <div className="form-group">
-                          <label htmlFor={`role-${index}`}>Role:</label>
+                          <label htmlFor={`role-${index}`} style={{ color: 'white', fontWeight: '500' }}>Role:</label>
                           <select
                             id={`role-${index}`}
                             name="role"
                             value={entry.role}
                             onChange={(e) => handleInputChange(index, e)}
+                            style={{ color: 'white', backgroundColor: '#2d2d2d', border: '1px solid #404040' }}
                             required
                           >
                             <option value="Developer">Developer</option>
                             <option value="Admin">Admin</option>
+                            <option value="StoreManager">Store Manager</option>
                           </select>
                         </div>
                       </div>
@@ -395,6 +399,7 @@ const AdminPanel = () => {
                     <option value="">All Roles</option>
                     <option value="Admin">Admin</option>
                     <option value="Developer">Developer</option>
+                    <option value="StoreManager">Store Manager</option>
                   </select>
                 </div>
               </div>
@@ -408,29 +413,29 @@ const AdminPanel = () => {
                     </div>
                   </div>
                 ) : (
-                  <table className="user-table">
+                  <table className="user-table" style={{ width: '100%', borderCollapse: 'collapse', color: 'white' }}>
                     <thead>
                       <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+                        <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #404040', backgroundColor: '#2d2d2d', color: '#00ffff' }}>Name</th>
+                        <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #404040', backgroundColor: '#2d2d2d', color: '#00ffff' }}>Email</th>
+                        <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #404040', backgroundColor: '#2d2d2d', color: '#00ffff' }}>Role</th>
+                        <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #404040', backgroundColor: '#2d2d2d', color: '#00ffff' }}>Status</th>
+                        <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #404040', backgroundColor: '#2d2d2d', color: '#00ffff' }}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {users.length > 0 ? (
                         users.map((user) => (
                           <tr key={user._id}>
-                            <td>{user.name}</td>
-                            <td>{user.email}</td>
-                            <td>{user.role}</td>
-                            <td>
-                              <span className={`status-badge ${user.status ? 'active' : 'inactive'}`}>
+                            <td style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #404040', color: 'white' }}>{user.name}</td>
+                            <td style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #404040', color: 'white' }}>{user.email}</td>
+                            <td style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #404040', color: 'white' }}>{user.role}</td>
+                            <td style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #404040', color: 'white' }}>
+                              <span className={`status-badge ${user.status ? 'active' : 'inactive'}`} style={{ padding: '4px 8px', borderRadius: '12px', fontWeight: '500' }}>
                                 {user.status ? 'Active' : 'Inactive'}
                               </span>
                             </td>
-                            <td>
+                            <td style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #404040', color: 'white' }}>
                               <button
                                 onClick={() => handleToggleStatus(user)}
                                 className={`toggle-button ${user.status ? 'deactivate' : 'activate'}`}
@@ -448,7 +453,7 @@ const AdminPanel = () => {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan="5" className="no-users">No users found</td>
+                          <td colSpan="5" className="no-users" style={{ textAlign: 'center', color: '#888', padding: '20px' }}>No users found</td>
                         </tr>
                       )}
                     </tbody>

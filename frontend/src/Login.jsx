@@ -2,7 +2,7 @@
 // eslint-disable-next-line no-unused-vars
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login, verifyLoginOTP } from './api';
+import { login, verifyLoginOTP, getUserInfo } from './api';
 import logo from './assets/logo.jpg';
 
 const Login = () => {
@@ -28,8 +28,21 @@ const Login = () => {
       } else {
         const response = await verifyLoginOTP(userId, otp);
         localStorage.setItem('token', response.data.token);
-        localStorage.setItem('userId', userId);  
-        navigate('/dashboard');
+        localStorage.setItem('userId', userId);
+        
+        // Get user info to determine role-based redirect
+        const userInfoResponse = await getUserInfo(userId);
+        const userRole = userInfoResponse.data.user.role;
+        
+        // Redirect based on role
+        if (userRole === 'Developer') {
+          navigate('/developer');
+        } else if (userRole === 'StoreManager') {
+          navigate('/store-manager');
+        } else {
+          // Admin or any other role
+          navigate('/dashboard');
+        }
       }
     } catch (err) {
       setError(err.response?.data?.message || 'An error occurred');
@@ -54,7 +67,7 @@ const Login = () => {
             {!showOtp ? (
               <>
                 <div className="form-group">
-                  <label htmlFor="email">Email</label>
+                  <label htmlFor="email" style={{ color: 'white', fontWeight: '500', display: 'block', marginBottom: '0.7rem' }}>Email</label>
                   <input
                     id="email"
                     type="email"
@@ -63,10 +76,11 @@ const Login = () => {
                     required
                     placeholder="Enter your email"
                     autoComplete="email"
+                    style={{ width: '100%', padding: '1rem', backgroundColor: 'rgba(51, 51, 51, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', color: 'white', fontSize: '1rem' }}
                   />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="password">Password</label>
+                  <label htmlFor="password" style={{ color: 'white', fontWeight: '500', display: 'block', marginBottom: '0.7rem' }}>Password</label>
                   <input
                     id="password"
                     type="password"
@@ -75,12 +89,13 @@ const Login = () => {
                     required
                     placeholder="Enter your password"
                     autoComplete="current-password"
+                    style={{ width: '100%', padding: '1rem', backgroundColor: 'rgba(51, 51, 51, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', color: 'white', fontSize: '1rem' }}
                   />
                 </div>
               </>
             ) : (
               <div className="form-group">
-                <label htmlFor="otp">Enter OTP</label>
+                <label htmlFor="otp" style={{ color: 'white', fontWeight: '500', display: 'block', marginBottom: '0.7rem' }}>Enter OTP</label>
                 <input
                   id="otp"
                   type="text"
@@ -90,8 +105,9 @@ const Login = () => {
                   placeholder="Enter OTP"
                   maxLength="6"
                   autoComplete="one-time-code"
+                  style={{ width: '100%', padding: '1rem', backgroundColor: 'rgba(51, 51, 51, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', color: 'white', fontSize: '1rem' }}
                 />
-                <p className="otp-message">Please check your email for OTP</p>
+                <p className="otp-message" style={{ color: '#9ca3af', fontSize: '0.9rem', marginTop: '0.8rem', textAlign: 'center' }}>Please check your email for OTP</p>
               </div>
             )}
             <br></br>

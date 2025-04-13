@@ -78,15 +78,13 @@ const DeveloperRoute = ({ children }) => {
       try {
         const userId = localStorage.getItem('userId');
         if (!userId) {
-          console.log('No userId found in localStorage');
           setIsDeveloper(false);
           return;
         }
         
-        console.log('Checking developer status for userId:', userId);
         const response = await getUserInfo(userId);
-        console.log('Developer check response:', response.data);
-        setIsDeveloper(response.data.user.role === 'Developer');
+        // Only Developer and Admin roles can access developer pages
+        setIsDeveloper(['Developer', 'Admin'].includes(response.data.user.role));
       } catch (error) {
         console.error('Error checking developer status:', error);
         setIsDeveloper(false);
@@ -97,16 +95,14 @@ const DeveloperRoute = ({ children }) => {
   }, []);
   
   if (isDeveloper === null) {
-    console.log('Developer status is still loading...');
     return <div>Loading...</div>;
   }
   
   if (!isDeveloper) {
-    console.log('User is not a developer, redirecting to dashboard...');
+    // If user is not a developer or admin, redirect based on their role
     return <Navigate to="/dashboard" state={{ from: location }} replace />;
   }
   
-  console.log('User is a developer, rendering developer dashboard...');
   return <ProtectedRoute>{children}</ProtectedRoute>;
 };
 
@@ -126,8 +122,8 @@ const StoreManagerRoute = ({ children }) => {
         
         const response = await getUserInfo(userId);
         const userRole = response.data.user.role;
-        // Allow access to Store Manager, Admin, and Developer roles
-        setIsStoreManager(['StoreManager', 'Admin', 'Developer'].includes(userRole));
+        // Only Store Manager and Admin roles can access store manager pages
+        setIsStoreManager(['StoreManager', 'Admin'].includes(userRole));
       } catch (error) {
         console.error('Error checking store manager status:', error);
         setIsStoreManager(false);
@@ -165,8 +161,49 @@ StoreManagerRoute.propTypes = {
   children: PropTypes.node.isRequired
 };
 
-// Dashboard Content
+// Dashboard Content with role-based redirect
 const DashboardContent = () => {
+  const [loading, setLoading] = React.useState(true);
+  const [redirect, setRedirect] = React.useState(null);
+  
+  React.useEffect(() => {
+    const checkUserRole = async () => {
+      try {
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+          setLoading(false);
+          return;
+        }
+        
+        const response = await getUserInfo(userId);
+        const userRole = response.data.user.role;
+        
+        // Redirect based on role
+        if (userRole === 'Developer') {
+          setRedirect('/developer');
+        } else if (userRole === 'StoreManager') {
+          setRedirect('/store-manager');
+        } else {
+          // Admin or any other role stays on dashboard
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error checking user role:', error);
+        setLoading(false);
+      }
+    };
+    
+    checkUserRole();
+  }, []);
+  
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+  
+  if (redirect) {
+    return <Navigate to={redirect} replace />;
+  }
+  
   return (
     <div className="dashboard-content">
       <Dashboard />
@@ -192,9 +229,9 @@ const App = () => {
           <Route
             path="/developer"
             element={
-              <ProtectedRoute>
+              <DeveloperRoute>
                 <Developer />
-              </ProtectedRoute>
+              </DeveloperRoute>
             }
           />
           <Route
@@ -208,9 +245,9 @@ const App = () => {
           <Route
             path="/api-integration"
             element={
-              <ProtectedRoute>
+              <DeveloperRoute>
                 <APIIntegration />
-              </ProtectedRoute>
+              </DeveloperRoute>
             }
           />
           <Route
@@ -224,9 +261,9 @@ const App = () => {
           <Route
             path="/model-performance"
             element={
-              <ProtectedRoute>
+              <DeveloperRoute>
                 <ModelPerformance />
-              </ProtectedRoute>
+              </DeveloperRoute>
             }
           />
           <Route
@@ -248,9 +285,9 @@ const App = () => {
           <Route
             path="/transaction-monitoring"
             element={
-              <ProtectedRoute>
+              <DeveloperRoute>
                 <TransactionMonitoring />
-              </ProtectedRoute>
+              </DeveloperRoute>
             }
           />
         </Routes>
