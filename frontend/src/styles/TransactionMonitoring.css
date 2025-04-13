@@ -22,6 +22,20 @@
   background-color: #f8fafc;
 }
 
+/* Placeholder text styling for different browsers */
+.transaction-monitoring .search-box .search-input::placeholder {
+  color: #718096;
+  opacity: 1; /* Firefox */
+}
+
+.transaction-monitoring .search-box .search-input:-ms-input-placeholder {
+  color: #718096;
+}
+
+.transaction-monitoring .search-box .search-input::-ms-input-placeholder {
+  color: #718096;
+}
+
 .transaction-monitoring .search-box .search-icon {
   position: absolute;
   left: 14px;

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { FaHome, FaCode, FaChartLine, FaExchangeAlt, FaChartPie } from 'react-icons/fa';
 import { Line } from 'react-chartjs-2';
 import Report from '../components/Report';
+import PageHeader from '../components/PageHeader';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import { getTransactions, getDashboardStats, getApiUsageStats } from '../api';
 import '../styles/Developer.css';
@@ -438,6 +439,7 @@ const Developer = () => {
       </div>
       
       <div className="main-content">
+        <PageHeader title="Developer Dashboard" />
         {/* Stats Cards */}
         <div className="stats-grid">
           <div className="stat-card">

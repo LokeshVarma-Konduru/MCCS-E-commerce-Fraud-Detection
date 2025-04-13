@@ -170,14 +170,19 @@ const TransactionMonitoring = () => {
 
       <div className="main-content">
         <PageHeader title="Transaction Monitoring" />
-        
-        <div className="search-filters">
+        <div className="monitoring-filters">
           <div className="search-box">
             <FaSearch className="search-icon" />
             <input 
               type="text" 
               placeholder="Search by transaction ID, amount, or status..." 
               className="search-input"
+              style={{ 
+                color: '#2d3748', 
+                backgroundColor: '#f8fafc',
+                border: '1px solid #cbd5e0',
+                boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.05)'
+              }}
             />
           </div>
 

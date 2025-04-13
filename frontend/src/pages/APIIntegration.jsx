@@ -271,9 +271,7 @@ const APIIntegration = () => {
       </div>
 
       <div className="main-content">
-        <div className="content-header">
-          <h1 style={{ color: '#2c3e50', fontSize: '24px', fontWeight: 600 }}>API Integration</h1>
-        </div>
+        <PageHeader title="API Integration" />
 
         {error && (
           <div className="error-message" style={{ color: 'red', marginBottom: '15px', padding: '10px', backgroundColor: '#ffeeee', borderRadius: '4px', border: '1px solid #ffcccc' }}>

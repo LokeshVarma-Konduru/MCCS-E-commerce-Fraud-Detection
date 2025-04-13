@@ -182,12 +182,12 @@ const ModelPerformance = () => {
   const renderMetricCard = (metric) => {
     const isPositive = !metric.change.startsWith('-');
     return (
-      <div className="stat-card" style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)' }}>
-        <h3 style={{ color: '#4a5568', fontSize: '14px', fontWeight: 'normal', marginBottom: '8px' }}>{metric.label}</h3>
-        <div className="stat-value" style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '8px', color: '#2d3748' }}>
+      <div className="metric-card">
+        <div className="metric-label">{metric.label}</div>
+        <div className="metric-value">
           {metric.value}
         </div>
-        <div className={`stat-change ${isPositive ? 'positive' : 'negative'}`} style={{ color: isPositive ? '#10b981' : '#ef4444', fontSize: '14px' }}>
+        <div className={`metric-change ${isPositive ? 'positive' : 'negative'}`}>
           {metric.change}
         </div>
       </div>

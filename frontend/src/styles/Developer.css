@@ -44,6 +44,20 @@
   gap: 24px;
 }
 
+/* Page Header Styling */
+.page-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.page-header h1 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
