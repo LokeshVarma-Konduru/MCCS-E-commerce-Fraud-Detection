@@ -43,6 +43,38 @@ const transactionSchema = new mongoose.Schema({
     default: [],
     required: true
   },
+  
+  // Transaction status for manual review
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected', 'under_review'],
+    default: 'pending'
+  },
+  
+  // Review notes
+  notes: {
+    type: String,
+    default: ''
+  },
+  
+  // Risk score (calculated from probability)
+  riskScore: {
+    type: Number,
+    default: 0
+  },
+  
+  // Reviewer information
+  reviewedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
+  },
+  
+  // Review timestamp
+  reviewedAt: {
+    type: Date,
+    required: false
+  },
 
   // Timestamps
   createdAt: { type: Date, default: Date.now, required: true }

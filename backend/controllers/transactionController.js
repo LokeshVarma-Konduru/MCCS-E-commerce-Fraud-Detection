@@ -153,46 +153,72 @@ export const predictTransaction = async (req, res) => {
 
 
   export const getTransactions = async (req, res) => {
-    try {
-      // Extract pagination parameters
-      const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || 10;
-      const skip = (page - 1) * limit;
+  try {
+    // Extract pagination parameters
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
 
-      // Allow filtering by model, prediction value, and other parameters
-      const { model, prediction, userId, startDate, endDate, productCategory, paymentMethod, transactionType } = req.query;
-      const filter = {};
-  
-      if (model) {
-        filter.modelUsed = model;
+    // Allow filtering by model, prediction value, status, and other parameters
+    const { model, prediction, status, userId, startDate, endDate, productCategory, paymentMethod, transactionType, minRiskScore, maxRiskScore, minAmount, maxAmount } = req.query;
+    const filter = {};
+
+    if (model) {
+      filter.modelUsed = model;
+    }
+    if (prediction !== undefined) {
+      // Filter transactions that have a prediction array containing the specified value
+      filter.predictions = { $in: [Number(prediction)] };
+    }
+    if (status) {
+      // Filter by review status (pending, approved, rejected, under_review)
+      filter.status = status;
+    }
+    if (userId) {
+      filter.userId = userId;
+    }
+    if (productCategory) {
+      filter.productCategory = productCategory;
+    }
+    if (paymentMethod) {
+      filter.paymentMethod = paymentMethod;
+    }
+    if (transactionType) {
+      filter.transactionType = transactionType;
+    }
+    
+    // Risk score range filter
+    if (minRiskScore !== undefined || maxRiskScore !== undefined) {
+      filter.riskScore = {};
+      if (minRiskScore !== undefined) {
+        filter.riskScore.$gte = Number(minRiskScore);
       }
-      if (prediction !== undefined) {
-        // Filter transactions that have a prediction array containing the specified value.
-        filter.predictions = { $in: [Number(prediction)] };
+      if (maxRiskScore !== undefined) {
+        filter.riskScore.$lte = Number(maxRiskScore);
       }
-      if (userId) {
-        filter.userId = userId;
+    }
+    
+    // Amount range filter
+    if (minAmount !== undefined || maxAmount !== undefined) {
+      filter.transactionAmount = {};
+      if (minAmount !== undefined) {
+        filter.transactionAmount.$gte = Number(minAmount);
       }
-      if (productCategory) {
-        filter.productCategory = productCategory;
+      if (maxAmount !== undefined) {
+        filter.transactionAmount.$lte = Number(maxAmount);
       }
-      if (paymentMethod) {
-        filter.paymentMethod = paymentMethod;
+    }
+    
+    // Date range filter
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) {
+        filter.createdAt.$gte = new Date(startDate);
       }
-      if (transactionType) {
-        filter.transactionType = transactionType;
+      if (endDate) {
+        filter.createdAt.$lte = new Date(endDate);
       }
-      
-      // Date range filter
-      if (startDate || endDate) {
-        filter.createdAt = {};
-        if (startDate) {
-          filter.createdAt.$gte = new Date(startDate);
-        }
-        if (endDate) {
-          filter.createdAt.$lte = new Date(endDate);
-        }
-      }
+    }  
       
       // Get transactions with pagination
       const transactions = await Transaction.find(filter)
@@ -244,3 +270,268 @@ export const predictTransaction = async (req, res) => {
       });
     }
   };
+
+// Update transaction status (approve/reject/under_review)
+export const updateTransactionStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, notes } = req.body;
+    
+    // Validate status
+    if (!['approved', 'rejected', 'under_review', 'pending'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid status. Must be one of: approved, rejected, under_review, pending'
+      });
+    }
+    
+    // Get user ID from authenticated user
+    const userId = req.user._id;
+    
+    const transaction = await Transaction.findById(id);
+    if (!transaction) {
+      return res.status(404).json({
+        success: false,
+        error: 'Transaction not found'
+      });
+    }
+    
+    // Update transaction
+    transaction.status = status;
+    if (notes) transaction.notes = notes;
+    transaction.reviewedBy = userId;
+    transaction.reviewedAt = new Date();
+    
+    await transaction.save();
+    
+    res.json({
+      success: true,
+      transaction
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error'
+    });
+  }
+};
+
+// Get fraud trends data for the monitoring dashboard
+export const getFraudTrends = async (req, res) => {
+  try {
+    const { period = 'week', transactionType = 'all' } = req.query;
+    
+    // Determine date range based on period
+    const endDate = new Date();
+    let startDate = new Date();
+    
+    switch (period) {
+      case 'day':
+        startDate.setDate(startDate.getDate() - 1);
+        break;
+      case 'week':
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+      case 'month':
+        startDate.setMonth(startDate.getMonth() - 1);
+        break;
+      case 'year':
+        startDate.setFullYear(startDate.getFullYear() - 1);
+        break;
+      default:
+        startDate.setDate(startDate.getDate() - 7); // Default to week
+    }
+    
+    // Build filter
+    const filter = {
+      createdAt: { $gte: startDate, $lte: endDate }
+    };
+    
+    // Add transaction type filter if not 'all'
+    if (transactionType !== 'all') {
+      filter.transactionType = transactionType;
+    }
+    
+    // Group by date and calculate fraud rate
+    const aggregationPipeline = [
+      { $match: filter },
+      {
+        $group: {
+          _id: {
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" },
+            day: { $dayOfMonth: "$createdAt" }
+          },
+          totalTransactions: { $sum: 1 },
+          fraudulentTransactions: {
+            $sum: {
+              $cond: [{ $eq: [{ $arrayElemAt: ["$predictions", 0] }, 1] }, 1, 0]
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          date: {
+            $dateFromParts: {
+              year: "$_id.year",
+              month: "$_id.month",
+              day: "$_id.day"
+            }
+          },
+          totalTransactions: 1,
+          fraudulentTransactions: 1,
+          fraudRate: {
+            $multiply: [
+              { $divide: ["$fraudulentTransactions", "$totalTransactions"] },
+              100
+            ]
+          }
+        }
+      },
+      { $sort: { date: 1 } }
+    ];
+    
+    const trendData = await Transaction.aggregate(aggregationPipeline);
+    
+    res.json({
+      success: true,
+      data: trendData
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error'
+    });
+  }
+};
+
+// Migration endpoint to update existing transactions with new fields
+export const migrateTransactions = async (req, res) => {
+  try {
+    // Find all transactions that don't have the status field set
+    const transactions = await Transaction.find({
+      $or: [
+        { status: { $exists: false } },
+        { riskScore: { $exists: false } }
+      ]
+    });
+    
+    console.log(`Found ${transactions.length} transactions to migrate`);
+    
+    // Update each transaction
+    const updatePromises = transactions.map(async (transaction) => {
+      // Calculate risk score from probabilities if available
+      let riskScore = 0;
+      if (transaction.probabilities && 
+          transaction.probabilities[0] && 
+          transaction.probabilities[0][1]) {
+        riskScore = Math.round(transaction.probabilities[0][1] * 100);
+      }
+      
+      // Set default status based on prediction
+      let status = 'pending';
+      if (transaction.predictions && 
+          transaction.predictions[0] !== undefined) {
+        // If prediction is 1 (fraud), set to under_review
+        status = transaction.predictions[0] === 1 ? 'under_review' : 'pending';
+      }
+      
+      // Update the transaction
+      transaction.status = status;
+      transaction.riskScore = riskScore;
+      transaction.notes = '';
+      
+      return transaction.save();
+    });
+    
+    // Wait for all updates to complete
+    await Promise.all(updatePromises);
+    
+    res.json({
+      success: true,
+      message: `Successfully migrated ${transactions.length} transactions`,
+      migratedCount: transactions.length
+    });
+  } catch (error) {
+    console.error('Migration error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error during migration',
+      message: error.message
+    });
+  }
+};
+
+// Get high-risk transactions for alerts
+export const getHighRiskTransactions = async (req, res) => {
+  try {
+    const { limit = 5, transactionType = 'all', minRiskScore = 70 } = req.query;
+    
+    // Build filter
+    const filter = {
+      // Filter for transactions predicted as fraud (prediction = 1)
+      predictions: { $in: [1] }
+    };
+    
+    // Add transaction type filter if not 'all'
+    if (transactionType !== 'all') {
+      filter.transactionType = transactionType;
+    }
+    
+    // Add risk score filter if specified
+    if (minRiskScore) {
+      // Either use the riskScore field if it exists
+      // or calculate it from probabilities
+      filter.$or = [
+        { riskScore: { $gte: parseInt(minRiskScore) } },
+        { 'probabilities.0.1': { $gte: parseInt(minRiskScore) / 100 } }
+      ];
+    }
+    
+    // Get transactions with high fraud probability
+    const transactions = await Transaction.find(filter)
+      .sort({ riskScore: -1, createdAt: -1 }) // Sort by risk score first, then by date
+      .limit(parseInt(limit))
+      .lean(); // Use lean() for better performance
+    
+    // Calculate risk score and format response
+    const alerts = transactions.map(transaction => {
+      // Get fraud probability (second value in first array of probabilities)
+      const fraudProbability = transaction.probabilities[0] ? 
+        transaction.probabilities[0][1] || 0 : 0;
+      
+      // Calculate risk score (0-100)
+      const riskScore = Math.round(fraudProbability * 100);
+      
+      return {
+        id: transaction._id,
+        amount: transaction.transactionAmount,
+        time: transaction.createdAt,
+        type: transaction.transactionType,
+        paymentMethod: transaction.paymentMethod,
+        productCategory: transaction.productCategory,
+        status: transaction.status,
+        riskScore,
+        fraudProbability
+      };
+    });
+    
+    // Sort by risk score (highest first)
+    alerts.sort((a, b) => b.riskScore - a.riskScore);
+    
+    res.json({
+      success: true,
+      data: alerts
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error'
+    });
+  }
+};

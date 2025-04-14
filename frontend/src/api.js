@@ -216,3 +216,35 @@ export const getRecentAlerts = (limit = 5, transactionType = 'All Transactions')
     throw error;
   }
 };
+
+// Transaction Monitoring specific endpoints
+export const getTransactionFraudTrends = (period = 'week', transactionType = 'all') => {
+  try {
+    return axios.get(`${API_URL}/transaction-monitoring/fraud-trends`, {
+      params: { period, transactionType }
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getHighRiskTransactions = (limit = 5, transactionType = 'all', minRiskScore = 0) => {
+  try {
+    return axios.get(`${API_URL}/transaction-monitoring/high-risk`, {
+      params: { limit, transactionType, minRiskScore }
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const updateTransactionStatus = (transactionId, status, notes = '') => {
+  try {
+    return axios.post(`${API_URL}/transaction/:id/status`.replace(':id', transactionId), {
+      status,
+      notes
+    });
+  } catch (error) {
+    throw error;
+  }
+};

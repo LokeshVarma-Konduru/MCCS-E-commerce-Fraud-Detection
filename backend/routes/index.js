@@ -4,7 +4,7 @@ import { getAllTeamMembers} from "../controllers/team.js";
 import { login, verifyLoginOTP, logout, updatePassword } from '../controllers/authController.js';
 import { getUserInfo } from "../controllers/userController.js";
 import { addUsers, getAllUsers, deleteUser, toggleUserStatus } from '../controllers/adminController.js';
-import { predictTransaction, getTransactions, getTransactionById } from '../controllers/transactionController.js';
+import { predictTransaction, getTransactions, getTransactionById, updateTransactionStatus, getFraudTrends as getTransactionFraudTrends, getHighRiskTransactions, migrateTransactions } from '../controllers/transactionController.js';
 import authMiddleware from '../middleware/auth.js';
 import adminMiddleware from '../middleware/admin.js';
 import { getAllModels, getModelById } from '../controllers/mlModelController.js';
@@ -57,5 +57,11 @@ router.get('/store-manager/alerts', authMiddleware, getRecentAlerts);
 router.post('/predict', validateApiKey, logApiCall, predictTransaction);
 router.get('/transactions', getTransactions);
 router.get('/transaction/:id', getTransactionById);
+router.post('/transaction/:id/status', authMiddleware, updateTransactionStatus);
+router.get('/transaction-monitoring/fraud-trends', authMiddleware, getTransactionFraudTrends);
+router.get('/transaction-monitoring/high-risk', authMiddleware, getHighRiskTransactions);
+
+// Migration endpoint - only for development/admin use
+router.post('/migrate-transactions', migrateTransactions);
 
 export default router;
