@@ -1,12 +1,14 @@
 /* Custom styles for Contact page */
 .contact-container {
+  width: 100vw;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   min-height: 100vh;
   background-color: #1a1a1a;
-  padding: 0; /* Remove padding to fill the screen */
-  margin: 0; /* Remove margin to fill the screen */
 }
 
 .contact-content {
@@ -15,7 +17,7 @@
   justify-content: space-between; /* Distribute space */
   align-items: stretch;
   padding: 2rem;
-  width: 100%; /* Ensure it fills the width */
+  width: 100vw; /* Ensure it fills the viewport width */
   gap: 2rem;
 }
 

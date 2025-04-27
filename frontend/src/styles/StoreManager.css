@@ -1,8 +1,17 @@
 .store-manager-container {
-  padding: 24px;
+  padding: 24px 24px 0 24px; /* Remove bottom padding to allow footer to extend fully */
   background-color: #f8fafc;
   min-height: calc(100vh - 64px); /* Subtract navbar height */
   margin-top: 64px; /* Add margin for navbar */
+  width: 100%;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+/* Footer styling for Store Manager page */
+.store-manager-container footer {
+  margin: 0 -24px; /* Extend beyond container padding */
+  width: calc(100% + 48px); /* Ensure full width accounting for container padding */
+  max-width: none; /* Override any max-width constraints */
 }
 
 .nav-tabs {

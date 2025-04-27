@@ -12,7 +12,10 @@ import {
   Legend,
 } from 'chart.js';
 import '../styles/StoreManager.css';
+import '../styles/Report.css';
 import { getStoreManagerStats, getFraudTrends, getTransactionTypeDistribution, getRecentAlerts } from '../api';
+import StoreManagerReport from '../components/StoreManagerReport';
+import Footer from '../components/Footer';
 
 ChartJS.register(
   CategoryScale,
@@ -31,6 +34,7 @@ const StoreManager = () => {
   const [transactionType, setTransactionType] = useState('All Transactions');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showReport, setShowReport] = useState(false);
   
   // State for real data
   const [stats, setStats] = useState({
@@ -337,8 +341,8 @@ const StoreManager = () => {
               <option>In-store</option>
             </select>
           </div>
-          <button className="export-btn">
-            Export Report
+          <button className="export-btn" onClick={() => setShowReport(!showReport)}>
+            {showReport ? 'Hide Report' : 'Generate Report'}
           </button>
         </div>
 
@@ -474,6 +478,28 @@ const StoreManager = () => {
           )}
         </div>
       </div>
+
+      {/* Report View */}
+      {showReport && (
+        <div className="report-view" style={{ 
+          background: 'white', 
+          padding: '32px', 
+          borderRadius: '12px',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
+          margin: '24px 0'
+        }}>
+          <StoreManagerReport 
+            data={{
+              period: timeRange,
+              fraudTrendData,
+              transactionTypesData,
+              stats,
+              recentAlerts
+            }} 
+          />
+        </div>
+      )}
+      <Footer />
     </div>
   );
 };
