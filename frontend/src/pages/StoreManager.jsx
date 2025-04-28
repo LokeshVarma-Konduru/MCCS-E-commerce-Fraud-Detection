@@ -316,7 +316,8 @@ const StoreManager = () => {
         </button>
       </div>
 
-      <div className="dashboard-content">
+      {activeTab === 'dashboard' && (
+        <div className="dashboard-content">
         {/* Filters */}
         <div className="filters">
           <div className="filter-group">
@@ -478,9 +479,44 @@ const StoreManager = () => {
           )}
         </div>
       </div>
+      )}
+
+      {/* Reports Tab Content */}
+      {activeTab === 'reports' && (
+        <div className="coming-soon-container">
+          <div className="coming-soon-card">
+            <h2>Reports Feature Coming Soon</h2>
+            <p>In the future, you'll be able to view all past reports here, including:</p>
+            <ul>
+              <li>Monthly fraud detection summaries</li>
+              <li>Transaction type analysis</li>
+              <li>Risk assessment reports</li>
+              <li>Custom date range reports</li>
+            </ul>
+            <p>Stay tuned for these exciting features!</p>
+          </div>
+        </div>
+      )}
+
+      {/* Alerts Tab Content */}
+      {activeTab === 'alerts' && (
+        <div className="coming-soon-container">
+          <div className="coming-soon-card">
+            <h2>Alerts Feature Coming Soon</h2>
+            <p>Soon you'll be able to:</p>
+            <ul>
+              <li>Set up custom alert thresholds</li>
+              <li>Receive notifications for high-risk transactions</li>
+              <li>Configure alert delivery methods (email, SMS, in-app)</li>
+              <li>Create alert rules based on transaction patterns</li>
+            </ul>
+            <p>We're working hard to bring you these capabilities!</p>
+          </div>
+        </div>
+      )}
 
       {/* Report View */}
-      {showReport && (
+      {showReport && activeTab === 'dashboard' && (
         <div className="report-view" style={{ 
           background: 'white', 
           padding: '32px', 
