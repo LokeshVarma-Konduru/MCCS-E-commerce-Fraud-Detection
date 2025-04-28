@@ -1,8 +1,8 @@
 /* eslint-disable no-useless-catch */
 import axios from 'axios';
 
-export const API_URL = 'http://localhost:9000/mccs';
-// const API_URL = 'http://35.164.210.165:9000/mccs';
+// const API_URL = 'http://localhost:9000/mccs';
+const API_URL = 'http://35.164.210.165:9000/mccs';
 
 // Configure axios defaults
 axios.defaults.withCredentials = true;
