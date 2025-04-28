@@ -13,6 +13,8 @@ import APIIntegration from './pages/APIIntegration';
 import ModelPerformance from './pages/ModelPerformance';
 import TransactionMonitoring from './pages/TransactionMonitoring';
 import StoreManager from './pages/StoreManager.jsx';
+import Help from './pages/Help.jsx';
+import ApiDocs from './pages/ApiDocs.jsx';
 import { getUserInfo } from './api.js';
 
 // Protected Route Component
@@ -290,6 +292,22 @@ const App = () => {
               </DeveloperRoute>
             }
           />
+          <Route
+            path="/help"
+            element={
+              <ProtectedRoute>
+                <Help />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/api-docs"
+            element={
+              <ProtectedRoute>
+                <ApiDocs />
+              </ProtectedRoute>
+          }
+        />
         </Routes>
       </div>
     </BrowserRouter>

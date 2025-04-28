@@ -177,6 +177,13 @@ const Navbar = () => {
                   Store Manager
                 </li>
               )}
+
+              <li 
+                className={currentPath === '/help' ? 'active' : ''}
+                onClick={(e) => handleNavigation('/help', e)}
+              >
+                Help & Documentation
+              </li>
               
               {/* About Us - Visible to all roles */}
               <li 
