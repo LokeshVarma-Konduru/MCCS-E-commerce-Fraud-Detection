@@ -89,7 +89,9 @@ export const regenerateApiKey = async (req, res) => {
     }
     
     // Generate new key
-    existingKey.key = undefined; // Let the default function generate a new key
+    // Instead of setting to undefined, generate a new UUID directly
+    const { v4: uuidv4 } = await import('uuid');
+    existingKey.key = uuidv4().replace(/-/g, '');
     existingKey.createdAt = Date.now();
     
     await existingKey.save();

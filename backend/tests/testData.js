@@ -11,7 +11,7 @@ export const users = [
     },
     {
       _id: "675fa5bbb727d03a130a9af6",
-      email: "k.lokeshvarma26@gmail.com",
+      email: "lokeshvarmakonduru2001@gmail.com",
       password: "$2b$10$iulj.ZTeOsxh8LbwmAa5Mu45J7M7S/fFnH/xOfhmITTz9y7APTsQO", // 941d1349
       name: "Lokesh Varma Konduru",
       role: "Developer",
