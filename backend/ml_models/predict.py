@@ -3,6 +3,14 @@ import json
 import os
 import joblib
 import pandas as pd
+import boto3
+import tempfile
+import logging
+from botocore.exceptions import ClientError
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 current_dir = os.path.dirname(__file__)
 
@@ -13,10 +21,56 @@ def load_model(model_name):
         pipeline = joblib.load(model_path)
         return pipeline
     elif model_name == "bernoulli-nb":
-        # Bernoulli NB pipeline
-        model_path = os.path.join(current_dir, "bernoulli_nb.pkl")
-        pipeline = joblib.load(model_path)
-        return pipeline
+        # Bernoulli NB pipeline from S3
+        bucket_name = 'cs5926-g1-s3'
+        model_key = 'Model_Files/bernoulli_nb.pkl'
+        s3_url = f"https://{bucket_name}.s3.us-west-2.amazonaws.com/{model_key}"
+        
+        try:
+            # Create an S3 client with region specified
+            s3_client = boto3.client('s3', region_name='us-west-2')
+            
+            logger.info(f"Attempting to download model from S3: {s3_url}")
+            
+            # Create a temporary file to store the downloaded model
+            with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+                # Download the model from S3 to the temporary file
+                s3_client.download_file(bucket_name, model_key, temp_file.name)
+                logger.info(f"Successfully downloaded model from S3 to {temp_file.name}")
+                
+                # Load the model from the temporary file
+                pipeline = joblib.load(temp_file.name)
+                logger.info("Successfully loaded model from temporary file")
+                
+                # Remove the temporary file
+                os.unlink(temp_file.name)
+                logger.info("Removed temporary file")
+                
+                return pipeline
+                
+        except ClientError as e:
+            error_code = e.response['Error']['Code']
+            error_message = e.response['Error']['Message']
+            logger.error(f"AWS S3 error: {error_code} - {error_message}")
+            print(f"AWS S3 error: {error_code} - {error_message}", file=sys.stderr)
+            
+            # Fallback to local file if S3 fails
+            logger.warning("Falling back to local model file")
+            print("Falling back to local model file", file=sys.stderr)
+            model_path = os.path.join(current_dir, "bernoulli_nb.pkl")
+            pipeline = joblib.load(model_path)
+            return pipeline
+            
+        except Exception as e:
+            logger.error(f"Error loading model from S3: {str(e)}")
+            print(f"Error loading model from S3: {str(e)}", file=sys.stderr)
+            
+            # Fallback to local file if S3 fails
+            logger.warning("Falling back to local model file")
+            print("Falling back to local model file", file=sys.stderr)
+            model_path = os.path.join(current_dir, "bernoulli_nb.pkl")
+            pipeline = joblib.load(model_path)
+            return pipeline
     elif model_name == "decision-tree":
         # Decision Tree pipeline
         model_path = os.path.join(current_dir, "decision_tree.pkl")
