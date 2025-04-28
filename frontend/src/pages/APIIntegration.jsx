@@ -72,7 +72,7 @@ const APIIntegration = () => {
   useEffect(() => {
     if (apiKey && selectedModel) {
       console.log("Updating API URL with model:", selectedModel);
-      setApiUrl(`http://localhost:9000/mccs/predict?apikey=${apiKey}&model=${selectedModel}`);
+      setApiUrl(`http://35.164.210.165:9000/mccs/predict?apikey=${apiKey}&model=${selectedModel}`);
     }
   }, [apiKey, selectedModel]);
 
