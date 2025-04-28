@@ -248,28 +248,38 @@ export const predictTransaction = async (req, res) => {
     }
   };
   
-  export const getTransactionById = async (req, res) => {
-    try {
-      const { id } = req.params;
-      const transaction = await Transaction.findById(id);
-      if (!transaction) {
-        return res.status(404).json({ 
-          success: false,
-          error: 'Transaction not found' 
-        });
-      }
-      res.json({ 
-        success: true,
-        transaction 
-      });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ 
+export const getTransactionById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Check if ID is a valid MongoDB ObjectId format
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
         success: false,
-        error: 'Server error' 
+        error: 'Invalid transaction ID format'
       });
     }
-  };
+    
+    const transaction = await Transaction.findById(id);
+    
+    if (!transaction) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Transaction not found' 
+      });
+    }
+    res.json({ 
+      success: true,
+      transaction 
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Server error' 
+    });
+  }
+};
 
 // Update transaction status (approve/reject/under_review)
 export const updateTransactionStatus = async (req, res) => {

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import { FaHome, FaKey, FaHistory, FaBook, FaCopy, FaSync, FaChartLine, FaExchangeAlt, FaCode } from 'react-icons/fa';
 import '../styles/Developer.css';
-import { getApiKey, generateApiKey, regenerateApiKey, predictTransaction, getMLModelMetrics } from '../api';
+import { getApiKey, generateApiKey, regenerateApiKey, predictTransaction, getMLModelMetrics, API_URL } from '../api';
 
 const APIIntegration = () => {
   const [apiKey, setApiKey] = useState('');
@@ -72,7 +72,8 @@ const APIIntegration = () => {
   useEffect(() => {
     if (apiKey && selectedModel) {
       console.log("Updating API URL with model:", selectedModel);
-      setApiUrl(`http://35.164.210.165:9000/mccs/predict?apikey=${apiKey}&model=${selectedModel}`);
+      // Use the API_URL imported from api.js
+      setApiUrl(`${API_URL}/predict?apikey=${apiKey}&model=${selectedModel}`);
     }
   }, [apiKey, selectedModel]);
 

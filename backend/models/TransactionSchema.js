@@ -3,18 +3,18 @@ import mongoose from 'mongoose';
 
 const transactionSchema = new mongoose.Schema({
   transactionAmount: { type: Number, required: true },
-  paymentMethod: { type: String, required: true },
-  productCategory: { type: String, required: true },
+  paymentMethod: { type: String, enum: ['credit card', 'debit card', 'bank transfer', 'PayPal'], required: true },
+  productCategory: { type: String, enum: ['electronics', 'home & garden', 'clothing', 'toys & games', 'health & beauty'], required: true },
   quantity: { type: Number, required: true },
   customerAge: { type: Number, required: true },
-  deviceUsed: { type: String, required: true },
+  deviceUsed: { type: String, enum: ['mobile', 'desktop', 'tablet'], required: true },
   accountAgeDays: { type: Number, required: true },
   transactionHour: { type: Number, required: true },
   transactionDay: { type: Number, required: true },
   transactionDOW: { type: Number, required: true },
   transactionMonth: { type: Number, required: true },
   isAddressMatch: { type: Number, required: true },
-  modelUsed: { type: String, required: true },
+  modelUsed: { type: String, enum: ['logistic-regression', 'bernoulli-nb', 'xgboost', 'decision-tree'], required: true },
   
   // Add transaction type (online or in-store)
   transactionType: { 
