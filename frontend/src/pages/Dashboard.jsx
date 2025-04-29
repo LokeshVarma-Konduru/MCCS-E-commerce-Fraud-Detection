@@ -16,6 +16,11 @@ const MetricCard = ({ title, value, icon }) => (
 );
 
 const ConfusionMatrix = ({ matrix }) => {
+  // Add null check for matrix
+  if (!matrix || !Array.isArray(matrix) || matrix.length < 2) {
+    return <div className="error-message">Confusion matrix data is missing or invalid</div>;
+  }
+  
   const data = [
     {
       id: 'Actual: Not Fraud',
@@ -140,6 +145,10 @@ const ConfusionMatrix = ({ matrix }) => {
 };
 
 const PlotVisualization = ({ plot }) => {
+  // Add null check for plot object
+  if (!plot) {
+    return <div className="error-message">Plot data is missing or invalid</div>;
+  }
   const { data, layout, type } = plot;
   
   // Function to get formatted title based on plot type
@@ -210,8 +219,9 @@ const PlotVisualization = ({ plot }) => {
   }
 
   // Create a deep copy of layout and modify it for dark theme
+  // Check if layout is defined before accessing its properties
   const darkLayout = {
-    ...layout,
+    ...(layout || {}),
     paper_bgcolor: '#2d2d2d',
     plot_bgcolor: '#383838',
     margin: {
@@ -237,9 +247,9 @@ const PlotVisualization = ({ plot }) => {
       yanchor: 'top'
     },
     xaxis: {
-      ...layout.xaxis,
+      ...(layout && layout.xaxis ? layout.xaxis : {}),
       title: {
-        ...layout?.xaxis?.title,
+        ...(layout && layout.xaxis && layout.xaxis.title ? layout.xaxis.title : {}),
         font: {
           color: '#ffffff',
           size: 14
@@ -254,9 +264,9 @@ const PlotVisualization = ({ plot }) => {
       }
     },
     yaxis: {
-      ...layout.yaxis,
+      ...(layout && layout.yaxis ? layout.yaxis : {}),
       title: {
-        ...layout?.yaxis?.title,
+        ...(layout && layout.yaxis && layout.yaxis.title ? layout.yaxis.title : {}),
         font: {
           color: '#ffffff',
           size: 14
