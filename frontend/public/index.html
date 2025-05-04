@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>MCCS Quantico</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // Handle SPA routing for deployed applications
+      (function() {
+        // No need to redirect if using hash router
+        if (window.location.hash) {
+          return;
+        }
+        
+        // Check if this is a direct navigation to a specific route
+        const path = window.location.pathname;
+        if (path !== '/' && !path.includes('.')) {
+          window.history.replaceState(null, null, 
+            window.location.origin + '/#' + path + 
+            window.location.search + 
+            window.location.hash
+          );
+        }
+      })();
+    </script>
+  </body>
+</html>
