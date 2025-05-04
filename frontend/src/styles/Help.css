@@ -1,23 +1,27 @@
 .help-container {
-  background: #1a1a1a;
+  background: #f8fafc;
   min-height: 100vh;
-  color: #e5e7eb;
-  padding-bottom: 40px;
+  color: #1e293b;
+  padding-bottom: 0; /* Removed padding to allow footer to stick to bottom */
+  display: flex;
+  flex-direction: column;
 }
 
 .help-content {
   max-width: 1200px;
   margin: 0 auto;
   padding-top: 80px; /* Space for navbar */
+  flex: 1; /* Take up available space */
 }
 
 /* Hero Section */
 .help-hero {
-  background: #222222;
+  background: white;
   padding: 40px 32px;
-  border-radius: 8px;
+  border-radius: 12px;
   margin: 24px 32px;
   text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .hero-content {
@@ -28,34 +32,35 @@
 .hero-icon {
   font-size: 32px;
   margin-bottom: 16px;
-  color: white;
+  color: #4a90e2;
 }
 
 .help-hero h1 {
   font-size: 28px;
   font-weight: 600;
   margin-bottom: 12px;
-  color: white;
+  color: #1e293b;
 }
 
 .help-hero p {
   font-size: 16px;
-  color: #a0aec0;
+  color: #64748b;
   margin: 0;
 }
 
 /* Main Content */
 .help-main {
-  background: #222222;
-  border-radius: 8px;
+  background: white;
+  border-radius: 12px;
   margin: 24px 32px;
   padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 /* Tab Navigation */
 .help-tabs {
   display: flex;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid #e2e8f0;
   margin-bottom: 24px;
   overflow-x: auto;
   padding-bottom: 4px;
@@ -65,7 +70,7 @@
   display: flex;
   align-items: center;
   background: transparent;
-  color: #a0aec0;
+  color: #64748b;
   border: none;
   padding: 8px 16px;
   font-size: 14px;
@@ -76,12 +81,12 @@
 }
 
 .tab-button:hover {
-  color: #e5e7eb;
+  color: #1e293b;
 }
 
 .tab-button.active {
-  color: #e5e7eb;
-  border-bottom: 2px solid #2c3e50;
+  color: #1e293b;
+  border-bottom: 2px solid #4a90e2;
 }
 
 .tab-icon {
@@ -96,7 +101,7 @@
   font-size: 20px;
   font-weight: 600;
   margin-bottom: 20px;
-  color: #e5e7eb;
+  color: #1e293b;
 }
 
 .faq-list {
@@ -106,9 +111,11 @@
 }
 
 .faq-item {
-  background: #2d2d2d;
+  background: white;
   border-radius: 6px;
   overflow: hidden;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 8px;
 }
 
 .faq-question {
@@ -121,29 +128,29 @@
 }
 
 .faq-question:hover {
-  background-color: #333;
+  background-color: #f1f5f9;
 }
 
 .faq-question.active {
-  background-color: #333;
+  background-color: #f1f5f9;
 }
 
 .faq-question h3 {
   font-size: 15px;
   font-weight: 500;
   margin: 0;
-  color: #e5e7eb;
+  color: #1e293b;
 }
 
 .toggle-icon {
   font-size: 18px;
-  color: #e5e7eb;
+  color: #4a90e2;
   font-weight: bold;
 }
 
 .faq-answer {
   padding: 0 16px 16px;
-  color: #a0aec0;
+  color: #64748b;
   line-height: 1.5;
 }
 
@@ -161,9 +168,11 @@
 }
 
 .documentation-item {
-  background: #2d2d2d;
+  background: white;
   border-radius: 6px;
   padding: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .documentation-header {
@@ -171,24 +180,24 @@
   align-items: center;
   margin-bottom: 12px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #444;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .doc-icon {
   font-size: 18px;
   margin-right: 10px;
-  color: #e5e7eb;
+  color: #4a90e2;
 }
 
 .documentation-header h3 {
   font-size: 16px;
   font-weight: 600;
   margin: 0;
-  color: #e5e7eb;
+  color: #1e293b;
 }
 
 .documentation-content {
-  color: #a0aec0;
+  color: #64748b;
   line-height: 1.5;
   font-size: 14px;
 }
@@ -197,14 +206,14 @@
   font-size: 15px;
   font-weight: 600;
   margin: 0 0 8px 0;
-  color: #e5e7eb;
+  color: #1e293b;
 }
 
 .documentation-content h4 {
   font-size: 14px;
   font-weight: 600;
   margin: 12px 0 6px 0;
-  color: #e5e7eb;
+  color: #1e293b;
 }
 
 .documentation-content p {
@@ -222,13 +231,13 @@
 }
 
 .documentation-content strong {
-  color: #e5e7eb;
+  color: #1e293b;
   font-weight: 600;
 }
 
 /* Glossary Section */
 .glossary-intro {
-  color: #a0aec0;
+  color: #64748b;
   margin-bottom: 16px;
   font-size: 14px;
 }
@@ -240,22 +249,24 @@
 }
 
 .glossary-item {
-  background: #2d2d2d;
+  background: white;
   border-radius: 6px;
   padding: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .glossary-term {
   font-size: 15px;
   font-weight: 600;
   margin: 0 0 8px 0;
-  color: #e5e7eb;
+  color: #1e293b;
   padding-bottom: 6px;
-  border-bottom: 1px solid #444;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .glossary-definition {
-  color: #a0aec0;
+  color: #64748b;
   margin: 0;
   line-height: 1.5;
   font-size: 14px;
@@ -263,10 +274,12 @@
 
 /* API Banner */
 .api-banner {
-  background: #2d2d2d;
+  background: white;
   border-radius: 6px;
   margin-bottom: 24px;
   overflow: hidden;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .api-banner-content {
@@ -277,7 +290,7 @@
 
 .api-banner-icon {
   font-size: 24px;
-  color: #e5e7eb;
+  color: #4a90e2;
   margin-right: 16px;
 }
 
@@ -289,17 +302,17 @@
   font-size: 16px;
   font-weight: 600;
   margin: 0 0 4px 0;
-  color: #e5e7eb;
+  color: #1e293b;
 }
 
 .api-banner-text p {
   font-size: 14px;
-  color: #a0aec0;
+  color: #64748b;
   margin: 0;
 }
 
 .api-banner-button {
-  background: #2c3e50;
+  background: #4a90e2;
   color: white;
   border: none;
   border-radius: 4px;
@@ -315,7 +328,7 @@
 }
 
 .api-banner-button:hover {
-  background: #3c5c7a;
+  background: #3a7bc8;
 }
 
 .api-docs-link {
@@ -326,25 +339,27 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: #e5e7eb;
+  color: white;
   text-decoration: none;
   font-size: 14px;
   padding: 6px 12px;
-  background: #2c3e50;
+  background: #4a90e2;
   border-radius: 4px;
   transition: background-color 0.2s ease;
 }
 
 .api-docs-link a:hover {
-  background: #3c5c7a;
+  background: #3a7bc8;
 }
 
 /* Tips Section */
 .tips-section {
   margin-top: 24px;
-  background: #2d2d2d;
-  border-radius: 6px;
+  background: white;
+  border-radius: 12px;
   padding: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .tip-header {
@@ -363,7 +378,7 @@
   font-size: 16px;
   font-weight: 600;
   margin: 0;
-  color: #e5e7eb;
+  color: #1e293b;
 }
 
 .tips-content {
@@ -373,21 +388,22 @@
 }
 
 .tip-item {
-  background: #222222;
+  background: #f8fafc;
   border-radius: 6px;
   padding: 12px;
+  border: 1px solid #e2e8f0;
 }
 
 .tip-item h4 {
   font-size: 14px;
   font-weight: 500;
   margin: 0 0 8px 0;
-  color: #e5e7eb;
+  color: #1e293b;
 }
 
 .tip-item p {
   margin: 0;
-  color: #a0aec0;
+  color: #64748b;
   line-height: 1.5;
   font-size: 13px;
 }

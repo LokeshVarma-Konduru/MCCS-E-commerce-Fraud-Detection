@@ -43,13 +43,13 @@ const ConfusionMatrix = ({ matrix }) => {
     const predicted = cell.data.x.replace('Predicted: ', '');
     return (
       <div style={{
-        background: '#2d2d2d',
+        background: 'white',
         padding: '8px 12px',
-        border: '1px solid #ffffff33',
+        border: '1px solid #e2e8f0',
         borderRadius: '4px',
-        color: 'white',
+        color: '#1e293b',
         fontSize: '12px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
       }}>
         <div><strong>Actual:</strong> {actual}</div>
         <div><strong>Predicted:</strong> {predicted}</div>
@@ -218,12 +218,12 @@ const PlotVisualization = ({ plot }) => {
     }
   }
 
-  // Create a deep copy of layout and modify it for dark theme
+  // Create a deep copy of layout and modify it for white theme
   // Check if layout is defined before accessing its properties
   const darkLayout = {
     ...(layout || {}),
-    paper_bgcolor: '#2d2d2d',
-    plot_bgcolor: '#383838',
+    paper_bgcolor: 'white',
+    plot_bgcolor: '#f8fafc',
     margin: {
       l: type.includes('Feature_Importance') ? 200 : 80,
       r: 50,
@@ -231,13 +231,13 @@ const PlotVisualization = ({ plot }) => {
       b: 50
     },
     font: {
-      color: '#ffffff',
+      color: '#1e293b',
       size: 12
     },
     title: {
       text: getPlotTitle(type),
       font: {
-        color: '#ffffff',
+        color: '#1e293b',
         size: 18,
         weight: 'bold'
       },
@@ -251,15 +251,15 @@ const PlotVisualization = ({ plot }) => {
       title: {
         ...(layout && layout.xaxis && layout.xaxis.title ? layout.xaxis.title : {}),
         font: {
-          color: '#ffffff',
+          color: '#1e293b',
           size: 14
         },
         standoff: 20
       },
-      gridcolor: '#4f4f4f',
-      zerolinecolor: '#4f4f4f',
+      gridcolor: '#e2e8f0',
+      zerolinecolor: '#cbd5e1',
       tickfont: {
-        color: '#ffffff',
+        color: '#1e293b',
         size: 12
       }
     },
@@ -268,15 +268,15 @@ const PlotVisualization = ({ plot }) => {
       title: {
         ...(layout && layout.yaxis && layout.yaxis.title ? layout.yaxis.title : {}),
         font: {
-          color: '#ffffff',
+          color: '#1e293b',
           size: 14
         },
         standoff: 20
       },
-      gridcolor: '#4f4f4f',
-      zerolinecolor: '#4f4f4f',
+      gridcolor: '#e2e8f0',
+      zerolinecolor: '#cbd5e1',
       tickfont: {
-        color: '#ffffff',
+        color: '#1e293b',
         size: 12
       }
     },
@@ -287,7 +287,7 @@ const PlotVisualization = ({ plot }) => {
       xanchor: 'center',
       orientation: 'h',
       font: {
-        color: '#ffffff',
+        color: '#1e293b',
         size: 12
       }
     },
@@ -498,15 +498,15 @@ const Dashboard = () => {
                 }
               ]}
               layout={{
-                paper_bgcolor: '#2d2d2d',
-                plot_bgcolor: '#383838',
+                paper_bgcolor: 'white',
+                plot_bgcolor: '#f8fafc',
                 font: {
-                  color: '#ffffff'
+                  color: '#1e293b'
                 },
                 title: {
                   text: 'ROC Curve',
                   font: {
-                    color: '#ffffff',
+                    color: '#1e293b',
                     size: 16
                   }
                 },
@@ -514,20 +514,20 @@ const Dashboard = () => {
                   title: {
                     text: 'False Positive Rate'
                   },
-                  gridcolor: '#4a4a4a',
-                  zerolinecolor: '#4a4a4a',
+                  gridcolor: '#e2e8f0',
+                  zerolinecolor: '#cbd5e1',
                   tickfont: {
-                    color: '#ffffff'
+                    color: '#1e293b'
                   }
                 },
                 yaxis: {
                   title: {
                     text: 'True Positive Rate'
                   },
-                  gridcolor: '#4a4a4a',
-                  zerolinecolor: '#4a4a4a',
+                  gridcolor: '#e2e8f0',
+                  zerolinecolor: '#cbd5e1',
                   tickfont: {
-                    color: '#ffffff'
+                    color: '#1e293b'
                   }
                 }
               }}
@@ -558,15 +558,15 @@ const Dashboard = () => {
                 }
               ]}
               layout={{
-                paper_bgcolor: '#2d2d2d',
-                plot_bgcolor: '#383838',
+                paper_bgcolor: 'white',
+                plot_bgcolor: '#f8fafc',
                 font: {
-                  color: '#ffffff'
+                  color: '#1e293b'
                 },
                 title: {
                   text: 'Precision-Recall Curve',
                   font: {
-                    color: '#ffffff',
+                    color: '#1e293b',
                     size: 16
                   }
                 },
@@ -574,20 +574,20 @@ const Dashboard = () => {
                   title: {
                     text: 'Recall'
                   },
-                  gridcolor: '#4a4a4a',
-                  zerolinecolor: '#4a4a4a',
+                  gridcolor: '#e2e8f0',
+                  zerolinecolor: '#cbd5e1',
                   tickfont: {
-                    color: '#ffffff'
+                    color: '#1e293b'
                   }
                 },
                 yaxis: {
                   title: {
                     text: 'Precision'
                   },
-                  gridcolor: '#4a4a4a',
-                  zerolinecolor: '#4a4a4a',
+                  gridcolor: '#e2e8f0',
+                  zerolinecolor: '#cbd5e1',
                   tickfont: {
-                    color: '#ffffff'
+                    color: '#1e293b'
                   }
                 }
               }}
@@ -609,11 +609,11 @@ const Dashboard = () => {
               <table className="metrics-table">
                 <thead>
                   <tr>
-                    <th>Class</th>
-                    <th>Precision</th>
-                    <th>Recall</th>
-                    <th>F1-Score</th>
-                    <th>Support</th>
+                    <th>CLASS</th>
+                    <th>PRECISION</th>
+                    <th>RECALL</th>
+                    <th>F1-SCORE</th>
+                    <th>SUPPORT</th>
                   </tr>
                 </thead>
                 <tbody>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FaKey, FaCode, FaExclamationTriangle, FaLock, FaServer, FaExchangeAlt, FaShieldAlt } from 'react-icons/fa';
 import '../styles/ApiDocs.css';
+import Footer from '../components/Footer';
 
 const ApiDocs = () => {
   const [activeEndpoint, setActiveEndpoint] = useState('authenticate');
@@ -364,6 +365,7 @@ const ApiDocs = () => {
           <p>For additional support, contact the MCCS Developer Support Team at <a href="mailto:mccs-dev-support@usmc.mil">mccs-dev-support@usmc.mil</a></p>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

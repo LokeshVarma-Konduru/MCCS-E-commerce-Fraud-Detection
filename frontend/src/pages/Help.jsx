@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { FaQuestionCircle, FaLightbulb, FaChartLine, FaChartPie, FaUserShield, 
   FaCode, FaStore, FaKey, FaExclamationTriangle, FaLock, FaDatabase, 
   FaClipboardCheck, FaChartBar, FaList, FaTools, FaPlus, FaMinus, FaBook, FaExternalLinkAlt } from 'react-icons/fa';
+import Footer from '../components/Footer';
 
 const Help = () => {
   const [activeTab, setActiveTab] = useState('admin');
@@ -429,6 +430,7 @@ const Help = () => {
           )}
         </div>
       </div>
+      <Footer />
     </div>
   );
 };
