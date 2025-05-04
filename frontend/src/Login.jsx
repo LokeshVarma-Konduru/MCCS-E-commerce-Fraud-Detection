@@ -3,8 +3,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login, verifyLoginOTP, getUserInfo } from './api';
-import logo from './assets/logo.jpg';
-
+import logo from './assets/logo.png';
 const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');

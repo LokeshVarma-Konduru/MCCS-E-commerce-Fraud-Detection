@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { FaLightbulb, FaChartLine, FaChartPie, FaUserShield, 
   FaCode, FaStore, FaKey, FaExclamationTriangle, FaLock, FaDatabase, 
   FaClipboardCheck, FaChartBar, FaList, FaTools, FaPlus, FaMinus, FaBook, FaExternalLinkAlt } from 'react-icons/fa';
-import mccsLogo from '../assets/logo.jpg';
+import mccsLogo from '../assets/logo.png';
 
 const Help = () => {
   const [activeTab, setActiveTab] = useState('admin');

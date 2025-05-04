@@ -16,7 +16,7 @@ import {
 import { FaFilePdf, FaChartLine, FaExchangeAlt, FaChartPie, FaExclamationTriangle, FaLightbulb } from 'react-icons/fa';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import logo from '../assets/logo.jpg';
+import logo from '../assets/logo.png';
 
 ChartJS.register(
   CategoryScale,

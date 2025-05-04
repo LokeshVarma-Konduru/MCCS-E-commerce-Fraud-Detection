@@ -1,5 +1,5 @@
 import React from 'react';
-import logo from '../assets/logo.jpg';
+import logo from '../assets/logo.png';
 import '../styles/Contact.css';
 import { FaEnvelope, FaPhone, FaClock, FaMapMarkerAlt } from 'react-icons/fa';
 

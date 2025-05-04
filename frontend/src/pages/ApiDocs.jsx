@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FaKey, FaCode, FaExclamationTriangle, FaLock, FaServer, FaExchangeAlt, FaShieldAlt } from 'react-icons/fa';
 import '../styles/ApiDocs.css';
-import mccsLogo from '../assets/logo.jpg';
+import mccsLogo from '../assets/logo.png';
 
 const ApiDocs = () => {
   const [activeEndpoint, setActiveEndpoint] = useState('authenticate');
