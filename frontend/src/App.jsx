@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-unused-vars
 import React from 'react';
 import PropTypes from 'prop-types';
-import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Dashboard from './pages/Dashboard.jsx';
 import Login from './Login.jsx';
 import Navbar from './components/Navbar.jsx';
@@ -218,7 +218,7 @@ const DashboardContent = () => {
 
 const App = () => {
   return (
-    <HashRouter>
+    <BrowserRouter>
       <div className="app">
         <Routes>
           <Route path="/login" element={<Login />} />
@@ -313,7 +313,7 @@ const App = () => {
         />
         </Routes>
       </div>
-    </HashRouter>
+    </BrowserRouter>
   );
 };
 
