@@ -160,8 +160,132 @@ export const predictTransaction = async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Allow filtering by model, prediction value, status, and other parameters
-    const { model, prediction, status, userId, startDate, endDate, productCategory, paymentMethod, transactionType, minRiskScore, maxRiskScore, minAmount, maxAmount } = req.query;
+    const { model, prediction, status, userId, startDate, endDate, productCategory, paymentMethod, transactionType, minRiskScore, maxRiskScore, minAmount, maxAmount, search } = req.query;
     const filter = {};
+    
+    // Add search functionality for transaction ID, amount, or status
+    if (search) {
+      try {
+        const searchTerm = search.trim();
+        
+        // Check if search term is a number (for amount)
+        const isNumber = !isNaN(parseFloat(searchTerm)) && isFinite(searchTerm);
+        
+        // Build the base filter for non-search related filters
+        const baseFilter = {};
+        
+        if (model) baseFilter.modelUsed = model;
+        if (prediction !== undefined) baseFilter.predictions = { $in: [Number(prediction)] };
+        if (status) baseFilter.status = status;
+        if (userId) baseFilter.userId = userId;
+        if (productCategory) baseFilter.productCategory = productCategory;
+        if (paymentMethod) baseFilter.paymentMethod = paymentMethod;
+        if (transactionType) baseFilter.transactionType = transactionType;
+        
+        // Date range filter
+        if (startDate || endDate) {
+          baseFilter.createdAt = {};
+          if (startDate) baseFilter.createdAt.$gte = new Date(startDate);
+          if (endDate) {
+            const endOfDay = new Date(endDate);
+            endOfDay.setHours(23, 59, 59, 999);
+            baseFilter.createdAt.$lte = endOfDay;
+          }
+        }
+        
+        // Risk score range filter
+        if (minRiskScore !== undefined || maxRiskScore !== undefined) {
+          baseFilter.riskScore = {};
+          if (minRiskScore !== undefined) baseFilter.riskScore.$gte = Number(minRiskScore);
+          if (maxRiskScore !== undefined) baseFilter.riskScore.$lte = Number(maxRiskScore);
+        }
+        
+        // Amount range filter
+        if (minAmount !== undefined || maxAmount !== undefined) {
+          baseFilter.transactionAmount = {};
+          if (minAmount !== undefined) baseFilter.transactionAmount.$gte = Number(minAmount);
+          if (maxAmount !== undefined) baseFilter.transactionAmount.$lte = Number(maxAmount);
+        }
+        
+        // Create the aggregation pipeline
+        const pipeline = [
+          // First add string versions of fields we want to search
+          { $addFields: { 
+            idString: { $toString: "$_id" },
+            amountString: { $toString: "$transactionAmount" }
+          }}
+        ];
+        
+        // Build search conditions
+        const searchConditions = [];
+        
+        // 1. Search by transaction ID (if it looks like a hex string)
+        if (/^[0-9a-fA-F]{3,}$/.test(searchTerm)) {
+          searchConditions.push({ idString: { $regex: searchTerm, $options: 'i' } });
+        }
+        
+        // 2. Search by amount (if it's a number)
+        if (isNumber) {
+          const numericValue = parseFloat(searchTerm);
+          // Exact match
+          searchConditions.push({ transactionAmount: numericValue });
+          // Partial match
+          searchConditions.push({ amountString: { $regex: searchTerm, $options: 'i' } });
+        }
+        
+        // 3. Search by status
+        searchConditions.push({ status: { $regex: searchTerm, $options: 'i' } });
+        
+        // 4. Search by transaction type
+        searchConditions.push({ transactionType: { $regex: searchTerm, $options: 'i' } });
+        
+        // 5. Search by payment method
+        searchConditions.push({ paymentMethod: { $regex: searchTerm, $options: 'i' } });
+        
+        // Add the search conditions to the pipeline
+        pipeline.push({ $match: { $or: searchConditions } });
+        
+        // Add the base filter if it's not empty
+        if (Object.keys(baseFilter).length > 0) {
+          pipeline.push({ $match: baseFilter });
+        }
+        
+        // Add sorting, pagination, and counting
+        pipeline.push(
+          { $sort: { createdAt: -1 } },
+          { $facet: {
+            // Get paginated transactions
+            paginatedResults: [{ $skip: skip }, { $limit: limit }],
+            // Count total matching documents
+            totalCount: [{ $count: 'count' }]
+          }}
+        );
+        
+        // Execute the aggregation
+        const result = await Transaction.aggregate(pipeline);
+        
+        // Extract results
+        const transactions = result[0].paginatedResults || [];
+        const totalCount = result[0].totalCount.length > 0 ? result[0].totalCount[0].count : 0;
+        
+        return res.json({ 
+          success: true,
+          transactions,
+          pagination: {
+            total: totalCount,
+            page,
+            limit,
+            pages: Math.ceil(totalCount / limit)
+          }
+        });
+      } catch (err) {
+        console.error('Search error:', err);
+        return res.status(500).json({ 
+          success: false,
+          error: 'Server error during search' 
+        });
+      }
+    }
 
     if (model) {
       filter.modelUsed = model;

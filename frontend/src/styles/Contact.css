@@ -1,14 +1,13 @@
 /* Custom styles for Contact page */
 .contact-container {
-  width: 100vw;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+  padding: 24px 24px 0 24px; /* Remove bottom padding to allow footer to extend fully */
+  background-color: #f8fafc;
+  min-height: calc(100vh - 64px); /* Subtract navbar height */
+  margin-top: 64px; /* Add margin for navbar */
+  width: 100%;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-  min-height: 100vh;
-  background-color: #1a1a1a;
 }
 
 .contact-content {
@@ -17,7 +16,7 @@
   justify-content: space-between; /* Distribute space */
   align-items: stretch;
   padding: 2rem;
-  width: 100vw; /* Ensure it fills the viewport width */
+  width: 100%; /* Ensure it fills the container width */
   gap: 2rem;
 }
 
@@ -26,9 +25,9 @@
   max-width: none; /* Allow full width */
   margin: 0; /* Remove margin to fill the screen */
   padding: 2rem;
-  background-color: #222222;
-  border-radius: 10px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
   gap: 2rem;
@@ -47,8 +46,9 @@
   flex-direction: column;
   align-items: center;
   padding: 2rem;
-  background-color: #1a1a1a;
+  background-color: #f8fafc;
   border-radius: 8px;
+  border: 1px solid #e2e8f0;
 }
 
 .logo-section img {
@@ -64,9 +64,9 @@
   flex-direction: column;
   gap: 1.5rem;
   padding: 2rem;
-  background-color: #1a1a1a;
+  background-color: #f8fafc;
   border-radius: 8px;
-  border: 1px solid #333;
+  border: 1px solid #e2e8f0;
   justify-content: space-around; /* Spread content evenly */
 }
 
@@ -78,7 +78,7 @@
 
 .contact-icon {
   font-size: 1.5rem;
-  color: #666;
+  color: #6366f1;
 }
 
 .contact-text {
@@ -88,7 +88,7 @@
 h1 {
   margin-top: 40px; /* Reduce gap between header and navbar */
   text-align: center;
-  color: white;
+  color: #1e293b;
 }
 
 @media (max-width: 768px) {

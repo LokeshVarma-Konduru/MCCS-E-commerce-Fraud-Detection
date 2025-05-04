@@ -40,6 +40,8 @@ const TransactionMonitoring = () => {
   const [fraudScore, setFraudScore] = useState('All Scores');
   const [prediction, setPrediction] = useState('All Predictions');
   const [reviewStatus, setReviewStatus] = useState('All Status');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   
@@ -74,18 +76,31 @@ const TransactionMonitoring = () => {
   // Error states
   const [error, setError] = useState(null);
   
-  // Fetch transactions based on filters
+  // Handle search term debouncing
   useEffect(() => {
-    const fetchTransactions = async () => {
-      setLoadingTransactions(true);
-      setError(null);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Define fetchTransactions function
+  const fetchTransactions = async () => {
+    setLoadingTransactions(true);
+    setError(null);
+    
+    try {
+      // Prepare filter parameters
+      const params = {
+        page,
+        limit
+      };
       
-      try {
-        // Prepare filter parameters
-        const params = {
-          page,
-          limit
-        };
+      // Add search term if provided
+      if (debouncedSearchTerm) {
+        params.search = debouncedSearchTerm;
+      }
         
         // Add prediction filter if selected
         if (prediction !== 'All Predictions') {
@@ -167,11 +182,13 @@ const TransactionMonitoring = () => {
         setError('Failed to load transactions. Please try again.');
       } finally {
         setLoadingTransactions(false);
-      }
-    };
-    
+    }
+  };
+  
+  // Fetch transactions when filters change
+  useEffect(() => {
     fetchTransactions();
-  }, [page, limit, prediction, reviewStatus, fraudScore, amountRange, startDate, endDate]);
+  }, [page, limit, prediction, reviewStatus, fraudScore, amountRange, startDate, endDate, debouncedSearchTerm]);
   
   // Fetch fraud trends
   useEffect(() => {
@@ -393,6 +410,8 @@ const TransactionMonitoring = () => {
               type="text" 
               placeholder="Search by transaction ID, amount, or status..." 
               className="search-input"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               style={{ 
                 color: '#2d3748', 
                 backgroundColor: '#f8fafc',

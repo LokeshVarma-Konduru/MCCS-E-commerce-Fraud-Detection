@@ -5,6 +5,8 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import Dashboard from './pages/Dashboard.jsx';
 import Login from './Login.jsx';
 import Navbar from './components/Navbar.jsx';
+import Footer from './components/Footer.jsx';
+import './styles/GlobalFooter.css';
 import AdminPanel from './pages/AdminPanel.jsx';
 import AboutUs from './pages/AboutUs.jsx';
 import Contact from './pages/Contact.jsx';
@@ -13,6 +15,8 @@ import APIIntegration from './pages/APIIntegration';
 import ModelPerformance from './pages/ModelPerformance';
 import TransactionMonitoring from './pages/TransactionMonitoring';
 import StoreManager from './pages/StoreManager.jsx';
+import Help from './pages/Help.jsx';
+import ApiDocs from './pages/ApiDocs.jsx';
 import { getUserInfo } from './api.js';
 
 // Protected Route Component
@@ -28,6 +32,7 @@ const ProtectedRoute = ({ children }) => {
     <>
       <Navbar />
       {children}
+      <Footer />
     </>
   );
 };
@@ -290,6 +295,22 @@ const App = () => {
               </DeveloperRoute>
             }
           />
+          <Route
+            path="/help"
+            element={
+              <ProtectedRoute>
+                <Help />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/api-docs"
+            element={
+              <ProtectedRoute>
+                <ApiDocs />
+              </ProtectedRoute>
+          }
+        />
         </Routes>
       </div>
     </BrowserRouter>

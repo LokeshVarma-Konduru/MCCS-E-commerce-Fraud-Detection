@@ -1,26 +1,26 @@
 /* Custom styles for About Us page */
 .about-container {
-  width: 100vw;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background-color: #1a1a1a;
+  padding: 24px 24px 0 24px; /* Remove bottom padding to allow footer to extend fully */
+  background-color: #f8fafc;
+  min-height: calc(100vh - 64px); /* Subtract navbar height */
+  margin-top: 64px; /* Add margin for navbar */
+  width: 100%;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 .about-content {
   flex: 1;
   margin-bottom: 2rem; /* Add consistent spacing before footer */
+  width: 100%;
 }
 
 /* Card and section backgrounds */
 .about-card {
-  background-color: #222222;
-  border-radius: 10px;
+  background-color: white;
+  border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 1.0rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 /* Additional custom styles can be added here */

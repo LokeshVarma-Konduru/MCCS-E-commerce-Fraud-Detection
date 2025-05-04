@@ -1,0 +1,496 @@
+.help-container {
+  background: #ffffff; /* Match Dashboard white background */
+  min-height: calc(100vh - 64px); /* Subtract navbar height */
+  margin-top: 64px; /* Add margin for navbar */
+  width: 100%;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+  padding: 24px 24px 24px 24px; /* Match Dashboard padding */
+  color: #1e293b;
+  display: flex;
+  flex-direction: column;
+}
+
+.help-content {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  flex: 1; /* Take up available space */
+}
+
+/* Hero Section */
+.help-hero {
+  background: white;
+  padding: 24px 32px;
+  border-radius: 12px;
+  margin: 24px 32px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.hero-content {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+}
+
+.hero-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.hero-logo {
+  flex-shrink: 0;
+}
+
+.hero-title {
+  text-align: left;
+}
+
+.mccs-logo {
+  width: 80px;
+  height: auto;
+  display: block;
+}
+
+.help-hero h1 {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #1e293b;
+}
+
+.help-hero p {
+  font-size: 16px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Main Content */
+.help-main {
+  background: white;
+  border-radius: 12px;
+  margin: 24px 32px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Tab Navigation */
+.help-tabs {
+  display: flex;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 24px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.tab-button {
+  display: flex;
+  align-items: center;
+  background: transparent;
+  color: #64748b;
+  border: none;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.tab-button:hover {
+  color: #1e293b;
+}
+
+.tab-button.active {
+  color: #1e293b;
+  border-bottom: 2px solid #4a90e2;
+}
+
+.tab-icon {
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+/* FAQ Section */
+.faq-section h2,
+.documentation-section h2,
+.glossary-section h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #1e293b;
+}
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.faq-item {
+  background: white;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 8px;
+}
+
+.faq-question {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.faq-question:hover {
+  background-color: #f1f5f9;
+}
+
+.faq-question.active {
+  background-color: #f1f5f9;
+}
+
+.faq-question h3 {
+  font-size: 15px;
+  font-weight: 500;
+  margin: 0;
+  color: #1e293b;
+}
+
+.toggle-icon {
+  font-size: 18px;
+  color: #4a90e2;
+  font-weight: bold;
+}
+
+.faq-answer {
+  padding: 0 16px 16px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.faq-answer p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Documentation Section */
+.documentation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.documentation-item {
+  background: white;
+  border-radius: 6px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.documentation-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.doc-icon {
+  font-size: 18px;
+  margin-right: 10px;
+  color: #4a90e2;
+}
+
+.documentation-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  color: #1e293b;
+}
+
+.documentation-content {
+  color: #64748b;
+  line-height: 1.5;
+  font-size: 14px;
+}
+
+.documentation-content h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: #1e293b;
+}
+
+.documentation-content h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 12px 0 6px 0;
+  color: #1e293b;
+}
+
+.documentation-content p {
+  margin: 0 0 8px 0;
+}
+
+.documentation-content ul,
+.documentation-content ol {
+  margin: 0 0 12px 0;
+  padding-left: 20px;
+}
+
+.documentation-content li {
+  margin-bottom: 4px;
+}
+
+.documentation-content strong {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+/* Glossary Section */
+.glossary-intro {
+  color: #64748b;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.glossary-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.glossary-item {
+  background: white;
+  border-radius: 6px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.glossary-term {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: #1e293b;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.glossary-definition {
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+  font-size: 14px;
+}
+
+/* API Banner */
+.api-banner {
+  background: white;
+  border-radius: 6px;
+  margin-bottom: 24px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.api-banner-content {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+}
+
+.api-banner-icon {
+  font-size: 24px;
+  color: #4a90e2;
+  margin-right: 16px;
+}
+
+.api-hero-icon {
+  margin-bottom: 16px;
+}
+
+.mccs-logo {
+  width: 100px;
+  height: auto;
+}
+
+.api-banner-text {
+  flex: 1;
+}
+
+.api-banner-text h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: #1e293b;
+}
+
+.api-banner-text p {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.api-banner-button {
+  background: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.api-banner-button:hover {
+  background: #3a7bc8;
+}
+
+.api-docs-link {
+  margin-top: 16px;
+}
+
+.api-docs-link a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: white;
+  text-decoration: none;
+  font-size: 14px;
+  padding: 6px 12px;
+  background: #4a90e2;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.api-docs-link a:hover {
+  background: #3a7bc8;
+}
+
+/* Tips Section */
+.tips-section {
+  margin-top: 24px;
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.tip-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.tip-icon {
+  font-size: 18px;
+  margin-right: 10px;
+  color: #f59e0b;
+}
+
+.tip-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  color: #1e293b;
+}
+
+.tips-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.tip-item {
+  background: #f8fafc;
+  border-radius: 6px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.tip-item h4 {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0 0 8px 0;
+  color: #1e293b;
+}
+
+.tip-item p {
+  margin: 0;
+  color: #64748b;
+  line-height: 1.5;
+  font-size: 13px;
+}
+
+kbd {
+  background-color: #333;
+  border-radius: 3px;
+  border: 1px solid #444;
+  color: #e5e7eb;
+  display: inline-block;
+  font-size: 0.85em;
+  font-weight: 600;
+  line-height: 1;
+  padding: 2px 4px;
+  margin: 0 2px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .help-hero {
+    margin: 16px;
+    padding: 24px 16px;
+  }
+  
+  .help-main {
+    margin: 16px;
+    padding: 16px;
+  }
+  
+  .help-tabs {
+    flex-wrap: wrap;
+  }
+  
+  .tab-button {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  
+  .tips-content,
+  .documentation-grid,
+  .glossary-list {
+    grid-template-columns: 1fr;
+  }
+  
+  .help-hero h1 {
+    font-size: 22px;
+  }
+  
+  .help-hero p {
+    font-size: 14px;
+  }
+  
+  .api-banner-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .api-banner-button {
+    width: 100%;
+    justify-content: center;
+  }
+}

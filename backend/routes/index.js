@@ -3,6 +3,7 @@ import express from "express";
 import { getAllTeamMembers} from "../controllers/team.js";
 import { login, verifyLoginOTP, logout, updatePassword } from '../controllers/authController.js';
 import { getUserInfo } from "../controllers/userController.js";
+import { generateSampleTransactions } from '../controllers/sampleDataController.js';
 import { addUsers, getAllUsers, deleteUser, toggleUserStatus } from '../controllers/adminController.js';
 import { predictTransaction, getTransactions, getTransactionById, updateTransactionStatus, getFraudTrends as getTransactionFraudTrends, getHighRiskTransactions, migrateTransactions } from '../controllers/transactionController.js';
 import authMiddleware from '../middleware/auth.js';
@@ -12,6 +13,7 @@ import { getApiKey, generateApiKey, regenerateApiKey, validateApiKey } from '../
 import { logApiCall, getApiLogs, getApiUsageStats, getApiLogById } from '../controllers/apiLogController.js';
 import { getDashboardStats } from '../controllers/dashboardController.js';
 import { getStoreManagerStats, getFraudTrends, getTransactionTypeDistribution, getRecentAlerts } from '../controllers/storeManagerController.js';
+import { sendReportEmail } from '../controllers/reportController.js';
 
 const router = express.Router();
 
@@ -63,5 +65,11 @@ router.get('/transaction-monitoring/high-risk', authMiddleware, getHighRiskTrans
 
 // Migration endpoint - only for development/admin use
 router.post('/migrate-transactions', migrateTransactions);
+
+// Report routes
+router.post('/send-report', authMiddleware, sendReportEmail);
+
+// Sample data generation route - only for development
+router.post('/generate-sample-transactions', generateSampleTransactions);
 
 export default router;

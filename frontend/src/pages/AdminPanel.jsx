@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { addUsers, getUsers, getUserInfo, deleteUser, toggleUserStatus } from '../api';
-import Footer from '../components/Footer';
+import PageHeader from '../components/PageHeader';
 import '../styles/AdminPanel.css';
 
 const AdminPanel = () => {
@@ -290,16 +290,14 @@ const AdminPanel = () => {
   }, []);
 
   return (
-    <div className="admin-container">
-      <div className="admin-content">
-        <div className="admin-panel-container min-h-screen bg-black">
-          <div className="admin-container">
-            <h1>Admin Panel</h1>
-            <div className="admin-card">
-              <h2>Add New Users</h2>
+    <div className="admin-panel">
+      <div className="admin-container">
+        <PageHeader title="Admin Panel" />
+        <div className="admin-content">
+          <div className="admin-card">
+            <h2>Add New Users</h2>
               {addUserMessage && (
-                <div className={`message ${addUserMessageType} ${addUserMessageVisible ? 'visible' : ''}`}
-                     style={{ whiteSpace: 'pre-line' }}>
+                <div className={`message ${addUserMessageType} ${addUserMessageVisible ? 'visible' : ''}`}>
                   {addUserMessage}
                 </div>
               )}
@@ -310,37 +308,37 @@ const AdminPanel = () => {
                     <div className="user-entry-content">
                       <div className="user-entry-fields">
                         <div className="form-group">
-                          <label htmlFor={`email-${index}`} style={{ color: 'white', fontWeight: '500' }}>Email:</label>
+                          <label htmlFor={`email-${index}`}>Email:</label>
                           <input
                             type="email"
                             id={`email-${index}`}
                             name="email"
                             value={entry.email}
                             onChange={(e) => handleInputChange(index, e)}
-                            style={{ color: 'white', backgroundColor: '#2d2d2d', border: '1px solid #404040' }}
+                            className="form-input"
                             required
                           />
                         </div>
                         <div className="form-group">
-                          <label htmlFor={`name-${index}`} style={{ color: 'white', fontWeight: '500' }}>Name:</label>
+                          <label htmlFor={`name-${index}`}>Name:</label>
                           <input
                             type="text"
                             id={`name-${index}`}
                             name="name"
                             value={entry.name}
                             onChange={(e) => handleInputChange(index, e)}
-                            style={{ color: 'white', backgroundColor: '#2d2d2d', border: '1px solid #404040' }}
+                            className="form-input"
                             required
                           />
                         </div>
                         <div className="form-group">
-                          <label htmlFor={`role-${index}`} style={{ color: 'white', fontWeight: '500' }}>Role:</label>
+                          <label htmlFor={`role-${index}`}>Role:</label>
                           <select
                             id={`role-${index}`}
                             name="role"
                             value={entry.role}
                             onChange={(e) => handleInputChange(index, e)}
-                            style={{ color: 'white', backgroundColor: '#2d2d2d', border: '1px solid #404040' }}
+                            className="form-input"
                             required
                           >
                             <option value="Developer">Developer</option>
@@ -373,7 +371,7 @@ const AdminPanel = () => {
               </form>
             </div>
 
-            <div className="admin-card users-list">
+          <div className="admin-card users-list">
               <h2>User List</h2>
               {usersListMessageVisible && (
                 <div className={`message ${usersListMessageType} visible`}>
@@ -413,29 +411,29 @@ const AdminPanel = () => {
                     </div>
                   </div>
                 ) : (
-                  <table className="user-table" style={{ width: '100%', borderCollapse: 'collapse', color: 'white' }}>
+                  <table className="user-table">
                     <thead>
                       <tr>
-                        <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #404040', backgroundColor: '#2d2d2d', color: '#00ffff' }}>Name</th>
-                        <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #404040', backgroundColor: '#2d2d2d', color: '#00ffff' }}>Email</th>
-                        <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #404040', backgroundColor: '#2d2d2d', color: '#00ffff' }}>Role</th>
-                        <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #404040', backgroundColor: '#2d2d2d', color: '#00ffff' }}>Status</th>
-                        <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #404040', backgroundColor: '#2d2d2d', color: '#00ffff' }}>Actions</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {users.length > 0 ? (
                         users.map((user) => (
                           <tr key={user._id}>
-                            <td style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #404040', color: 'white' }}>{user.name}</td>
-                            <td style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #404040', color: 'white' }}>{user.email}</td>
-                            <td style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #404040', color: 'white' }}>{user.role}</td>
-                            <td style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #404040', color: 'white' }}>
-                              <span className={`status-badge ${user.status ? 'active' : 'inactive'}`} style={{ padding: '4px 8px', borderRadius: '12px', fontWeight: '500' }}>
+                            <td>{user.name}</td>
+                            <td>{user.email}</td>
+                            <td>{user.role}</td>
+                            <td>
+                              <span className={`status-badge ${user.status ? 'active' : 'inactive'}`}>
                                 {user.status ? 'Active' : 'Inactive'}
                               </span>
                             </td>
-                            <td style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #404040', color: 'white' }}>
+                            <td>
                               <button
                                 onClick={() => handleToggleStatus(user)}
                                 className={`toggle-button ${user.status ? 'deactivate' : 'activate'}`}
@@ -453,7 +451,7 @@ const AdminPanel = () => {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan="5" className="no-users" style={{ textAlign: 'center', color: '#888', padding: '20px' }}>No users found</td>
+                          <td colSpan="5" className="no-users">No users found</td>
                         </tr>
                       )}
                     </tbody>
@@ -461,9 +459,9 @@ const AdminPanel = () => {
                 )}
               </div>
             </div>
-          </div>
+        </div>
 
-          {/* Delete Confirmation Modal */}
+        {/* Delete Confirmation Modal */}
           {deleteModalOpen && userToDelete && (
             <div className="modal-overlay">
               <div className="modal-container">
@@ -530,8 +528,6 @@ const AdminPanel = () => {
           )}
         </div>
       </div>
-      <Footer />
-    </div>
   );
 };
 
