@@ -248,3 +248,24 @@ export const updateTransactionStatus = (transactionId, status, notes = '') => {
     throw error;
   }
 };
+
+// Send report email with PDF attachment
+export const sendReportEmail = async (email, subject, message, pdfData, filename, userName = '', userRole = '') => {
+  try {
+    return axios.post(`${API_URL}/send-report`, {
+      email,
+      subject,
+      message,
+      pdfData,
+      filename,
+      userName,
+      userRole
+    });
+  } catch (error) {
+    console.error('Error sending report email:', error);
+    throw {
+      message: error.response?.data?.message || 'Failed to send report email',
+      status: error.response?.status
+    };
+  }
+};

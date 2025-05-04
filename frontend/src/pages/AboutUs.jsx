@@ -1,5 +1,4 @@
 import React from 'react';
-import Footer from '../components/Footer';
 import logo from '../assets/logo.jpg';
 import '../styles/AboutUs.css';
 
@@ -72,8 +71,6 @@ const AboutUs = () => {
             </div>
           </div>
         </section>
-
-        <Footer />
       </div>
     </div>
   );

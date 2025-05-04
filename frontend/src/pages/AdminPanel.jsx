@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { addUsers, getUsers, getUserInfo, deleteUser, toggleUserStatus } from '../api';
-import Footer from '../components/Footer';
+import PageHeader from '../components/PageHeader';
 import '../styles/AdminPanel.css';
 
 const AdminPanel = () => {
@@ -290,13 +290,12 @@ const AdminPanel = () => {
   }, []);
 
   return (
-    <div className="admin-container">
-      <div className="admin-content">
-        <div className="admin-panel-container min-h-screen bg-black">
-          <div className="admin-container">
-            <h1>Admin Panel</h1>
-            <div className="admin-card">
-              <h2>Add New Users</h2>
+    <div className="admin-panel">
+      <div className="admin-container">
+        <PageHeader title="Admin Panel" />
+        <div className="admin-content">
+          <div className="admin-card">
+            <h2>Add New Users</h2>
               {addUserMessage && (
                 <div className={`message ${addUserMessageType} ${addUserMessageVisible ? 'visible' : ''}`}>
                   {addUserMessage}
@@ -372,7 +371,7 @@ const AdminPanel = () => {
               </form>
             </div>
 
-            <div className="admin-card users-list">
+          <div className="admin-card users-list">
               <h2>User List</h2>
               {usersListMessageVisible && (
                 <div className={`message ${usersListMessageType} visible`}>
@@ -460,9 +459,9 @@ const AdminPanel = () => {
                 )}
               </div>
             </div>
-          </div>
+        </div>
 
-          {/* Delete Confirmation Modal */}
+        {/* Delete Confirmation Modal */}
           {deleteModalOpen && userToDelete && (
             <div className="modal-overlay">
               <div className="modal-container">
@@ -529,8 +528,6 @@ const AdminPanel = () => {
           )}
         </div>
       </div>
-      <Footer />
-    </div>
   );
 };
 

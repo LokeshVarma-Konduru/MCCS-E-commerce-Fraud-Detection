@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import '../styles/Help.css';
 import { Link } from 'react-router-dom';
-import { FaQuestionCircle, FaLightbulb, FaChartLine, FaChartPie, FaUserShield, 
+import { FaLightbulb, FaChartLine, FaChartPie, FaUserShield, 
   FaCode, FaStore, FaKey, FaExclamationTriangle, FaLock, FaDatabase, 
   FaClipboardCheck, FaChartBar, FaList, FaTools, FaPlus, FaMinus, FaBook, FaExternalLinkAlt } from 'react-icons/fa';
-import Footer from '../components/Footer';
+import mccsLogo from '../assets/MRLogoDesignFinal.png';
 
 const Help = () => {
   const [activeTab, setActiveTab] = useState('admin');
@@ -227,11 +227,15 @@ const Help = () => {
       <div className="help-content">
         <div className="help-hero">
           <div className="hero-content">
-            <div className="hero-icon">
-              <FaQuestionCircle />
+            <div className="hero-header">
+              <div className="hero-logo">
+                <img src={mccsLogo} alt="MCCS Logo" className="mccs-logo" />
+              </div>
+              <div className="hero-title">
+                <h1>MCCS Fraud Detection Help Center</h1>
+                <p>Find documentation, guides, and answers to common questions</p>
+              </div>
             </div>
-            <h1>MCCS Fraud Detection Help Center</h1>
-            <p>Find documentation, guides, and answers to common questions</p>
           </div>
         </div>
 
@@ -430,7 +434,6 @@ const Help = () => {
           )}
         </div>
       </div>
-      <Footer />
     </div>
   );
 };

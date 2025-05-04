@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FaKey, FaCode, FaExclamationTriangle, FaLock, FaServer, FaExchangeAlt, FaShieldAlt } from 'react-icons/fa';
 import '../styles/ApiDocs.css';
-import Footer from '../components/Footer';
+import mccsLogo from '../assets/MRLogoDesignFinal.png';
 
 const ApiDocs = () => {
   const [activeEndpoint, setActiveEndpoint] = useState('authenticate');
@@ -212,8 +212,15 @@ const ApiDocs = () => {
       <div className="api-docs-content">
         <div className="api-docs-header">
           <div className="header-content">
-            <h1>MCCS Fraud Detection API</h1>
-            <p>Integration documentation for developers</p>
+            <div className="header-wrapper">
+              <div className="header-logo">
+                <img src={mccsLogo} alt="MCCS Logo" className="mccs-logo" />
+              </div>
+              <div className="header-title">
+                <h1>MCCS Fraud Detection API</h1>
+                <p>Integration documentation for developers</p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -365,7 +372,6 @@ const ApiDocs = () => {
           <p>For additional support, contact the MCCS Developer Support Team at <a href="mailto:mccs-dev-support@usmc.mil">mccs-dev-support@usmc.mil</a></p>
         </div>
       </div>
-      <Footer />
     </div>
   );
 };

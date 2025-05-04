@@ -1,38 +1,56 @@
 .help-container {
-  background: #f8fafc;
-  min-height: 100vh;
+  background: #ffffff; /* Match Dashboard white background */
+  min-height: calc(100vh - 64px); /* Subtract navbar height */
+  margin-top: 64px; /* Add margin for navbar */
+  width: 100%;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+  padding: 24px 24px 24px 24px; /* Match Dashboard padding */
   color: #1e293b;
-  padding-bottom: 0; /* Removed padding to allow footer to stick to bottom */
   display: flex;
   flex-direction: column;
 }
 
 .help-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding-top: 80px; /* Space for navbar */
+  width: 100%;
+  margin: 0;
+  padding: 0;
   flex: 1; /* Take up available space */
 }
 
 /* Hero Section */
 .help-hero {
   background: white;
-  padding: 40px 32px;
+  padding: 24px 32px;
   border-radius: 12px;
   margin: 24px 32px;
-  text-align: center;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .hero-content {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
+  display: flex;
+  justify-content: center;
 }
 
-.hero-icon {
-  font-size: 32px;
-  margin-bottom: 16px;
-  color: #4a90e2;
+.hero-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.hero-logo {
+  flex-shrink: 0;
+}
+
+.hero-title {
+  text-align: left;
+}
+
+.mccs-logo {
+  width: 80px;
+  height: auto;
+  display: block;
 }
 
 .help-hero h1 {
@@ -292,6 +310,15 @@
   font-size: 24px;
   color: #4a90e2;
   margin-right: 16px;
+}
+
+.api-hero-icon {
+  margin-bottom: 16px;
+}
+
+.mccs-logo {
+  width: 100px;
+  height: auto;
 }
 
 .api-banner-text {

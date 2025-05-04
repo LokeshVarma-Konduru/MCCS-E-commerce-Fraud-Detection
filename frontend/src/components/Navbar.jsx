@@ -5,6 +5,7 @@ import { getUserInfo, logout } from '../api';
 import ChangePasswordModal from './ChangePasswordModal';
 import '../styles/Navbar.css';
 import { FaSearch, FaBars } from 'react-icons/fa';
+import mccsLogo from '../assets/16_MCCSlogo_Comp_NoText.png';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -129,10 +130,12 @@ const Navbar = () => {
             <FaBars />
           </button>
           <Link to="/" className="navbar-brand">
-            MCCS Fraud Detection
+            <img src={mccsLogo} alt="MCCS Logo" className="navbar-logo" />
+            <span className="brand-text">MCCS Fraud Detection</span>
           </Link>
           <div className={`sidebar ${isOpen ? 'open' : ''}`}>
             <div className="sidebar-header">
+              <img src={mccsLogo} alt="MCCS Logo" className="sidebar-logo" />
               <h3>Menu</h3>
             </div>
             <ul className="sidebar-menu">
