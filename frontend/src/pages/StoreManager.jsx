@@ -594,7 +594,6 @@ const StoreManager = () => {
               <option>All Transactions</option>
               <option>Online</option>
               <option>In-store</option>
-              <option>Mobile</option>
             </select>
           </div>
           <div className="report-buttons">

@@ -1,8 +1,8 @@
 /* eslint-disable no-useless-catch */
 import axios from 'axios';
 
-// export const API_URL = 'http://localhost:9000/mccs';
-export const API_URL = 'http://52.38.75.158:9000/mccs';
+export const API_URL = 'http://localhost:9000/mccs';
+// export const API_URL = 'http://52.38.75.158:9000/mccs';
 
 // Configure axios defaults
 axios.defaults.withCredentials = true;
@@ -11,6 +11,9 @@ axios.defaults.headers.common['Accept'] = 'application/json';
 
 export const login = (email, password) => 
     axios.post(`${API_URL}/login`, { email, password });
+
+export const testLogin = () => 
+    axios.post(`${API_URL}/test-login`);
 
 export const verifyLoginOTP = (userId, otp) => 
     axios.post(`${API_URL}/verify-login-otp`, { userId, otp });
