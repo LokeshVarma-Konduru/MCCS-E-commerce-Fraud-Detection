@@ -1,7 +1,7 @@
 import express from "express";
 
 import { getAllTeamMembers} from "../controllers/team.js";
-import { login, verifyLoginOTP, logout, updatePassword } from '../controllers/authController.js';
+import { login, verifyLoginOTP, logout, updatePassword, testLogin } from '../controllers/authController.js';
 import { getUserInfo } from "../controllers/userController.js";
 import { generateSampleTransactions } from '../controllers/sampleDataController.js';
 import { addUsers, getAllUsers, deleteUser, toggleUserStatus } from '../controllers/adminController.js';
@@ -24,6 +24,7 @@ router.post('/login', login);
 router.post('/verify-login-otp', verifyLoginOTP);
 router.post('/logout', authMiddleware, logout);
 router.post('/update-password', authMiddleware, updatePassword);
+router.post('/test-login', testLogin);
 router.get('/user/:userId', authMiddleware, getUserInfo);
 
 // Admin routes

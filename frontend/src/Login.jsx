@@ -14,6 +14,7 @@ const Login = () => {
   const [userId, setUserId] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isTestUser, setIsTestUser] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,6 +25,7 @@ const Login = () => {
       if (!showOtp) {
         const response = await login(email, password);
         setUserId(response.data.userId);
+        setIsTestUser(response.data.isTestUser || false);
         setShowOtp(true);
       } else {
         const response = await verifyLoginOTP(userId, otp);
@@ -50,6 +52,8 @@ const Login = () => {
       setIsLoading(false);
     }
   };
+
+
 
   return (
     <div className="login-container">
@@ -107,7 +111,14 @@ const Login = () => {
                   autoComplete="one-time-code"
                   style={{ width: '100%', padding: '1rem', backgroundColor: 'rgba(51, 51, 51, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', color: 'white', fontSize: '1rem' }}
                 />
-                <p className="otp-message" style={{ color: '#9ca3af', fontSize: '0.9rem', marginTop: '0.8rem', textAlign: 'center' }}>Please check your email for OTP</p>
+                {isTestUser ? (
+                  <div>
+                    <p className="otp-message" style={{ color: '#9ca3af', fontSize: '0.9rem', marginTop: '0.8rem', textAlign: 'center' }}>Test User OTP: <strong>123456</strong></p>
+                    <p className="otp-message" style={{ color: '#9ca3af', fontSize: '0.9rem', marginTop: '0.4rem', textAlign: 'center' }}>This is a test account with fixed OTP</p>
+                  </div>
+                ) : (
+                  <p className="otp-message" style={{ color: '#9ca3af', fontSize: '0.9rem', marginTop: '0.8rem', textAlign: 'center' }}>Please check your email for OTP</p>
+                )}
               </div>
             )}
             <br></br>

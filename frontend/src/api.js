@@ -12,6 +12,9 @@ axios.defaults.headers.common['Accept'] = 'application/json';
 export const login = (email, password) => 
     axios.post(`${API_URL}/login`, { email, password });
 
+export const testLogin = () => 
+    axios.post(`${API_URL}/test-login`);
+
 export const verifyLoginOTP = (userId, otp) => 
     axios.post(`${API_URL}/verify-login-otp`, { userId, otp });
 

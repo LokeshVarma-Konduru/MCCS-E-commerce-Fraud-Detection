@@ -382,10 +382,16 @@ const AdminPanel = () => {
                 <div className="search-box">
                   <input
                     type="text"
-                    placeholder="Search by name or email..."
+                    placeholder="Search users by name or email..."
                     value={searchTerm}
                     onChange={handleSearchChange}
                     className={`search-input ${isSearching ? 'searching' : ''}`}
+                    style={{
+                      color: 'black',
+                      backgroundColor: 'white',
+                      fontWeight: 'bold',
+                      border: '3px solid #00bcd4'
+                    }}
                   />
                 </div>
                 <div className="role-filter">
