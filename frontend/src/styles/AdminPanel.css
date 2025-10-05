@@ -1,23 +1,29 @@
 .admin-panel {
-  padding: 24px 24px 0 24px; /* Remove bottom padding to allow footer to extend fully */
-  background-color: #f8fafc;
+  padding: 24px 24px 24px 24px; /* Added bottom padding for footer spacing */
+  background-color: #ffffff; /* Match Dashboard white background */
   min-height: calc(100vh - 64px); /* Subtract navbar height */
   margin-top: 64px; /* Add margin for navbar */
   width: 100%;
   overflow-x: hidden; /* Prevent horizontal scrolling */
   color: #1e293b;
+  display: flex;
+  flex-direction: column;
 }
 
 .admin-container {
   width: 100%;
   display: flex;
   flex-direction: column;
-  background-color: #f8fafc;
+  background-color: #ffffff; /* Match Dashboard white background */
 }
 
 .admin-content {
   flex: 1;
-  margin-bottom: 2rem; /* Add consistent spacing before footer */
+  margin: 0;
+  padding: 0 24px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .admin-card {
@@ -314,22 +320,45 @@
 .search-box {
   flex: 1;
   min-width: 200px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-box::before {
+  content: '🔍';
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #00bcd4;
+  font-size: 16px;
+  z-index: 1;
 }
 
 .search-input {
   width: 100%;
-  padding: 0.8rem;
-  border: 1px solid #e2e8f0;
+  padding: 0.8rem 1rem 0.8rem 2.5rem;
+  border: 3px solid #00bcd4;
   border-radius: 8px;
-  background: white;
-  color: #1e293b;
+  background: white !important;
+  color: #000000 !important;
   font-size: 1rem;
+  font-weight: 600;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 188, 212, 0.2);
+}
+
+.search-input::placeholder {
+  color: #000000;
+  opacity: 1;
+  font-weight: 600;
 }
 
 .search-input:focus {
   outline: none;
   border-color: #007bff;
+  background: white;
   box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.3);
 }
 

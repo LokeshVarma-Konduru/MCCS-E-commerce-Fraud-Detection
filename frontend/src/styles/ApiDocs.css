@@ -1,16 +1,19 @@
 .api-docs-container {
-  background: #f8fafc;
-  min-height: 100vh;
+  background: #ffffff; /* Match Dashboard white background */
+  min-height: calc(100vh - 64px); /* Subtract navbar height */
+  margin-top: 64px; /* Add margin for navbar */
+  width: 100%;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+  padding: 24px 24px 24px 24px; /* Match Dashboard padding */
   color: #1e293b;
   display: flex;
   flex-direction: column;
 }
 
 .api-docs-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding-top: 80px; /* Space for navbar */
-  padding-bottom: 0; /* Removed padding to allow footer to stick to bottom */
+  width: 100%;
+  margin: 0;
+  padding: 0;
   flex: 1; /* Take up available space */
 }
 
@@ -320,6 +323,34 @@
   color: #1e293b;
   font-size: 14px;
   line-height: 1.5;
+}
+
+/* Header */
+.header-content {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+}
+
+.header-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.header-logo {
+  flex-shrink: 0;
+}
+
+.header-title {
+  text-align: left;
+}
+
+.mccs-logo {
+  width: 80px;
+  height: auto;
+  display: block;
 }
 
 /* Footer */

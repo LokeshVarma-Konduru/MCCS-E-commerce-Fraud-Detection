@@ -5,6 +5,8 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import Dashboard from './pages/Dashboard.jsx';
 import Login from './Login.jsx';
 import Navbar from './components/Navbar.jsx';
+import Footer from './components/Footer.jsx';
+import './styles/GlobalFooter.css';
 import AdminPanel from './pages/AdminPanel.jsx';
 import AboutUs from './pages/AboutUs.jsx';
 import Contact from './pages/Contact.jsx';
@@ -30,6 +32,7 @@ const ProtectedRoute = ({ children }) => {
     <>
       <Navbar />
       {children}
+      <Footer />
     </>
   );
 };

@@ -2,7 +2,8 @@
 import axios from 'axios';
 
 export const API_URL = 'http://localhost:9000/mccs';
-//export const API_URL = 'http://35.164.210.165:9000/mccs';
+// export const API_URL = 'http://52.38.75.158:9000/mccs';
+
 // Configure axios defaults
 axios.defaults.withCredentials = true;
 axios.defaults.headers.common['Content-Type'] = 'application/json';
@@ -10,6 +11,9 @@ axios.defaults.headers.common['Accept'] = 'application/json';
 
 export const login = (email, password) => 
     axios.post(`${API_URL}/login`, { email, password });
+
+export const testLogin = () => 
+    axios.post(`${API_URL}/test-login`);
 
 export const verifyLoginOTP = (userId, otp) => 
     axios.post(`${API_URL}/verify-login-otp`, { userId, otp });
@@ -246,5 +250,26 @@ export const updateTransactionStatus = (transactionId, status, notes = '') => {
     });
   } catch (error) {
     throw error;
+  }
+};
+
+// Send report email with PDF attachment
+export const sendReportEmail = async (email, subject, message, pdfData, filename, userName = '', userRole = '') => {
+  try {
+    return axios.post(`${API_URL}/send-report`, {
+      email,
+      subject,
+      message,
+      pdfData,
+      filename,
+      userName,
+      userRole
+    });
+  } catch (error) {
+    console.error('Error sending report email:', error);
+    throw {
+      message: error.response?.data?.message || 'Failed to send report email',
+      status: error.response?.status
+    };
   }
 };

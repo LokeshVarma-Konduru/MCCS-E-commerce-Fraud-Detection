@@ -6,9 +6,9 @@
   font-family: Inter, system-ui, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color-scheme: light;
+  color: #333333;
+  background-color: #ffffff;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -19,6 +19,19 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+/* Global container styles for all pages */
+.dashboard-container,
+.developer-container,
+.help-container,
+.admin-panel-container,
+.about-us-container,
+.contact-container,
+.api-docs-container,
+.store-manager-container {
+  padding-bottom: 24px; /* Add consistent bottom padding for footer spacing */
+  min-height: calc(100vh - 64px - 200px); /* Subtract navbar height and approximate footer height */
 }
 
 body {

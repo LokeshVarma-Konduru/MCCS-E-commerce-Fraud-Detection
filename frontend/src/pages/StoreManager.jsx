@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Line, Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -11,11 +11,11 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { FaEnvelope, FaTimes } from 'react-icons/fa';
 import '../styles/StoreManager.css';
 import '../styles/Report.css';
-import { getStoreManagerStats, getFraudTrends, getTransactionTypeDistribution, getRecentAlerts } from '../api';
+import { getStoreManagerStats, getFraudTrends, getTransactionTypeDistribution, getRecentAlerts, sendReportEmail, getUserInfo } from '../api';
 import StoreManagerReport from '../components/StoreManagerReport';
-import Footer from '../components/Footer';
 
 ChartJS.register(
   CategoryScale,
@@ -36,6 +36,19 @@ const StoreManager = () => {
   const [error, setError] = useState(null);
   const [showReport, setShowReport] = useState(false);
   
+  // Create a reference for the report section
+  const reportRef = useRef(null);
+  
+  // User state
+  const [currentUser, setCurrentUser] = useState(null);
+  
+  // Email report state
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailAddress, setEmailAddress] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [emailError, setEmailError] = useState(null);
+
   // State for real data
   const [stats, setStats] = useState({
     totalTransactions: {
@@ -74,6 +87,226 @@ const StoreManager = () => {
   const [transactionTypeFilter, setTransactionTypeFilter] = useState('All Types');
   const [recentAlerts, setRecentAlerts] = useState([]);
   const [alertsLoading, setAlertsLoading] = useState(true);
+  
+  // Function to toggle email modal
+  const toggleEmailModal = () => {
+    setShowEmailModal(!showEmailModal);
+    setEmailSent(false);
+    setEmailError(null);
+    setEmailAddress('');
+  };
+  
+  // Function to handle report generation with scrolling
+  const handleGenerateReport = () => {
+    const newReportState = !showReport;
+    setShowReport(newReportState);
+    
+    // If showing the report, scroll to it after a short delay to ensure rendering
+    if (newReportState) {
+      setTimeout(() => {
+        if (reportRef.current) {
+          reportRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    }
+  };
+  
+  // Function to send report via email
+  const handleSendReportEmail = async () => {
+    if (!emailAddress) {
+      setEmailError('Please enter a valid email address');
+      return;
+    }
+    
+    try {
+      setSendingEmail(true);
+      setEmailError(null);
+      
+      // Get PDF data
+      const pdfData = await getReportPdfData();
+      if (!pdfData) {
+        throw new Error('Failed to generate PDF report');
+      }
+      
+      // Check if PDF data is too large (>10MB)
+      if (pdfData.length > 10 * 1024 * 1024) {
+        // Show warning and attempt to compress further
+        console.warn('PDF file is very large, attempting to compress further');
+      }
+      
+      // Create a more professional email message
+      const periodLabel = timeRange;
+      const emailSubject = `MCCS Store Manager Report - ${periodLabel}`;
+      
+      // Create a more professional message
+      let emailMessage = `This report contains fraud detection metrics and insights for ${periodLabel}.`;
+      
+      // Use the current user's information automatically
+      let userName = '';
+      let userRole = '';
+      
+      if (currentUser) {
+        userName = currentUser.name || '';
+        userRole = currentUser.role || '';
+      }
+      
+      // Send email with PDF attachment including current user's information
+      const response = await sendReportEmail(
+        emailAddress,
+        emailSubject,
+        emailMessage,
+        pdfData,
+        `store-manager-report-${timeRange.replace(/\s+/g, '-').toLowerCase()}.pdf`,
+        userName,
+        userRole
+      );
+      
+      if (response.data.success) {
+        setEmailSent(true);
+        setTimeout(() => {
+          setShowEmailModal(false);
+          setEmailSent(false);
+          setEmailAddress('');
+        }, 3000);
+      } else {
+        throw new Error(response.data.message || 'Failed to send email');
+      }
+    } catch (error) {
+      console.error('Error sending report email:', error);
+      
+      // Handle specific error for payload too large
+      if (error.message && error.message.includes('too large')) {
+        setEmailError('The report is too large to send via email. Please try downloading it instead.');
+      } else {
+        setEmailError(error.message || 'Failed to send email. Please try again.');
+      }
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+  
+  // Function to convert HTML report to PDF and get base64 data
+  const getReportPdfData = async () => {
+    if (!reportRef.current) return null;
+    
+    try {
+      // Use html2canvas and jsPDF to convert the report to PDF
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+      
+      // Capture the entire report as a single image
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2, // Higher scale for better quality
+        useCORS: true, // Enable CORS for external images
+        logging: false,
+        backgroundColor: '#ffffff',
+        windowWidth: reportRef.current.scrollWidth,
+        windowHeight: reportRef.current.scrollHeight,
+        onclone: (clonedDoc) => {
+          // Make sure all elements are visible in the clone
+          const clonedReport = clonedDoc.querySelector('.report-container');
+          if (clonedReport) {
+            clonedReport.style.height = 'auto';
+            clonedReport.style.overflow = 'visible';
+            
+            // Fix header layout for PDF
+            const header = clonedDoc.querySelector('.report-header');
+            if (header) {
+              header.style.display = 'flex';
+              header.style.justifyContent = 'space-between';
+              header.style.alignItems = 'center';
+              header.style.width = '100%';
+              header.style.marginBottom = '40px';
+              header.style.paddingBottom = '24px';
+              header.style.borderBottom = '1px solid #e5e7eb';
+            }
+            
+            // Fix title container
+            const titleContainer = clonedDoc.querySelector('.report-title');
+            if (titleContainer) {
+              titleContainer.style.textAlign = 'center';
+              titleContainer.style.flexGrow = '1';
+              titleContainer.style.margin = '0';
+              titleContainer.style.padding = '0 20px';
+            }
+            
+            // Fix download button container (hide it in PDF)
+            const actionsContainer = clonedDoc.querySelector('.report-actions');
+            if (actionsContainer) {
+              actionsContainer.style.display = 'none';
+            }
+            
+            // Ensure charts grid is properly displayed side by side in PDF
+            const chartsGrid = clonedDoc.querySelector('.report-charts-grid');
+            if (chartsGrid) {
+              chartsGrid.style.display = 'grid';
+              chartsGrid.style.gridTemplateColumns = '1fr 1fr';
+              chartsGrid.style.gap = '32px';
+              chartsGrid.style.margin = '40px 0';
+              chartsGrid.style.width = '100%';
+            }
+            
+            // Style each chart column for PDF
+            const chartColumns = clonedDoc.querySelectorAll('.report-chart-column');
+            chartColumns.forEach(column => {
+              column.style.background = 'white';
+              column.style.borderRadius = '12px';
+              column.style.padding = '24px';
+              column.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.05)';
+              column.style.border = '1px solid #e5e7eb';
+              column.style.display = 'flex';
+              column.style.flexDirection = 'column';
+            });
+            
+            // Style chart containers for PDF
+            const chartContainers = clonedDoc.querySelectorAll('.report-chart-column .chart-container');
+            chartContainers.forEach(container => {
+              container.style.height = '350px';
+              container.style.flexGrow = '1';
+              container.style.minHeight = '300px';
+            });
+            
+            // Make sure all sections are visible
+            const sections = clonedReport.querySelectorAll('.report-charts-grid, .report-charts, .report-metrics, .insights-section, .financial-metrics, .monthly-trends, .key-insights');
+            sections.forEach(section => {
+              if (section) {
+                section.style.display = section.classList.contains('report-charts-grid') ? 'grid' : 'block';
+                section.style.visibility = 'visible';
+              }
+            });
+            
+            // Make sure the footer with timestamp is visible
+            const footer = clonedDoc.querySelector('.report-footer');
+            if (footer) {
+              footer.style.display = 'block';
+              footer.style.visibility = 'visible';
+            }
+          }
+        }
+      });
+      
+      // Create a PDF with dimensions matching the canvas aspect ratio
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      const pdf = new jsPDF({
+        orientation: imgHeight > imgWidth ? 'portrait' : 'landscape',
+        unit: 'mm',
+        format: [imgWidth, imgHeight]
+      });
+      
+      // Add the image to fill the entire PDF with high quality
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+      
+      // Convert PDF to base64
+      const pdfBase64 = pdf.output('datauristring');
+      return pdfBase64.split(',')[1]; // Remove the data URI prefix
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      return null;
+    }
+  };
 
   // Convert timeRange to period parameter for API calls
   const getPeriodFromTimeRange = (range) => {
@@ -88,6 +321,25 @@ const StoreManager = () => {
         return 'day';
     }
   };
+
+  // Fetch user information when component mounts
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const userId = localStorage.getItem('userId');
+        if (userId) {
+          const response = await getUserInfo(userId);
+          if (response && response.data && response.data.user) {
+            setCurrentUser(response.data.user);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user information:', error);
+      }
+    };
+    
+    fetchUserData();
+  }, []);
 
   // Fetch stats data
   useEffect(() => {
@@ -318,33 +570,49 @@ const StoreManager = () => {
 
       {activeTab === 'dashboard' && (
         <div className="dashboard-content">
-        {/* Filters */}
-        <div className="filters">
-          <div className="filter-group">
+        {/* Dashboard Controls */}
+        <div className="dashboard-controls">
+          <div className="time-range-selector">
+            <label>Time Range:</label>
             <select 
-              value={timeRange}
+              value={timeRange} 
               onChange={(e) => setTimeRange(e.target.value)}
-              className="filter-select"
+              className="select-control"
             >
               <option>Last 24 h.</option>
               <option>Last 7 days</option>
               <option>Last 30 days</option>
             </select>
           </div>
-          <div className="filter-group">
+          <div className="transaction-type-selector">
+            <label>Transaction Type:</label>
             <select 
-              value={transactionType}
+              value={transactionType} 
               onChange={(e) => setTransactionType(e.target.value)}
-              className="filter-select"
+              className="select-control"
             >
               <option>All Transactions</option>
               <option>Online</option>
               <option>In-store</option>
             </select>
           </div>
-          <button className="export-btn" onClick={() => setShowReport(!showReport)}>
-            {showReport ? 'Hide Report' : 'Generate Report'}
-          </button>
+          <div className="report-buttons">
+            <button 
+              className="generate-report-button"
+              onClick={handleGenerateReport}
+            >
+              {showReport ? 'Hide Report' : 'Generate Report'}
+            </button>
+            {showReport && (
+              <button 
+                className="send-report-button"
+                onClick={toggleEmailModal}
+              >
+                <FaEnvelope className="button-icon" />
+                Send Report
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -517,7 +785,7 @@ const StoreManager = () => {
 
       {/* Report View */}
       {showReport && activeTab === 'dashboard' && (
-        <div className="report-view" style={{ 
+        <div ref={reportRef} className="report-view" style={{ 
           background: 'white', 
           padding: '32px', 
           borderRadius: '12px',
@@ -535,7 +803,57 @@ const StoreManager = () => {
           />
         </div>
       )}
-      <Footer />
+      
+      {/* Email Modal */}
+      {showEmailModal && (
+        <div className="email-modal-overlay">
+          <div className="email-modal">
+            <div className="email-modal-header">
+              <h3>Send Report via Email</h3>
+              <button className="close-button" onClick={toggleEmailModal}>
+                ✕
+              </button>
+            </div>
+            <div className="email-modal-body">
+              {!emailSent ? (
+                <>
+                  <div className="form-group">
+                    <label>Email Address: <span className="required">*</span></label>
+                    <input
+                      type="email"
+                      value={emailAddress}
+                      onChange={(e) => setEmailAddress(e.target.value)}
+                      placeholder="Enter recipient's email address"
+                      className="email-input"
+                      disabled={sendingEmail}
+                      required
+                    />
+                  </div>
+                  
+                  {currentUser && (
+                    <div className="user-info-notice">
+                      <p>Report will be sent from: <strong>{currentUser.name}</strong> ({currentUser.role})</p>
+                    </div>
+                  )}
+                  
+                  {emailError && <p className="email-error">{emailError}</p>}
+                  <button 
+                    className="send-button"
+                    onClick={handleSendReportEmail}
+                    disabled={sendingEmail}
+                  >
+                    {sendingEmail ? 'Sending...' : 'Send Report'}
+                  </button>
+                </>
+              ) : (
+                <div className="success-message">
+                  <p>Report sent successfully!</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Router } from "express";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import cookieParser from 'cookie-parser'; 

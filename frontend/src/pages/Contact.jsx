@@ -1,5 +1,4 @@
 import React from 'react';
-import Footer from '../components/Footer';
 import logo from '../assets/logo.jpg';
 import '../styles/Contact.css';
 import { FaEnvelope, FaPhone, FaClock, FaMapMarkerAlt } from 'react-icons/fa';
@@ -60,7 +59,6 @@ const Contact = () => {
           </div>
         </div>
       </div>
-      <Footer />
     </div>
   );
 };

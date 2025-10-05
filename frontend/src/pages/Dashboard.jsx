@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getMLModelMetrics } from '../api';
 import { ResponsiveHeatMap } from '@nivo/heatmap';
 import Plot from 'react-plotly.js';
-import Footer from '../components/Footer';
+import PageHeader from '../components/PageHeader';
 import '../styles/Dashboard.css';
 
 const MetricCard = ({ title, value, icon }) => (
@@ -412,9 +412,9 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-container">
+      <PageHeader title="ML Model Dashboard" />
       <div className="dashboard-content">
         <div className="dashboard-header">
-          <h1>ML Model Dashboard</h1>
           <div className="model-selector">
             <select 
               value={selectedModelId} 
@@ -641,7 +641,6 @@ const Dashboard = () => {
           </div>
         )}
       </div>
-      <Footer />
     </div>
   );
 };
