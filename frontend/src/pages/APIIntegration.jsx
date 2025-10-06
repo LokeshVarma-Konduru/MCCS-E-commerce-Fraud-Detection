@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
-import { FaHome, FaKey, FaHistory, FaBook, FaCopy, FaSync, FaChartLine, FaExchangeAlt, FaCode } from 'react-icons/fa';
+import { FaKey, FaHistory, FaBook, FaCopy, FaSync, FaCode } from 'react-icons/fa';
+import DeveloperNav from '../components/DeveloperNav';
 import '../styles/Developer.css';
 import { getApiKey, generateApiKey, regenerateApiKey, predictTransaction, getMLModelMetrics, API_URL } from '../api';
 
@@ -250,26 +250,7 @@ const APIIntegration = () => {
 
   return (
     <div className="developer-container">
-      <div className="top-navigation">
-        <nav className="nav-menu">
-          <Link to="/developer" className="nav-item">
-            <FaHome className="nav-icon" />
-            <span>Dashboard</span>
-          </Link>
-          <Link to="/api-integration" className="nav-item active">
-            <FaKey className="nav-icon" />
-            <span>API Integration</span>
-          </Link>
-          <Link to="/model-performance" className="nav-item">
-            <FaChartLine className="nav-icon" />
-            <span>Model Performance</span>
-          </Link>
-          <Link to="/transaction-monitoring" className="nav-item">
-            <FaExchangeAlt className="nav-icon" />
-            <span>Transaction Monitoring</span>
-          </Link>
-        </nav>
-      </div>
+      <DeveloperNav activePath="/api-integration" />
 
       <div className="main-content">
         <PageHeader title="API Integration" />
@@ -703,3 +684,4 @@ const APIIntegration = () => {
 };
 
 export default APIIntegration;
+

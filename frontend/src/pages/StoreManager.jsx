@@ -14,7 +14,8 @@ import {
 import { FaEnvelope, FaTimes } from 'react-icons/fa';
 import '../styles/StoreManager.css';
 import '../styles/Report.css';
-import { getStoreManagerStats, getFraudTrends, getTransactionTypeDistribution, getRecentAlerts, sendReportEmail, getUserInfo } from '../api';
+import { getStoreManagerStats, getFraudTrends, getTransactionTypeDistribution, getRecentAlerts, sendReportEmail } from '../api';
+import { useAuth } from '../context/AuthContext.jsx';
 import StoreManagerReport from '../components/StoreManagerReport';
 
 ChartJS.register(
@@ -29,6 +30,7 @@ ChartJS.register(
 );
 
 const StoreManager = () => {
+  const { user: currentUser, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [timeRange, setTimeRange] = useState('Last 30 days');
   const [transactionType, setTransactionType] = useState('All Transactions');
@@ -40,7 +42,6 @@ const StoreManager = () => {
   const reportRef = useRef(null);
   
   // User state
-  const [currentUser, setCurrentUser] = useState(null);
   
   // Email report state
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -322,25 +323,6 @@ const StoreManager = () => {
     }
   };
 
-  // Fetch user information when component mounts
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const userId = localStorage.getItem('userId');
-        if (userId) {
-          const response = await getUserInfo(userId);
-          if (response && response.data && response.data.user) {
-            setCurrentUser(response.data.user);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching user information:', error);
-      }
-    };
-    
-    fetchUserData();
-  }, []);
-
   // Fetch stats data
   useEffect(() => {
     const fetchStats = async () => {
@@ -375,7 +357,7 @@ const StoreManager = () => {
     };
 
     fetchStats();
-  }, [timeRange, transactionType]);
+  }, [timeRange, transactionType, authLoading, currentUser]);
 
   // Fetch fraud trend data
   useEffect(() => {
@@ -407,7 +389,7 @@ const StoreManager = () => {
     };
 
     fetchFraudTrends();
-  }, [timeRange, transactionType]);
+  }, [timeRange, transactionType, authLoading, currentUser]);
 
   // Fetch transaction type distribution data
   useEffect(() => {
@@ -446,7 +428,7 @@ const StoreManager = () => {
     };
 
     fetchTransactionTypes();
-  }, [timeRange, transactionTypeFilter]);
+  }, [timeRange, transactionTypeFilter, authLoading, currentUser]);
 
   // Fetch recent alerts
   useEffect(() => {
@@ -466,7 +448,7 @@ const StoreManager = () => {
     };
 
     fetchRecentAlerts();
-  }, [transactionType]);
+  }, [transactionType, authLoading, currentUser]);
 
   // Memoize chart options to prevent unnecessary re-renders
   const chartOptions = useMemo(() => ({

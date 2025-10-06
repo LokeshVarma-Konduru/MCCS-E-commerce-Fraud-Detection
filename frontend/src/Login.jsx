@@ -2,10 +2,12 @@
 // eslint-disable-next-line no-unused-vars
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login, verifyLoginOTP, getUserInfo } from './api';
+import { login, verifyLoginOTP } from './api';
 import logo from './assets/logo.jpg';
+import { useAuth } from './context/AuthContext.jsx';
 
 const Login = () => {
+  const { refreshUser } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,12 +33,22 @@ const Login = () => {
         const response = await verifyLoginOTP(userId, otp);
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('userId', userId);
-        
-        // Get user info to determine role-based redirect
-        const userInfoResponse = await getUserInfo(userId);
-        const userRole = userInfoResponse.data.user.role;
-        
-        // Redirect based on role
+
+        let userRole = null;
+        try {
+          const refreshedUser = await refreshUser();
+          userRole = refreshedUser?.role || null;
+        } catch (refreshError) {
+          console.error('Failed to refresh user after login:', refreshError);
+          setError(refreshError.response?.data?.message || 'Unable to load user profile');
+          return;
+        }
+
+        if (!userRole) {
+          setError('Unable to determine user role. Please try again.');
+          return;
+        }
+
         if (userRole === 'Developer') {
           navigate('/developer');
         } else if (userRole === 'StoreManager') {
@@ -143,3 +155,6 @@ const Login = () => {
 };
 
 export default Login;
+
+
+

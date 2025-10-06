@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { FaHome, FaCode, FaChartLine, FaExchangeAlt, FaSearch, FaCalendar, FaExclamationTriangle } from 'react-icons/fa';
+import { FaSearch, FaCalendar, FaExclamationTriangle } from 'react-icons/fa';
+import DeveloperNav from '../components/DeveloperNav';
 import DatePicker from 'react-datepicker';
 import { Line } from 'react-chartjs-2';
 import FraudScoreIndicator from '../components/FraudScoreIndicator';
@@ -380,26 +380,7 @@ const TransactionMonitoring = () => {
 
   return (
     <div className="developer-container transaction-monitoring" style={{ backgroundColor: '#f8fafc' }}>
-      <div className="top-navigation">
-        <nav className="nav-menu">
-          <Link to="/developer" className="nav-item">
-            <FaHome className="nav-icon" />
-            <span>Dashboard</span>
-          </Link>
-          <Link to="/api-integration" className="nav-item">
-            <FaCode className="nav-icon" />
-            <span>API Integration</span>
-          </Link>
-          <Link to="/model-performance" className="nav-item">
-            <FaChartLine className="nav-icon" />
-            <span>Model Performance</span>
-          </Link>
-          <Link to="/transaction-monitoring" className="nav-item active">
-            <FaExchangeAlt className="nav-icon" />
-            <span>Transaction Monitoring</span>
-          </Link>
-        </nav>
-      </div>
+      <DeveloperNav activePath="/transaction-monitoring" />
 
       <div className="main-content">
         <PageHeader title="Transaction Monitoring" />
@@ -774,3 +755,4 @@ const TransactionMonitoring = () => {
 };
 
 export default TransactionMonitoring;
+
