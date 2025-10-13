@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { addUsers, getUsers, getUserInfo, deleteUser, toggleUserStatus } from '../api';
+import { addUsers, getUsers, deleteUser, toggleUserStatus } from '../api';
+import { useAuth } from '../context/AuthContext.jsx';
 import PageHeader from '../components/PageHeader';
 import '../styles/AdminPanel.css';
 
 const AdminPanel = () => {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
   const [userEntries, setUserEntries] = useState([
     { email: '', name: '', role: 'Developer' }
   ]);
@@ -51,11 +53,25 @@ const AdminPanel = () => {
   }, [roleFilter, searchTerm]);
 
   useEffect(() => {
-    checkAdminAccess();
-    fetchUsers();
-  }, []);
+    if (loading) {
+      return;
+    }
+
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    if (user.role !== 'Admin') {
+      navigate('/dashboard');
+    }
+  }, [user, loading, navigate]);
 
   useEffect(() => {
+    if (loading || !user || user.role !== 'Admin') {
+      return;
+    }
+
     // Clear any existing timeout
     if (searchTimeout.current) {
       clearTimeout(searchTimeout.current);
@@ -73,25 +89,7 @@ const AdminPanel = () => {
         clearTimeout(searchTimeout.current);
       }
     };
-  }, [fetchUsers, searchTerm, roleFilter]);
-
-  const checkAdminAccess = async () => {
-    try {
-      const userId = localStorage.getItem('userId');
-      if (!userId) {
-        navigate('/login');
-        return;
-      }
-
-      const response = await getUserInfo(userId);
-      if (!response.data.user || response.data.user.role !== 'Admin') {
-        navigate('/dashboard');
-      }
-    } catch (error) {
-      console.error('Error checking admin access:', error);
-      navigate('/login');
-    }
-  };
+  }, [fetchUsers, searchTerm, roleFilter, loading, user]);
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
@@ -538,3 +536,7 @@ const AdminPanel = () => {
 };
 
 export default AdminPanel;
+
+
+
+

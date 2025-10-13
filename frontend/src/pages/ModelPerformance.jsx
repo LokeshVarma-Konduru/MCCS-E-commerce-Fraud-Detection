@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FaHome, FaCode, FaChartLine, FaExchangeAlt, FaSync, FaInfoCircle } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
+import { FaSync, FaInfoCircle } from 'react-icons/fa';
+import DeveloperNav from '../components/DeveloperNav';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -465,26 +465,7 @@ const ModelPerformance = () => {
 
   return (
     <div className="developer-container model-performance">
-      <div className="top-navigation">
-        <nav className="nav-menu">
-          <Link to="/developer" className="nav-item">
-            <FaHome className="nav-icon" />
-            <span>Dashboard</span>
-          </Link>
-          <Link to="/api-integration" className="nav-item">
-            <FaCode className="nav-icon" />
-            <span>API Integration</span>
-          </Link>
-          <Link to="/model-performance" className="nav-item active">
-            <FaChartLine className="nav-icon" />
-            <span>Model Performance</span>
-          </Link>
-          <Link to="/transaction-monitoring" className="nav-item">
-            <FaExchangeAlt className="nav-icon" />
-            <span>Transaction Monitoring</span>
-          </Link>
-        </nav>
-      </div>
+      <DeveloperNav activePath="/model-performance" />
 
       <div className="main-content">
         <PageHeader title="Model Performance" />
@@ -668,3 +649,4 @@ const ModelPerformance = () => {
 };
 
 export default ModelPerformance;
+
