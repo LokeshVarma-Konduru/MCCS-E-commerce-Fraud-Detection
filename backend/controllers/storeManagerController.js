@@ -18,10 +18,9 @@ export const getStoreManagerStats = async (req, res) => {
       previousPeriodStart = new Date(previousPeriodEnd);
       previousPeriodStart.setDate(previousPeriodStart.getDate() - 1);
     } else if (period === 'week') {
-      // Current week and previous week
+      // Last 7 days and previous 7 days
       currentPeriodStart = new Date(now);
-      currentPeriodStart.setDate(now.getDate() - now.getDay());
-      currentPeriodStart.setHours(0, 0, 0, 0);
+      currentPeriodStart.setDate(now.getDate() - 7);
       previousPeriodEnd = new Date(currentPeriodStart);
       previousPeriodStart = new Date(previousPeriodEnd);
       previousPeriodStart.setDate(previousPeriodStart.getDate() - 7);
