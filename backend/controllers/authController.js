@@ -96,7 +96,9 @@ export const verifyLoginOTP = async (req, res) => {
             user: {
                 id: user._id,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                storeRef: user.storeRef || null,
+                storeID: user.storeID || null
             }
         });
     } catch (error) {

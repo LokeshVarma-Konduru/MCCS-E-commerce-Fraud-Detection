@@ -13,6 +13,9 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    // Store assignment (added for StoreManager users)
+    storeRef: { type: mongoose.Schema.Types.ObjectId, ref: 'Store', required: false },
+    storeID: { type: String, required: false },
     // #storeID
     otp: { type: String },
     otpExpiresAt: { type: Date },

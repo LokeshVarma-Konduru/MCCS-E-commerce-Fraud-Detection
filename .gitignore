@@ -7,6 +7,10 @@ backend/.env
 frontend/.env
 ML-Models/.env
 
+# Python virtual environments
+backend/.venv/
+ML-Models/.venv/
+
 # Build files
 # frontend/dist/
 backend/build/

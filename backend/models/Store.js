@@ -51,7 +51,7 @@ const storeSchema = new mongoose.Schema({
 });
 
 // Index for efficient queries
-storeSchema.index({ storeID: 1 });
+// storeID index is automatically created by unique: true above
 storeSchema.index({ coordinates: '2dsphere' }); // For geospatial queries
 storeSchema.index({ zipCode: 1 });
 

@@ -89,4 +89,6 @@ router.get('/stores/nearby', authMiddleware, getStoresNearby);
 router.post('/seed-stores', authMiddleware, adminMiddleware, seedStores);
 router.delete('/clear-stores', authMiddleware, adminMiddleware, clearStores);
 
+
+
 export default router;

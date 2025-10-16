@@ -224,6 +224,22 @@ const Navbar = () => {
                 </div>
                 <div className="profile-body">
                   <div className="role-badge">{user ? (user.role || 'User') : 'User'}</div>
+                  {user && user.role === 'StoreManager' && (
+                    <div style={{ marginTop: '8px', fontSize: '12px', color: '#cbd5e1' }}>
+                      {(() => {
+                        const sid = user?.storeRef?.storeID || user?.storeID;
+                        const sname = user?.storeRef?.storeName;
+                        const sloc = user?.storeRef?.storeLocation;
+                        if (!sid && !sname) return null;
+                        return (
+                          <>
+                            <div>Store: {sid}{sname ? ` — ${sname}` : ''}</div>
+                            {sloc ? <div>Location: {sloc}</div> : null}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
                 </div>
                 <div className="profile-footer">
                   <button 

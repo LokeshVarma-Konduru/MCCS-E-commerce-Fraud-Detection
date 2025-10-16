@@ -323,13 +323,17 @@ const StoreManager = () => {
     }
   };
 
+  // Derive store context from logged-in user
+  const storeRefId = currentUser?.storeRef?._id || null;
+  const storeHumanId = currentUser?.storeRef?.storeID || currentUser?.storeID || null;
+
   // Fetch stats data
   useEffect(() => {
     const fetchStats = async () => {
       try {
         setLoading(true);
         const period = getPeriodFromTimeRange(timeRange);
-        const response = await getStoreManagerStats(period, transactionType);
+        const response = await getStoreManagerStats(period, transactionType, { storeRef: storeRefId, storeID: storeHumanId });
         
         if (response.data && response.data.success) {
           const { totalTransactions, fraudRate, financialImpact } = response.data.data;
@@ -364,7 +368,7 @@ const StoreManager = () => {
     const fetchFraudTrends = async () => {
       try {
         const period = getPeriodFromTimeRange(timeRange);
-        const response = await getFraudTrends(period, transactionType);
+        const response = await getFraudTrends(period, transactionType, { storeRef: storeRefId, storeID: storeHumanId });
         
         if (response.data && response.data.success) {
           const trendData = response.data.data;
@@ -397,7 +401,7 @@ const StoreManager = () => {
       try {
         const period = getPeriodFromTimeRange(timeRange);
         const typeFilter = transactionTypeFilter !== 'All Types' ? transactionTypeFilter : null;
-        const response = await getTransactionTypeDistribution(period, typeFilter);
+        const response = await getTransactionTypeDistribution(period, typeFilter, { storeRef: storeRefId, storeID: storeHumanId });
         
         if (response.data && response.data.success) {
           const { categories, series } = response.data.data;
@@ -435,7 +439,7 @@ const StoreManager = () => {
     const fetchRecentAlerts = async () => {
       try {
         setAlertsLoading(true);
-        const response = await getRecentAlerts(5, transactionType);
+        const response = await getRecentAlerts(5, transactionType, { storeRef: storeRefId, storeID: storeHumanId });
         
         if (response.data && response.data.success) {
           setRecentAlerts(response.data.data);
