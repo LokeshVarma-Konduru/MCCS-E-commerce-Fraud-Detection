@@ -90,7 +90,15 @@ export const verifyLoginOTP = async (req, res) => {
         const token = jwt.sign({ userId: user._id, role:user.role}, process.env.JWT_SECRET, { expiresIn: '1h' });
         res.cookie('authonlycookie', token, { httpOnly: true, maxAge: 3600000 }); // 1 hour
 
-        res.status(200).json({ message: 'OTP verified, login successful' });
+        res.status(200).json({ 
+            message: 'OTP verified, login successful',
+            token: token,
+            user: {
+                id: user._id,
+                email: user.email,
+                role: user.role
+            }
+        });
     } catch (error) {
         console.error('Verify OTP error:', error);
         res.status(500).json({ message: 'OTP verification error', error: error.message });
