@@ -13,6 +13,7 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    // #storeID
     otp: { type: String },
     otpExpiresAt: { type: Date },
 },
