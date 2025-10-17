@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import mongoose from 'mongoose';
 import Transaction from '../models/TransactionSchema.js';
 import Store from '../models/Store.js';
+import { io } from '../index.js';
 
 // We need these for ES module __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -144,6 +145,38 @@ export const predictTransaction = async (req, res) => {
           });
   
           const savedTransaction = await newTransaction.save();
+  
+          // 🚨 EMIT REAL-TIME FRAUD ALERT if fraud is detected
+          if (parsed.predictions[0] === 1) {
+            // Calculate risk score based on probability
+            const fraudProbability = parsed.probabilities && parsed.probabilities[0] && parsed.probabilities[0][1] 
+              ? parsed.probabilities[0][1] 
+              : 0.5;
+            
+            let riskLevel = 'Medium';
+            if (fraudProbability > 0.8) riskLevel = 'High';
+            else if (fraudProbability < 0.6) riskLevel = 'Low';
+            
+            const alertData = {
+              type: 'fraud_detected',
+              transactionId: savedTransaction._id.toString(),
+              transactionIdShort: `TRX-${savedTransaction._id.toString().slice(-6).toUpperCase()}`,
+              amount: savedTransaction.transactionAmount,
+              paymentMethod: savedTransaction.paymentMethod,
+              productCategory: savedTransaction.productCategory,
+              deviceUsed: savedTransaction.deviceUsed,
+              transactionType: savedTransaction.transactionType,
+              riskLevel: riskLevel,
+              probability: (fraudProbability * 100).toFixed(1),
+              modelUsed: modelName,
+              timestamp: savedTransaction.createdAt || new Date(),
+              storeID: savedTransaction.storeID || null,
+              storeName: resolvedStore?.storeName || null
+            };
+            
+            console.log('🚨 FRAUD DETECTED! Emitting alert:', alertData.transactionIdShort);
+            io.emit('fraud_alert', alertData);
+          }
   
           // 11) Return predictions + saved doc
           return res.json({
