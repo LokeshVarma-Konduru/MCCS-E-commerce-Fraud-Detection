@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { FaSync, FaInfoCircle } from 'react-icons/fa';
-import DeveloperNav from '../components/DeveloperNav';
-import { Line } from 'react-chartjs-2';
+import React, { useState, useEffect, useRef } from "react";
+import { FaInfoCircle } from "react-icons/fa";
+import DeveloperNav from "../components/DeveloperNav";
+import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -13,10 +13,10 @@ import {
   Legend,
   Colors
 } from 'chart.js';
-import '../styles/Developer.css';
-import '../styles/ModelPerformance.css';
-import PageHeader from '../components/PageHeader';
-import { getMLModelMetrics, getModelById } from '../api';
+import "../styles/Developer.css";
+import "../styles/ModelPerformance.css";
+import PageHeader from "../components/PageHeader";
+import { getMLModelMetrics, getModelById } from "../api";
 
 ChartJS.register(
   CategoryScale,
@@ -28,6 +28,22 @@ ChartJS.register(
   Legend,
   Colors
 );
+
+const SUPPORTED_FILE_TYPES = [".csv", ".xlsx", ".json", ".txt"];
+const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024; // 25 MB
+const DEFAULT_CUSTOM_PARAMS = {
+  learningRate: "0.15",
+  nEstimators: "400",
+  maxDepth: "10",
+  minChildWeight: "3",
+  gamma: "0.1",
+  subsample: "0.8",
+  colsampleByTree: "0.8",
+  regAlpha: "0.1",
+  cvFolds: "5",
+  testSize: "0.2",
+  scaler: "standard"
+};
 
 const ModelPerformance = () => {
   // State for model data
@@ -408,8 +424,153 @@ const ModelPerformance = () => {
   // Use primary confusion matrix as default
   const confusionMatrix = primaryConfusionMatrix;
 
-  const [selectedDataset, setSelectedDataset] = useState('internal');
-  const [trainingConfig, setTrainingConfig] = useState('default');
+  const [selectedDataset, setSelectedDataset] = useState("internal");
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [uploadError, setUploadError] = useState("");
+  const [selectedModelType, setSelectedModelType] = useState("xgboost");
+  const [trainingConfig, setTrainingConfig] = useState("default");
+  const [customParams, setCustomParams] = useState(() => ({ ...DEFAULT_CUSTOM_PARAMS }));
+  const fileInputRef = useRef(null);
+
+  const datasetIsCustom = selectedDataset === "custom";
+
+  const formatFileSize = (bytes) => {
+    if (!bytes && bytes !== 0) return "";
+    const units = ["B", "KB", "MB", "GB"];
+    let value = bytes;
+    let unitIndex = 0;
+
+    while (value >= 1024 && unitIndex < units.length - 1) {
+      value /= 1024;
+      unitIndex += 1;
+    }
+
+    const precision = unitIndex === 0 ? 0 : 1;
+    return `${value.toFixed(precision)} ${units[unitIndex]}`;
+  };
+
+  const resetFileInput = () => {
+    if (fileInputRef.current) {
+      // eslint-disable-next-line no-param-reassign
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleDatasetChange = (value) => {
+    setSelectedDataset(value);
+    setUploadError("");
+
+    if (value === "custom") {
+      if (!uploadedFile || uploadedFile.source !== "custom") {
+        setUploadedFile(null);
+        resetFileInput();
+      }
+    } else if (uploadedFile && uploadedFile.source === "custom") {
+      setUploadedFile(null);
+      resetFileInput();
+    }
+  };
+
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const extension = `.${file.name.split(".").pop()?.toLowerCase() || ""}`;
+
+    if (!SUPPORTED_FILE_TYPES.includes(extension)) {
+      setUploadError(`Unsupported file type. Accepted formats: ${SUPPORTED_FILE_TYPES.join(", ")}`);
+      setUploadedFile(null);
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      setUploadError("File is too large. Please upload a file smaller than 25 MB.");
+      setUploadedFile(null);
+      return;
+    }
+
+    setUploadedFile({
+      file,
+      name: file.name,
+      size: file.size,
+      type: extension.replace(".", ""),
+      mimeType: file.type || "unknown",
+      source: selectedDataset
+    });
+    setUploadError("");
+  };
+
+  const handleRemoveFile = () => {
+    setUploadedFile(null);
+    setUploadError("");
+    resetFileInput();
+  };
+
+  const handleTrainingConfigChange = (value) => {
+    setTrainingConfig(value);
+    if (value === "default") {
+      setCustomParams({ ...DEFAULT_CUSTOM_PARAMS });
+    }
+  };
+
+  const handleParamChange = (key, value) => {
+    setCustomParams((prev) => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  const parseNumericParam = (value, type = "float") => {
+    if (value === "" || value === null || value === undefined) {
+      return null;
+    }
+    const parsed = type === "int" ? parseInt(value, 10) : parseFloat(value);
+    return Number.isNaN(parsed) ? null : parsed;
+  };
+
+  const handleRetrain = () => {
+    if (datasetIsCustom && !uploadedFile) {
+      setUploadError("A custom dataset upload is required before retraining.");
+      return;
+    }
+
+    const normalizedParams = trainingConfig === "custom"
+      ? {
+          learningRate: parseNumericParam(customParams.learningRate),
+          nEstimators: parseNumericParam(customParams.nEstimators, "int"),
+          maxDepth: parseNumericParam(customParams.maxDepth, "int"),
+          minChildWeight: parseNumericParam(customParams.minChildWeight, "int"),
+          gamma: parseNumericParam(customParams.gamma),
+          subsample: parseNumericParam(customParams.subsample),
+          colsampleByTree: parseNumericParam(customParams.colsampleByTree),
+          regAlpha: parseNumericParam(customParams.regAlpha),
+          cvFolds: parseNumericParam(customParams.cvFolds, "int"),
+          testSize: parseNumericParam(customParams.testSize),
+          scaler: customParams.scaler
+        }
+      : null;
+
+    const payload = {
+      datasetSelection: selectedDataset,
+      uploadedFile: uploadedFile
+        ? {
+            name: uploadedFile.name,
+            size: uploadedFile.size,
+            type: uploadedFile.type,
+            mimeType: uploadedFile.mimeType
+          }
+        : null,
+      modelType: selectedModelType,
+      trainingConfig,
+      parameters: normalizedParams
+    };
+
+    // Placeholder for backend integration
+    console.log("[Retrain Preview]", payload);
+  };
 
   const renderMetricCard = (metric) => {
     const hasChange = metric.change && metric.change.trim() !== '';
@@ -616,30 +777,336 @@ const ModelPerformance = () => {
           <h3>Retrain Model</h3>
           <div className="retrain-options">
             <div className="option-group">
-              <label>Dataset Selection</label>
+              <label htmlFor="dataset-selection">Dataset Selection</label>
               <select 
+                id="dataset-selection"
                 value={selectedDataset} 
-                onChange={(e) => setSelectedDataset(e.target.value)}
+                onChange={(e) => handleDatasetChange(e.target.value)}
                 className="dataset-select"
               >
                 <option value="internal">Internal Dataset (Recommended)</option>
-                <option value="external">External Dataset</option>
                 <option value="custom">Custom Dataset</option>
               </select>
+              <p className="option-helper">
+                Choose the baseline data source for this training job.
+              </p>
             </div>
             <div className="option-group">
-              <label>Training Parameters</label>
+              <label htmlFor="model-type-selection">Select Model to Retrain</label>
+              <select
+                id="model-type-selection"
+                value={selectedModelType}
+                onChange={(e) => setSelectedModelType(e.target.value)}
+                className="model-type-select"
+              >
+                <option value="xgboost">XGBoost (Recommended)</option>
+                <option value="logistic-regression">Logistic Regression</option>
+                <option value="bernoulli-nb">Bernoulli Naive Bayes</option>
+                <option value="decision-tree">Decision Tree</option>
+              </select>
+              <p className="option-helper">
+                Align the training run with the model architecture you intend to deploy.
+              </p>
+            </div>
+            <div className="option-group">
+              <label htmlFor="training-configuration">Training Parameters</label>
               <select 
+                id="training-configuration"
                 value={trainingConfig} 
-                onChange={(e) => setTrainingConfig(e.target.value)}
+                onChange={(e) => handleTrainingConfigChange(e.target.value)}
                 className="config-select"
               >
                 <option value="default">Default Configuration</option>
                 <option value="custom">Custom Configuration</option>
               </select>
+              <p className="option-helper">
+                Use the standard project settings or apply granular hyperparameter tuning.
+              </p>
             </div>
           </div>
-          <button className="retrain-button">
+
+          <div className={`file-upload-section ${datasetIsCustom ? "required" : ""}`}>
+            <div className="file-upload-header">
+              <div className="file-upload-labels">
+                <label htmlFor="dataset-upload-input">
+                  {datasetIsCustom ? "Upload Custom Training Data *" : "Supplemental Training Data (Optional)"}
+                </label>
+                <span className="upload-hint">
+                  Accepted formats: CSV, XLSX, JSON, TXT - Max size 25 MB
+                </span>
+              </div>
+              {datasetIsCustom ? (
+                <span className="upload-requirement">Required when training with a custom dataset.</span>
+              ) : (
+                <span className="upload-requirement optional">Optional - defaults to curated internal data.</span>
+              )}
+            </div>
+            <div className="file-upload-control">
+              <input
+                id="dataset-upload-input"
+                ref={fileInputRef}
+                type="file"
+                accept={SUPPORTED_FILE_TYPES.join(",")}
+                onChange={handleFileChange}
+                className="file-input-hidden"
+              />
+              <button
+                type="button"
+                className="file-upload-trigger"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {uploadedFile ? "Replace file" : "Select file"}
+              </button>
+              {uploadedFile && (
+                <button
+                  type="button"
+                  className="file-remove-button"
+                  onClick={handleRemoveFile}
+                  aria-label="Remove selected training data file"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+            {uploadedFile && (
+              <div className="file-info" role="status">
+                <div className="file-info__details">
+                  <span className="file-name">{uploadedFile.name}</span>
+                  <span className="file-meta">
+                    {uploadedFile.type.toUpperCase()} - {formatFileSize(uploadedFile.size)}
+                  </span>
+                </div>
+              </div>
+            )}
+            {uploadError && (
+              <p className="input-error" role="alert">
+                {uploadError}
+              </p>
+            )}
+          </div>
+
+          {trainingConfig === "custom" && (
+            <div className="custom-params-panel">
+              <h4>Advanced Hyperparameters</h4>
+              <p className="custom-params-helper">
+                Adjust the training configuration for experimentation. Values outside recommended ranges may lead to instability.
+              </p>
+              <div className="param-grid">
+                <div className="param-field">
+                  <label htmlFor="learningRate" className="param-label">
+                    Learning rate
+                    <span className="param-tooltip" title="Controls the contribution of each boosting round. Lower values provide more stable learning.">
+                      <FaInfoCircle aria-hidden="true" />
+                      <span className="sr-only">Learning rate tooltip</span>
+                    </span>
+                  </label>
+                  <input
+                    id="learningRate"
+                    type="number"
+                    min="0.01"
+                    max="1"
+                    step="0.01"
+                    value={customParams.learningRate}
+                    onChange={(e) => handleParamChange("learningRate", e.target.value)}
+                  />
+                  <small className="param-helper">Recommended 0.01 - 0.3</small>
+                </div>
+                <div className="param-field">
+                  <label htmlFor="nEstimators" className="param-label">
+                    Number of estimators
+                    <span className="param-tooltip" title="Total boosting rounds. Higher values can capture more complexity at the cost of training time.">
+                      <FaInfoCircle aria-hidden="true" />
+                      <span className="sr-only">Estimators tooltip</span>
+                    </span>
+                  </label>
+                  <input
+                    id="nEstimators"
+                    type="number"
+                    min="100"
+                    max="700"
+                    step="10"
+                    value={customParams.nEstimators}
+                    onChange={(e) => handleParamChange("nEstimators", e.target.value)}
+                  />
+                  <small className="param-helper">Range 100 - 700</small>
+                </div>
+                <div className="param-field">
+                  <label htmlFor="maxDepth" className="param-label">
+                    Max depth
+                    <span className="param-tooltip" title="Maximum depth of each tree. Helps control overfitting by limiting complexity.">
+                      <FaInfoCircle aria-hidden="true" />
+                      <span className="sr-only">Max depth tooltip</span>
+                    </span>
+                  </label>
+                  <input
+                    id="maxDepth"
+                    type="number"
+                    min="3"
+                    max="20"
+                    step="1"
+                    value={customParams.maxDepth}
+                    onChange={(e) => handleParamChange("maxDepth", e.target.value)}
+                  />
+                  <small className="param-helper">Integer between 3 and 20</small>
+                </div>
+                <div className="param-field">
+                  <label htmlFor="minChildWeight" className="param-label">
+                    Min child weight
+                    <span className="param-tooltip" title="Minimum sum of instance weight needed in a child. Larger values make the model more conservative.">
+                      <FaInfoCircle aria-hidden="true" />
+                      <span className="sr-only">Min child weight tooltip</span>
+                    </span>
+                  </label>
+                  <input
+                    id="minChildWeight"
+                    type="number"
+                    min="1"
+                    max="10"
+                    step="1"
+                    value={customParams.minChildWeight}
+                    onChange={(e) => handleParamChange("minChildWeight", e.target.value)}
+                  />
+                  <small className="param-helper">Integer between 1 and 10</small>
+                </div>
+                <div className="param-field">
+                  <label htmlFor="gamma" className="param-label">
+                    Gamma
+                    <span className="param-tooltip" title="Minimum loss reduction required to split a leaf node. Larger values discourage complex trees.">
+                      <FaInfoCircle aria-hidden="true" />
+                      <span className="sr-only">Gamma tooltip</span>
+                    </span>
+                  </label>
+                  <input
+                    id="gamma"
+                    type="number"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={customParams.gamma}
+                    onChange={(e) => handleParamChange("gamma", e.target.value)}
+                  />
+                  <small className="param-helper">Range 0.00 - 1.00</small>
+                </div>
+                <div className="param-field">
+                  <label htmlFor="subsample" className="param-label">
+                    Subsample ratio
+                    <span className="param-tooltip" title="Fraction of observations used in each boosting round. Lower values provide regularisation.">
+                      <FaInfoCircle aria-hidden="true" />
+                      <span className="sr-only">Subsample tooltip</span>
+                    </span>
+                  </label>
+                  <input
+                    id="subsample"
+                    type="number"
+                    min="0.1"
+                    max="1"
+                    step="0.05"
+                    value={customParams.subsample}
+                    onChange={(e) => handleParamChange("subsample", e.target.value)}
+                  />
+                  <small className="param-helper">Range 0.10 - 1.00</small>
+                </div>
+                <div className="param-field">
+                  <label htmlFor="colsampleByTree" className="param-label">
+                    Column sample (by tree)
+                    <span className="param-tooltip" title="Fraction of features considered per tree. Lower values can reduce feature correlation.">
+                      <FaInfoCircle aria-hidden="true" />
+                      <span className="sr-only">Column sample tooltip</span>
+                    </span>
+                  </label>
+                  <input
+                    id="colsampleByTree"
+                    type="number"
+                    min="0.1"
+                    max="1"
+                    step="0.05"
+                    value={customParams.colsampleByTree}
+                    onChange={(e) => handleParamChange("colsampleByTree", e.target.value)}
+                  />
+                  <small className="param-helper">Range 0.10 - 1.00</small>
+                </div>
+                <div className="param-field">
+                  <label htmlFor="regAlpha" className="param-label">
+                    L1 regularisation (alpha)
+                    <span className="param-tooltip" title="Adds sparsity by penalising large weights, reducing overfitting in complex trees.">
+                      <FaInfoCircle aria-hidden="true" />
+                      <span className="sr-only">Alpha tooltip</span>
+                    </span>
+                  </label>
+                  <input
+                    id="regAlpha"
+                    type="number"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={customParams.regAlpha}
+                    onChange={(e) => handleParamChange("regAlpha", e.target.value)}
+                  />
+                  <small className="param-helper">Range 0.00 - 1.00</small>
+                </div>
+                <div className="param-field">
+                  <label htmlFor="cvFolds" className="param-label">
+                    Cross-validation folds
+                    <span className="param-tooltip" title="Number of folds used to evaluate the model. Higher folds add training time but improve stability.">
+                      <FaInfoCircle aria-hidden="true" />
+                      <span className="sr-only">Cross-validation tooltip</span>
+                    </span>
+                  </label>
+                  <input
+                    id="cvFolds"
+                    type="number"
+                    min="2"
+                    max="10"
+                    step="1"
+                    value={customParams.cvFolds}
+                    onChange={(e) => handleParamChange("cvFolds", e.target.value)}
+                  />
+                  <small className="param-helper">Common choice: 5 folds</small>
+                </div>
+                <div className="param-field">
+                  <label htmlFor="testSize" className="param-label">
+                    Test split (ratio)
+                    <span className="param-tooltip" title="Portion of data reserved for hold-out evaluation.">
+                      <FaInfoCircle aria-hidden="true" />
+                      <span className="sr-only">Test split tooltip</span>
+                    </span>
+                  </label>
+                  <input
+                    id="testSize"
+                    type="number"
+                    min="0.1"
+                    max="0.4"
+                    step="0.05"
+                    value={customParams.testSize}
+                    onChange={(e) => handleParamChange("testSize", e.target.value)}
+                  />
+                  <small className="param-helper">Common split 0.20 (80/20)</small>
+                </div>
+                <div className="param-field param-field--select">
+                  <label htmlFor="scaler" className="param-label">
+                    Feature scaling method
+                    <span className="param-tooltip" title="Choose how to scale numeric features before modelling.">
+                      <FaInfoCircle aria-hidden="true" />
+                      <span className="sr-only">Scaling method tooltip</span>
+                    </span>
+                  </label>
+                  <select
+                    id="scaler"
+                    value={customParams.scaler}
+                    onChange={(e) => handleParamChange("scaler", e.target.value)}
+                  >
+                    <option value="standard">Standard Scaler</option>
+                    <option value="minmax">Min-Max Scaler</option>
+                    <option value="robust">Robust Scaler</option>
+                    <option value="none">No scaling</option>
+                  </select>
+                  <small className="param-helper">Match the preprocessing used in production pipelines.</small>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <button type="button" className="retrain-button" onClick={handleRetrain}>
             Trigger Retraining
           </button>
         </div>

@@ -11,11 +11,13 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { FaEnvelope, FaTimes } from 'react-icons/fa';
+import { FaEnvelope } from 'react-icons/fa';
 import '../styles/StoreManager.css';
 import '../styles/Report.css';
 import { getStoreManagerStats, getFraudTrends, getTransactionTypeDistribution, getRecentAlerts, sendReportEmail } from '../api';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useSocket } from '../context/SocketContext.jsx';
+import RealtimeAlertsPanel from '../components/RealtimeAlertsPanel.jsx';
 import StoreManagerReport from '../components/StoreManagerReport';
 
 ChartJS.register(
@@ -31,6 +33,7 @@ ChartJS.register(
 
 const StoreManager = () => {
   const { user: currentUser, loading: authLoading } = useAuth();
+  const { isConnected, fraudAlerts, clearAlerts, removeAlert } = useSocket();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [timeRange, setTimeRange] = useState('Last 30 days');
   const [transactionType, setTransactionType] = useState('All Transactions');
@@ -326,6 +329,12 @@ const StoreManager = () => {
   // Derive store context from logged-in user
   const storeRefId = currentUser?.storeRef?._id || null;
   const storeHumanId = currentUser?.storeRef?.storeID || currentUser?.storeID || null;
+  const storeName = currentUser?.storeRef?.storeName || null;
+  const storeDisplayLabel = storeName
+    ? `${storeName}${storeHumanId ? ` · ${storeHumanId}` : ''}`
+    : storeHumanId
+      ? `Store ${storeHumanId}`
+      : 'Assigned store';
 
   // Fetch stats data
   useEffect(() => {
@@ -754,19 +763,17 @@ const StoreManager = () => {
 
       {/* Alerts Tab Content */}
       {activeTab === 'alerts' && (
-        <div className="coming-soon-container">
-          <div className="coming-soon-card">
-            <h2>Alerts Feature Coming Soon</h2>
-            <p>Soon you'll be able to:</p>
-            <ul>
-              <li>Set up custom alert thresholds</li>
-              <li>Receive notifications for high-risk transactions</li>
-              <li>Configure alert delivery methods (email, SMS, in-app)</li>
-              <li>Create alert rules based on transaction patterns</li>
-            </ul>
-            <p>We're working hard to bring you these capabilities!</p>
-          </div>
-        </div>
+        <RealtimeAlertsPanel
+          title="Live Store Alerts"
+          description="Real-time notifications for high-risk transactions detected in your assigned store."
+          alerts={fraudAlerts}
+          isConnected={isConnected}
+          onClearAlerts={clearAlerts}
+          onRemoveAlert={removeAlert}
+          scopeLabel={storeDisplayLabel}
+          emptyStateTitle="No alerts for your store yet"
+          emptyStateDescription="Fraud alerts will appear here instantly when transactions in your store are flagged."
+        />
       )}
 
       {/* Report View */}

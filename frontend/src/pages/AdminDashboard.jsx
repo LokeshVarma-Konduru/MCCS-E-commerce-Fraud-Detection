@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useSocket } from "../context/SocketContext.jsx";
 import FiltersBar from "../components/adminDashboard/FiltersBar.jsx";
 import KpiCard from "../components/adminDashboard/KpiCard.jsx";
 import TransactionsTable from "../components/adminDashboard/TransactionsTable.jsx";
 import ReportSummaries from "../components/adminDashboard/ReportSummaries.jsx";
 import USFraudHeatmap from "../components/adminDashboard/USFraudHeatmap.jsx";
 import { usaMapData } from "../components/adminDashboard/usMapData.js";
+import RealtimeAlertsPanel from "../components/RealtimeAlertsPanel.jsx";
 import "../styles/AdminDashboard.css";
 
 const riskLevelLabels = {
@@ -141,6 +143,7 @@ const deriveRiskKey = (value) => {
 
 const AdminDashboard = () => {
   const { user, loading: authLoading } = useAuth();
+  const { isConnected, fraudAlerts, clearAlerts, removeAlert } = useSocket();
   const [filters, setFilters] = useState({
     dateRange: "30d",
     region: "all",
@@ -620,6 +623,17 @@ const AdminDashboard = () => {
       </section>
 
       <ReportSummaries reports={reportMetrics} />
+
+      <RealtimeAlertsPanel
+        title="Live Fraud Alerts"
+        description="Streaming high-risk transactions from every store and channel."
+        alerts={fraudAlerts}
+        isConnected={isConnected}
+        onClearAlerts={clearAlerts}
+        onRemoveAlert={removeAlert}
+        scopeLabel="All stores"
+        className="admin-dashboard__alerts-panel"
+      />
 
       <TransactionsTable
         rows={paginatedRows}

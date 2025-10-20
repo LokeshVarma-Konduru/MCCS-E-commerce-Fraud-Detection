@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaChartPie, FaEnvelope, FaTimes, FaBell } from 'react-icons/fa';
+import { FaChartPie, FaEnvelope } from 'react-icons/fa';
 import DeveloperNav from '../components/DeveloperNav';
 import { Line } from 'react-chartjs-2';
 import Report from '../components/Report';
@@ -8,6 +8,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement
 import { getTransactions, getDashboardStats, getApiUsageStats, sendReportEmail } from '../api';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useSocket } from '../context/SocketContext.jsx';
+import RealtimeAlertsPanel from '../components/RealtimeAlertsPanel.jsx';
 import '../styles/Developer.css';
 import '../styles/Report.css';
 
@@ -836,211 +837,15 @@ const Developer = () => {
         </div>
 
         {/* 🚨 Fraud Alerts Section */}
-        <div className="fraud-alerts-section">
-          <div className="section-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <h3>
-                <FaBell style={{ marginRight: '8px', color: '#ef4444' }} />
-                Real-Time Fraud Alerts
-              </h3>
-              {isConnected ? (
-                <span style={{ 
-                  fontSize: '12px', 
-                  color: '#10b981', 
-                  background: '#d1fae5', 
-                  padding: '4px 12px', 
-                  borderRadius: '12px',
-                  fontWeight: '500'
-                }}>
-                  ● Connected
-                </span>
-              ) : (
-                <span style={{ 
-                  fontSize: '12px', 
-                  color: '#ef4444', 
-                  background: '#fee2e2', 
-                  padding: '4px 12px', 
-                  borderRadius: '12px',
-                  fontWeight: '500'
-                }}>
-                  ○ Disconnected
-                </span>
-              )}
-              {fraudAlerts.length > 0 && (
-                <span style={{ 
-                  fontSize: '12px', 
-                  background: '#dc2626', 
-                  color: 'white', 
-                  padding: '4px 12px', 
-                  borderRadius: '12px',
-                  fontWeight: 'bold'
-                }}>
-                  {fraudAlerts.length} Alert{fraudAlerts.length !== 1 ? 's' : ''}
-                </span>
-              )}
-            </div>
-            {fraudAlerts.length > 0 && (
-              <button 
-                onClick={clearAlerts}
-                style={{
-                  background: 'transparent',
-                  border: '1px solid #dc2626',
-                  color: '#dc2626',
-                  padding: '6px 16px',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = '#dc2626';
-                  e.currentTarget.style.color = 'white';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#dc2626';
-                }}
-              >
-                Clear All
-              </button>
-            )}
-          </div>
-          <div className="fraud-alerts-list" style={{
-            maxHeight: '400px',
-            overflowY: 'auto',
-            padding: '12px',
-            background: '#fafafa',
-            borderRadius: '8px'
-          }}>
-            {fraudAlerts.length === 0 ? (
-              <div style={{
-                textAlign: 'center',
-                padding: '48px 20px',
-                color: '#6b7280',
-                fontSize: '14px'
-              }}>
-                <FaBell style={{ fontSize: '48px', opacity: 0.3, marginBottom: '16px' }} />
-                <p style={{ margin: 0, fontWeight: '500' }}>No fraud alerts</p>
-                <p style={{ margin: '8px 0 0 0', fontSize: '13px' }}>
-                  Alerts will appear here when fraudulent transactions are detected
-                </p>
-              </div>
-            ) : (
-              fraudAlerts.map((alert, index) => (
-                <div 
-                  key={alert.transactionId || index} 
-                  style={{
-                    background: 'white',
-                    border: '2px solid #fee2e2',
-                    borderRadius: '10px',
-                    padding: '16px',
-                    marginBottom: '12px',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                    position: 'relative'
-                  }}
-                >
-                  <button
-                    onClick={() => removeAlert(alert.transactionId)}
-                    style={{
-                      position: 'absolute',
-                      top: '12px',
-                      right: '12px',
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#9ca3af',
-                      fontSize: '18px',
-                      cursor: 'pointer',
-                      padding: '4px',
-                      borderRadius: '4px',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.background = '#f3f4f6';
-                      e.currentTarget.style.color = '#374151';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.background = 'transparent';
-                      e.currentTarget.style.color = '#9ca3af';
-                    }}
-                  >
-                    <FaTimes />
-                  </button>
-                  
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                        <h4 style={{ margin: 0, fontSize: '16px', color: '#dc2626', fontWeight: '600' }}>
-                          ⚠️ {alert.transactionIdShort}
-                        </h4>
-                        <span style={{
-                          background: alert.riskLevel === 'High' ? '#dc2626' : alert.riskLevel === 'Medium' ? '#f59e0b' : '#10b981',
-                          color: 'white',
-                          padding: '2px 10px',
-                          borderRadius: '12px',
-                          fontSize: '11px',
-                          fontWeight: '600',
-                          textTransform: 'uppercase'
-                        }}>
-                          {alert.riskLevel} Risk
-                        </span>
-                      </div>
-                      <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#6b7280' }}>
-                        {new Date(alert.timestamp).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(2, 1fr)', 
-                    gap: '12px',
-                    padding: '12px',
-                    background: '#fafafa',
-                    borderRadius: '6px'
-                  }}>
-                    <div>
-                      <p style={{ margin: 0, fontSize: '11px', color: '#6b7280', fontWeight: '500' }}>Amount</p>
-                      <p style={{ margin: '4px 0 0 0', fontSize: '15px', fontWeight: '600', color: '#111827' }}>
-                        ${alert.amount?.toFixed(2)}
-                      </p>
-                    </div>
-                    <div>
-                      <p style={{ margin: 0, fontSize: '11px', color: '#6b7280', fontWeight: '500' }}>Probability</p>
-                      <p style={{ margin: '4px 0 0 0', fontSize: '15px', fontWeight: '600', color: '#dc2626' }}>
-                        {alert.probability}%
-                      </p>
-                    </div>
-                    <div>
-                      <p style={{ margin: 0, fontSize: '11px', color: '#6b7280', fontWeight: '500' }}>Payment</p>
-                      <p style={{ margin: '4px 0 0 0', fontSize: '13px', fontWeight: '500', color: '#374151', textTransform: 'capitalize' }}>
-                        {alert.paymentMethod}
-                      </p>
-                    </div>
-                    <div>
-                      <p style={{ margin: 0, fontSize: '11px', color: '#6b7280', fontWeight: '500' }}>Device</p>
-                      <p style={{ margin: '4px 0 0 0', fontSize: '13px', fontWeight: '500', color: '#374151', textTransform: 'capitalize' }}>
-                        {alert.deviceUsed}
-                      </p>
-                    </div>
-                    <div>
-                      <p style={{ margin: 0, fontSize: '11px', color: '#6b7280', fontWeight: '500' }}>Category</p>
-                      <p style={{ margin: '4px 0 0 0', fontSize: '13px', fontWeight: '500', color: '#374151', textTransform: 'capitalize' }}>
-                        {alert.productCategory}
-                      </p>
-                    </div>
-                    <div>
-                      <p style={{ margin: 0, fontSize: '11px', color: '#6b7280', fontWeight: '500' }}>Model</p>
-                      <p style={{ margin: '4px 0 0 0', fontSize: '13px', fontWeight: '500', color: '#374151' }}>
-                        {alert.modelUsed}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+        <RealtimeAlertsPanel
+          title="Real-Time Fraud Alerts"
+          description="Live stream of high-risk transactions detected across the platform."
+          alerts={fraudAlerts}
+          isConnected={isConnected}
+          onClearAlerts={clearAlerts}
+          onRemoveAlert={removeAlert}
+          scopeLabel="All stores"
+        />
 
         {/* Recent Logs */}
         <div className="logs-section">
