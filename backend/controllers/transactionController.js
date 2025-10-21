@@ -175,7 +175,10 @@ export const predictTransaction = async (req, res) => {
             };
             
             console.log('🚨 FRAUD DETECTED! Emitting alert:', alertData.transactionIdShort);
-            io.emit('fraud_alert', alertData);
+            io.to("alerts:all").emit("fraud_alert", alertData);
+            if (alertData.storeID) {
+              io.to(`store:${alertData.storeID}`).emit("fraud_alert", alertData);
+            }
           }
   
           // 11) Return predictions + saved doc
