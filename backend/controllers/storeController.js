@@ -1,4 +1,5 @@
 import Store from '../models/Store.js';
+import Transaction from '../models/TransactionSchema.js';
 
 // Get all stores
 export const getAllStores = async (req, res) => {
@@ -240,6 +241,140 @@ export const getStoresNearby = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error fetching nearby stores',
+            error: error.message
+        });
+    }
+};
+
+// Get stores with fraud statistics
+export const getStoresWithFraudStats = async (req, res) => {
+    try {
+        const { period = '30d' } = req.query;
+        
+        // Calculate date range based on period
+        const endDate = new Date();
+        let startDate = new Date();
+        
+        switch (period) {
+            case '7d':
+                startDate.setDate(startDate.getDate() - 7);
+                break;
+            case '30d':
+                startDate.setDate(startDate.getDate() - 30);
+                break;
+            case '90d':
+                startDate.setDate(startDate.getDate() - 90);
+                break;
+            case '1y':
+                startDate.setFullYear(startDate.getFullYear() - 1);
+                break;
+            default:
+                startDate.setDate(startDate.getDate() - 30);
+        }
+        
+        // Get all stores
+        const stores = await Store.find().populate('managerId', 'name email role');
+        
+        // Get fraud statistics for each store
+        const storesWithStats = await Promise.all(
+            stores.map(async (store) => {
+                try {
+                    // Get transaction counts for this store
+                    const totalTransactions = await Transaction.countDocuments({
+                        $or: [
+                            { storeRef: store._id },
+                            { storeID: store.storeID }
+                        ],
+                        createdAt: { $gte: startDate, $lte: endDate }
+                    });
+                    
+                    const fraudulentTransactions = await Transaction.countDocuments({
+                        $or: [
+                            { storeRef: store._id },
+                            { storeID: store.storeID }
+                        ],
+                        predictions: { $in: [1] },
+                        createdAt: { $gte: startDate, $lte: endDate }
+                    });
+                    
+                    // Calculate fraud rate
+                    const fraudRate = totalTransactions > 0 
+                        ? (fraudulentTransactions / totalTransactions) * 100 
+                        : 0;
+                    
+                    // Get total transaction amount for this store
+                    const totalAmount = await Transaction.aggregate([
+                        {
+                            $match: {
+                                $or: [
+                                    { storeRef: store._id },
+                                    { storeID: store.storeID }
+                                ],
+                                createdAt: { $gte: startDate, $lte: endDate }
+                            }
+                        },
+                        {
+                            $group: {
+                                _id: null,
+                                total: { $sum: '$transactionAmount' }
+                            }
+                        }
+                    ]);
+                    
+                    const transactionVolume = totalAmount.length > 0 ? totalAmount[0].total : 0;
+                    
+                    // Get high-risk transactions (risk score > 70)
+                    const highRiskTransactions = await Transaction.countDocuments({
+                        $or: [
+                            { storeRef: store._id },
+                            { storeID: store.storeID }
+                        ],
+                        $or: [
+                            { riskScore: { $gte: 70 } },
+                            { 'probabilities.0.1': { $gte: 0.7 } }
+                        ],
+                        createdAt: { $gte: startDate, $lte: endDate }
+                    });
+                    
+                    return {
+                        ...store.toObject(),
+                        fraudStats: {
+                            totalTransactions,
+                            fraudulentTransactions,
+                            fraudRate: parseFloat(fraudRate.toFixed(2)),
+                            transactionVolume,
+                            highRiskTransactions,
+                            period
+                        }
+                    };
+                } catch (error) {
+                    console.error(`Error getting stats for store ${store.storeID}:`, error);
+                    return {
+                        ...store.toObject(),
+                        fraudStats: {
+                            totalTransactions: 0,
+                            fraudulentTransactions: 0,
+                            fraudRate: 0,
+                            transactionVolume: 0,
+                            highRiskTransactions: 0,
+                            period
+                        }
+                    };
+                }
+            })
+        );
+        
+        res.status(200).json({
+            success: true,
+            data: storesWithStats,
+            count: storesWithStats.length,
+            period
+        });
+    } catch (error) {
+        console.error('Error fetching stores with fraud stats:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching stores with fraud statistics',
             error: error.message
         });
     }

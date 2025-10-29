@@ -14,7 +14,7 @@ import { logApiCall, getApiLogs, getApiUsageStats, getApiLogById } from '../cont
 import { getDashboardStats } from '../controllers/dashboardController.js';
 import { getStoreManagerStats, getFraudTrends, getTransactionTypeDistribution, getRecentAlerts } from '../controllers/storeManagerController.js';
 import { sendReportEmail } from '../controllers/reportController.js';
-import { getAllStores, getStoreById, getStoreByStoreId, createStore, updateStore, deleteStore, getStoresByManager, getStoresNearby } from '../controllers/storeController.js';
+import { getAllStores, getStoreById, getStoreByStoreId, createStore, updateStore, deleteStore, getStoresByManager, getStoresNearby, getStoresWithFraudStats } from '../controllers/storeController.js';
 import { seedStores, clearStores } from '../controllers/storeSeederController.js';
 
 const router = express.Router();
@@ -77,13 +77,14 @@ router.post('/generate-sample-transactions', generateSampleTransactions);
 
 // Store routes
 router.get('/stores', authMiddleware, getAllStores);
-router.get('/stores/:id', authMiddleware, getStoreById);
+router.get('/stores/fraud-stats', authMiddleware, getStoresWithFraudStats);
+router.get('/stores/nearby', authMiddleware, getStoresNearby);
+router.get('/stores/manager/:managerId', authMiddleware, getStoresByManager);
 router.get('/stores/store-id/:storeId', authMiddleware, getStoreByStoreId);
+router.get('/stores/:id', authMiddleware, getStoreById);
 router.post('/stores', authMiddleware, adminMiddleware, createStore);
 router.put('/stores/:id', authMiddleware, adminMiddleware, updateStore);
 router.delete('/stores/:id', authMiddleware, adminMiddleware, deleteStore);
-router.get('/stores/manager/:managerId', authMiddleware, getStoresByManager);
-router.get('/stores/nearby', authMiddleware, getStoresNearby);
 
 // Store seeder routes (for development/testing)
 router.post('/seed-stores', authMiddleware, adminMiddleware, seedStores);

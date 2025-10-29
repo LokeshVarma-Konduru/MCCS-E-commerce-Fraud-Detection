@@ -18,15 +18,16 @@ const storeSchema = new mongoose.Schema({
         type: String, 
         required: true 
     },
-    // Additional fields for map functionality
+    // Additional fields for map functionality - GeoJSON format
     coordinates: {
-        latitude: { 
-            type: Number, 
-            required: true 
+        type: {
+            type: String,
+            enum: ['Point'],
+            default: 'Point'
         },
-        longitude: { 
-            type: Number, 
-            required: true 
+        coordinates: {
+            type: [Number], // [longitude, latitude]
+            required: true
         }
     },
     // Store status
