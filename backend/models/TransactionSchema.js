@@ -15,6 +15,10 @@ const transactionSchema = new mongoose.Schema({
   transactionMonth: { type: Number, required: true },
   isAddressMatch: { type: Number, required: true },
   modelUsed: { type: String, enum: ['logistic-regression', 'bernoulli-nb', 'xgboost', 'decision-tree'], required: true },
+
+  // Store linkage (only meaningful for in-store transactions)
+  storeRef: { type: mongoose.Schema.Types.ObjectId, ref: 'Store', required: false },
+  storeID: { type: String, required: false },
   
   // Add transaction type (online or in-store)
   transactionType: { 
@@ -79,6 +83,9 @@ const transactionSchema = new mongoose.Schema({
   // Timestamps
   createdAt: { type: Date, default: Date.now, required: true }
 });
+
+// Helpful index for store-scoped dashboards
+transactionSchema.index({ storeRef: 1, createdAt: -1 });
 
 const Transaction = mongoose.model('Transaction', transactionSchema);
 export default Transaction;

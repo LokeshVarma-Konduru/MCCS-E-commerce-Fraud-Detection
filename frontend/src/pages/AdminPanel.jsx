@@ -1,15 +1,18 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { addUsers, getUsers, getUserInfo, deleteUser, toggleUserStatus } from '../api';
+import { addUsers, getUsers, deleteUser, toggleUserStatus, getStores } from '../api';
+import { useAuth } from '../context/AuthContext.jsx';
 import PageHeader from '../components/PageHeader';
 import '../styles/AdminPanel.css';
 
 const AdminPanel = () => {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
   const [userEntries, setUserEntries] = useState([
     { email: '', name: '', role: 'Developer' }
   ]);
   const [users, setUsers] = useState([]);
+  const [stores, setStores] = useState([]);
   
   // Separate messages for Add User and Users List
   const [addUserMessage, setAddUserMessage] = useState('');
@@ -51,11 +54,41 @@ const AdminPanel = () => {
   }, [roleFilter, searchTerm]);
 
   useEffect(() => {
-    checkAdminAccess();
-    fetchUsers();
-  }, []);
+    if (loading) {
+      return;
+    }
+
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    if (user.role !== 'Admin') {
+      navigate('/dashboard');
+    }
+  }, [user, loading, navigate]);
+
+  // Load stores once for dropdowns
+  useEffect(() => {
+    const loadStores = async () => {
+      try {
+        const res = await getStores();
+        const list = res?.data || [];
+        setStores(Array.isArray(list) ? list : (list.data || []));
+      } catch (e) {
+        // Silent fail; admin can still add non-store users
+      }
+    };
+    if (!loading && user && user.role === 'Admin') {
+      loadStores();
+    }
+  }, [loading, user]);
 
   useEffect(() => {
+    if (loading || !user || user.role !== 'Admin') {
+      return;
+    }
+
     // Clear any existing timeout
     if (searchTimeout.current) {
       clearTimeout(searchTimeout.current);
@@ -73,25 +106,7 @@ const AdminPanel = () => {
         clearTimeout(searchTimeout.current);
       }
     };
-  }, [fetchUsers, searchTerm, roleFilter]);
-
-  const checkAdminAccess = async () => {
-    try {
-      const userId = localStorage.getItem('userId');
-      if (!userId) {
-        navigate('/login');
-        return;
-      }
-
-      const response = await getUserInfo(userId);
-      if (!response.data.user || response.data.user.role !== 'Admin') {
-        navigate('/dashboard');
-      }
-    } catch (error) {
-      console.error('Error checking admin access:', error);
-      navigate('/login');
-    }
-  };
+  }, [fetchUsers, searchTerm, roleFilter, loading, user]);
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
@@ -138,7 +153,18 @@ const AdminPanel = () => {
     }
 
     try {
-      const response = await addUsers({ users: userEntries });
+      // Map entries: if StoreManager, attach storeRef and storeID from selected store
+      const mapped = userEntries.map((entry) => {
+        if (entry.role === 'StoreManager' && entry._selectedStoreId) {
+          const st = stores.find(s => (s._id === entry._selectedStoreId));
+          if (st) {
+            return { ...entry, storeRef: st._id, storeID: st.storeID };
+          }
+        }
+        return entry;
+      });
+
+      const response = await addUsers({ users: mapped });
 
       if (response.data) {
         const { addedUsers, failedUsers } = response.data;
@@ -346,6 +372,26 @@ const AdminPanel = () => {
                             <option value="StoreManager">Store Manager</option>
                           </select>
                         </div>
+                        {entry.role === 'StoreManager' && (
+                          <div className="form-group">
+                            <label htmlFor={`store-${index}`}>Store:</label>
+                            <select
+                              id={`store-${index}`}
+                              name="_selectedStoreId"
+                              value={entry._selectedStoreId || ''}
+                              onChange={(e) => handleInputChange(index, e)}
+                              className="form-input"
+                              required
+                            >
+                              <option value="" disabled>Select a store</option>
+                              {stores.map(st => (
+                                <option key={st._id} value={st._id}>
+                                  {st.storeID} — {st.storeName}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
                       </div>
                       {userEntries.length > 1 && (
                         <button
@@ -431,7 +477,20 @@ const AdminPanel = () => {
                       {users.length > 0 ? (
                         users.map((user) => (
                           <tr key={user._id}>
-                            <td>{user.name}</td>
+                            <td>
+                              {user.name}
+                              {user.role === 'StoreManager' && (
+                                <div style={{ fontSize: '12px', color: '#555', marginTop: '4px' }}>
+                                  {(() => {
+                                    const storeID = user?.storeRef?.storeID || user?.storeID;
+                                    const storeName = user?.storeRef?.storeName;
+                                    if (storeID && storeName) return `Store: ${storeID} — ${storeName}`;
+                                    if (storeID) return `Store: ${storeID}`;
+                                    return null;
+                                  })()}
+                                </div>
+                              )}
+                            </td>
                             <td>{user.email}</td>
                             <td>{user.role}</td>
                             <td>
@@ -538,3 +597,7 @@ const AdminPanel = () => {
 };
 
 export default AdminPanel;
+
+
+
+

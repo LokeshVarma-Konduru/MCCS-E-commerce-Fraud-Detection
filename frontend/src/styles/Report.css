@@ -190,9 +190,13 @@
   gap: 32px;
   margin: 40px 0;
   width: 100%;
+    align-items: stretch;
 }
 
 .report-chart-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   background: white;
   border-radius: 12px;
   padding: 24px;
@@ -893,3 +897,5 @@
     grid-template-columns: 1fr;
   }
 }
+
+

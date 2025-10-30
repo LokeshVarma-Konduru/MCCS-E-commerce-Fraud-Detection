@@ -1,29 +1,31 @@
-// eslint-disable-next-line no-unused-vars
-import React from 'react';
-import PropTypes from 'prop-types';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import Dashboard from './pages/Dashboard.jsx';
-import Login from './Login.jsx';
-import Navbar from './components/Navbar.jsx';
-import Footer from './components/Footer.jsx';
-import './styles/GlobalFooter.css';
-import AdminPanel from './pages/AdminPanel.jsx';
-import AboutUs from './pages/AboutUs.jsx';
-import Contact from './pages/Contact.jsx';
-import Developer from './pages/Developer.jsx';
-import APIIntegration from './pages/APIIntegration';
-import ModelPerformance from './pages/ModelPerformance';
-import TransactionMonitoring from './pages/TransactionMonitoring';
-import StoreManager from './pages/StoreManager.jsx';
-import Help from './pages/Help.jsx';
-import ApiDocs from './pages/ApiDocs.jsx';
-import { getUserInfo } from './api.js';
+import PropTypes from "prop-types";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import Dashboard from "./pages/Dashboard.jsx";
+import Login from "./Login.jsx";
+import Navbar from "./components/Navbar.jsx";
+import AdminPanel from "./pages/AdminPanel.jsx";
+import AdminDashboard from "./pages/AdminDashboard.jsx";
+import AboutUs from "./pages/AboutUs.jsx";
+import Contact from "./pages/Contact.jsx";
+import Developer from "./pages/Developer.jsx";
+import Footer from "./components/Footer.jsx";
+import "./styles/GlobalFooter.css";
+import APIIntegration from "./pages/APIIntegration";
+import ModelPerformance from "./pages/ModelPerformance";
+import TransactionMonitoring from "./pages/TransactionMonitoring";
+import StoreManager from "./pages/StoreManager.jsx";
+import Help from "./pages/Help.jsx";
+import ApiDocs from "./pages/ApiDocs.jsx";
+import { useAuth } from "./context/AuthContext.jsx";
 
-// Protected Route Component
 const ProtectedRoute = ({ children }) => {
-  const isAuthenticated = localStorage.getItem('token');
   const location = useLocation();
-  
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
@@ -37,119 +39,63 @@ const ProtectedRoute = ({ children }) => {
   );
 };
 
-// Admin Route Component
 const AdminRoute = ({ children }) => {
-  const [isAdmin, setIsAdmin] = React.useState(null);
   const location = useLocation();
-  
-  React.useEffect(() => {
-    const checkAdminStatus = async () => {
-      try {
-        const userId = localStorage.getItem('userId');
-        if (!userId) {
-          setIsAdmin(false);
-          return;
-        }
-        
-        const response = await getUserInfo(userId);
-        setIsAdmin(response.data.user.role === 'Admin');
-      } catch (error) {
-        console.error('Error checking admin status:', error);
-        setIsAdmin(false);
-      }
-    };
-    
-    checkAdminStatus();
-  }, []);
-  
-  if (isAdmin === null) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
     return <div>Loading...</div>;
   }
-  
-  if (!isAdmin) {
+
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (user.role !== "Admin") {
     return <Navigate to="/dashboard" state={{ from: location }} replace />;
   }
-  
+
   return <ProtectedRoute>{children}</ProtectedRoute>;
 };
 
-// Developer Route Component
 const DeveloperRoute = ({ children }) => {
-  const [isDeveloper, setIsDeveloper] = React.useState(null);
   const location = useLocation();
+  const { user, loading } = useAuth();
 
-  React.useEffect(() => {
-    const checkDeveloperStatus = async () => {
-      try {
-        const userId = localStorage.getItem('userId');
-        if (!userId) {
-          setIsDeveloper(false);
-          return;
-        }
-        
-        const response = await getUserInfo(userId);
-        // Only Developer and Admin roles can access developer pages
-        setIsDeveloper(['Developer', 'Admin'].includes(response.data.user.role));
-      } catch (error) {
-        console.error('Error checking developer status:', error);
-        setIsDeveloper(false);
-      }
-    };
-    
-    checkDeveloperStatus();
-  }, []);
-  
-  if (isDeveloper === null) {
+  if (loading) {
     return <div>Loading...</div>;
   }
-  
-  if (!isDeveloper) {
-    // If user is not a developer or admin, redirect based on their role
+
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (!["Developer", "Admin"].includes(user.role)) {
     return <Navigate to="/dashboard" state={{ from: location }} replace />;
   }
-  
+
   return <ProtectedRoute>{children}</ProtectedRoute>;
 };
 
-// Store Manager Route Component
 const StoreManagerRoute = ({ children }) => {
-  const [isStoreManager, setIsStoreManager] = React.useState(null);
   const location = useLocation();
+  const { user, loading } = useAuth();
 
-  React.useEffect(() => {
-    const checkStoreManagerStatus = async () => {
-      try {
-        const userId = localStorage.getItem('userId');
-        if (!userId) {
-          setIsStoreManager(false);
-          return;
-        }
-        
-        const response = await getUserInfo(userId);
-        const userRole = response.data.user.role;
-        // Only Store Manager and Admin roles can access store manager pages
-        setIsStoreManager(['StoreManager', 'Admin'].includes(userRole));
-      } catch (error) {
-        console.error('Error checking store manager status:', error);
-        setIsStoreManager(false);
-      }
-    };
-    
-    checkStoreManagerStatus();
-  }, []);
-  
-  if (isStoreManager === null) {
+  if (loading) {
     return <div>Loading...</div>;
   }
-  
-  if (!isStoreManager) {
+
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (!["StoreManager", "Admin"].includes(user.role)) {
     return <Navigate to="/dashboard" state={{ from: location }} replace />;
   }
-  
+
   return <ProtectedRoute>{children}</ProtectedRoute>;
 };
 
-// Add PropTypes validation
 ProtectedRoute.propTypes = {
   children: PropTypes.node.isRequired
 };
@@ -166,49 +112,25 @@ StoreManagerRoute.propTypes = {
   children: PropTypes.node.isRequired
 };
 
-// Dashboard Content with role-based redirect
 const DashboardContent = () => {
-  const [loading, setLoading] = React.useState(true);
-  const [redirect, setRedirect] = React.useState(null);
-  
-  React.useEffect(() => {
-    const checkUserRole = async () => {
-      try {
-        const userId = localStorage.getItem('userId');
-        if (!userId) {
-          setLoading(false);
-          return;
-        }
-        
-        const response = await getUserInfo(userId);
-        const userRole = response.data.user.role;
-        
-        // Redirect based on role
-        if (userRole === 'Developer') {
-          setRedirect('/developer');
-        } else if (userRole === 'StoreManager') {
-          setRedirect('/store-manager');
-        } else {
-          // Admin or any other role stays on dashboard
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error('Error checking user role:', error);
-        setLoading(false);
-      }
-    };
-    
-    checkUserRole();
-  }, []);
-  
+  const { user, loading } = useAuth();
+
   if (loading) {
     return <div>Loading...</div>;
   }
-  
-  if (redirect) {
-    return <Navigate to={redirect} replace />;
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
   }
-  
+
+  if (user.role === "Developer") {
+    return <Navigate to="/developer" replace />;
+  }
+
+  if (user.role === "StoreManager") {
+    return <Navigate to="/store-manager" replace />;
+  }
+
   return (
     <div className="dashboard-content">
       <Dashboard />
@@ -237,6 +159,14 @@ const App = () => {
               <DeveloperRoute>
                 <Developer />
               </DeveloperRoute>
+            }
+          />
+          <Route
+            path="/admin-dashboard"
+            element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
             }
           />
           <Route
@@ -309,8 +239,8 @@ const App = () => {
               <ProtectedRoute>
                 <ApiDocs />
               </ProtectedRoute>
-          }
-        />
+            }
+          />
         </Routes>
       </div>
     </BrowserRouter>
@@ -318,3 +248,4 @@ const App = () => {
 };
 
 export default App;
+

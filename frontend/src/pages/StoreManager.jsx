@@ -11,10 +11,13 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { FaEnvelope, FaTimes } from 'react-icons/fa';
+import { FaEnvelope } from 'react-icons/fa';
 import '../styles/StoreManager.css';
 import '../styles/Report.css';
-import { getStoreManagerStats, getFraudTrends, getTransactionTypeDistribution, getRecentAlerts, sendReportEmail, getUserInfo } from '../api';
+import { getStoreManagerStats, getFraudTrends, getTransactionTypeDistribution, getRecentAlerts, sendReportEmail } from '../api';
+import { useAuth } from '../context/AuthContext.jsx';
+import { useSocket } from '../context/SocketContext.jsx';
+import RealtimeAlertsPanel from '../components/RealtimeAlertsPanel.jsx';
 import StoreManagerReport from '../components/StoreManagerReport';
 
 ChartJS.register(
@@ -29,6 +32,8 @@ ChartJS.register(
 );
 
 const StoreManager = () => {
+  const { user: currentUser, loading: authLoading } = useAuth();
+  const { isConnected, fraudAlerts, clearAlerts, removeAlert } = useSocket();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [timeRange, setTimeRange] = useState('Last 30 days');
   const [transactionType, setTransactionType] = useState('All Transactions');
@@ -40,7 +45,6 @@ const StoreManager = () => {
   const reportRef = useRef(null);
   
   // User state
-  const [currentUser, setCurrentUser] = useState(null);
   
   // Email report state
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -322,24 +326,15 @@ const StoreManager = () => {
     }
   };
 
-  // Fetch user information when component mounts
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const userId = localStorage.getItem('userId');
-        if (userId) {
-          const response = await getUserInfo(userId);
-          if (response && response.data && response.data.user) {
-            setCurrentUser(response.data.user);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching user information:', error);
-      }
-    };
-    
-    fetchUserData();
-  }, []);
+  // Derive store context from logged-in user
+  const storeRefId = currentUser?.storeRef?._id || null;
+  const storeHumanId = currentUser?.storeRef?.storeID || currentUser?.storeID || null;
+  const storeName = currentUser?.storeRef?.storeName || null;
+  const storeDisplayLabel = storeName
+    ? `${storeName}${storeHumanId ? ` · ${storeHumanId}` : ''}`
+    : storeHumanId
+      ? `Store ${storeHumanId}`
+      : 'Assigned store';
 
   // Fetch stats data
   useEffect(() => {
@@ -347,7 +342,7 @@ const StoreManager = () => {
       try {
         setLoading(true);
         const period = getPeriodFromTimeRange(timeRange);
-        const response = await getStoreManagerStats(period, transactionType);
+        const response = await getStoreManagerStats(period, transactionType, { storeRef: storeRefId, storeID: storeHumanId });
         
         if (response.data && response.data.success) {
           const { totalTransactions, fraudRate, financialImpact } = response.data.data;
@@ -375,14 +370,14 @@ const StoreManager = () => {
     };
 
     fetchStats();
-  }, [timeRange, transactionType]);
+  }, [timeRange, transactionType, authLoading, currentUser]);
 
   // Fetch fraud trend data
   useEffect(() => {
     const fetchFraudTrends = async () => {
       try {
         const period = getPeriodFromTimeRange(timeRange);
-        const response = await getFraudTrends(period, transactionType);
+        const response = await getFraudTrends(period, transactionType, { storeRef: storeRefId, storeID: storeHumanId });
         
         if (response.data && response.data.success) {
           const trendData = response.data.data;
@@ -407,7 +402,7 @@ const StoreManager = () => {
     };
 
     fetchFraudTrends();
-  }, [timeRange, transactionType]);
+  }, [timeRange, transactionType, authLoading, currentUser]);
 
   // Fetch transaction type distribution data
   useEffect(() => {
@@ -415,7 +410,7 @@ const StoreManager = () => {
       try {
         const period = getPeriodFromTimeRange(timeRange);
         const typeFilter = transactionTypeFilter !== 'All Types' ? transactionTypeFilter : null;
-        const response = await getTransactionTypeDistribution(period, typeFilter);
+        const response = await getTransactionTypeDistribution(period, typeFilter, { storeRef: storeRefId, storeID: storeHumanId });
         
         if (response.data && response.data.success) {
           const { categories, series } = response.data.data;
@@ -446,14 +441,14 @@ const StoreManager = () => {
     };
 
     fetchTransactionTypes();
-  }, [timeRange, transactionTypeFilter]);
+  }, [timeRange, transactionTypeFilter, authLoading, currentUser]);
 
   // Fetch recent alerts
   useEffect(() => {
     const fetchRecentAlerts = async () => {
       try {
         setAlertsLoading(true);
-        const response = await getRecentAlerts(5, transactionType);
+        const response = await getRecentAlerts(5, transactionType, { storeRef: storeRefId, storeID: storeHumanId });
         
         if (response.data && response.data.success) {
           setRecentAlerts(response.data.data);
@@ -466,7 +461,7 @@ const StoreManager = () => {
     };
 
     fetchRecentAlerts();
-  }, [transactionType]);
+  }, [transactionType, authLoading, currentUser]);
 
   // Memoize chart options to prevent unnecessary re-renders
   const chartOptions = useMemo(() => ({
@@ -768,19 +763,17 @@ const StoreManager = () => {
 
       {/* Alerts Tab Content */}
       {activeTab === 'alerts' && (
-        <div className="coming-soon-container">
-          <div className="coming-soon-card">
-            <h2>Alerts Feature Coming Soon</h2>
-            <p>Soon you'll be able to:</p>
-            <ul>
-              <li>Set up custom alert thresholds</li>
-              <li>Receive notifications for high-risk transactions</li>
-              <li>Configure alert delivery methods (email, SMS, in-app)</li>
-              <li>Create alert rules based on transaction patterns</li>
-            </ul>
-            <p>We're working hard to bring you these capabilities!</p>
-          </div>
-        </div>
+        <RealtimeAlertsPanel
+          title="Live Store Alerts"
+          description="Real-time notifications for high-risk transactions detected in your assigned store."
+          alerts={fraudAlerts}
+          isConnected={isConnected}
+          onClearAlerts={clearAlerts}
+          onRemoveAlert={removeAlert}
+          scopeLabel={storeDisplayLabel}
+          emptyStateTitle="No alerts for your store yet"
+          emptyStateDescription="Fraud alerts will appear here instantly when transactions in your store are flagged."
+        />
       )}
 
       {/* Report View */}

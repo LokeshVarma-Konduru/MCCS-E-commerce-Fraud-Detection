@@ -3,29 +3,99 @@ import json
 import os
 import joblib
 import pandas as pd
+import io
+from pymongo import MongoClient
+import gridfs
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 current_dir = os.path.dirname(__file__)
 
+# Global cache for loaded models (avoid reloading from GridFS)
+_model_cache = {}
+
+def load_model_from_gridfs(filename):
+    """Load model from MongoDB GridFS"""
+    try:
+        mongo_uri = os.getenv("MONGO_URI")
+        if not mongo_uri:
+            raise ValueError("MONGO_URI not found in environment")
+        
+        # Connect to MongoDB
+        client = MongoClient(mongo_uri)
+        db = client["mccs"]
+        fs = gridfs.GridFS(db, collection="modelFiles")
+        
+        # Find and download model
+        grid_out = fs.find_one({"filename": filename})
+        if not grid_out:
+            raise FileNotFoundError(f"Model {filename} not found in GridFS")
+        
+        # Read binary data
+        model_bytes = grid_out.read()
+        client.close()
+        
+        # Load model from bytes
+        print(f"✅ Loaded {filename} from MongoDB GridFS", file=sys.stderr)
+        return joblib.load(io.BytesIO(model_bytes))
+        
+    except Exception as e:
+        print(f"❌ GridFS Error: {str(e)}", file=sys.stderr)
+        raise
+
+def load_model_from_local(filename):
+    """Fallback: Load model from local file system"""
+    model_path = os.path.join(current_dir, filename)
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Model {filename} not found in local directory")
+    print(f"✅ Loaded {filename} from local file system", file=sys.stderr)
+    return joblib.load(model_path)
+
 def load_model(model_name):
-    if model_name == "logistic-regression":
-        # Logistic Regression pipeline
-        model_path = os.path.join(current_dir, "logistic_regression.pkl")
-        pipeline = joblib.load(model_path)
-        return pipeline
-    elif model_name == "bernoulli-nb":
-        # Bernoulli NB pipeline
-        model_path = os.path.join(current_dir, "bernoulli_nb.pkl")
-        pipeline = joblib.load(model_path)
-        return pipeline
-    elif model_name == "decision-tree":
-        # Decision Tree pipeline
-        model_path = os.path.join(current_dir, "decision_tree.pkl")
-        pipeline = joblib.load(model_path)
-        return pipeline
-    elif model_name == "xgboost":
-        # XGBoost pipeline - handle ColumnTransformer case
-        model_path = os.path.join(current_dir, "xgb_pipeline.pkl")
-        transformer = joblib.load(model_path)
+    """
+    Load model from MongoDB GridFS with caching and fallback to local files.
+    Uses global cache to avoid reloading models.
+    """
+    # Model name to filename mapping
+    model_files = {
+        "logistic-regression": "logistic_regression.pkl",
+        "bernoulli-nb": "bernoulli_nb.pkl",
+        "decision-tree": "decision_tree.pkl",
+        "xgboost": "xgb_pipeline.pkl",
+        "spinal-net": "spinalnet_weights.pkl",
+        "gan-weights": "gan_weights.pkl"
+    }
+    
+    # Check if model name is valid
+    if model_name not in model_files:
+        raise ValueError(f"Unknown model name: {model_name}")
+    
+    filename = model_files[model_name]
+    
+    # Check cache first
+    if model_name in _model_cache:
+        print(f"🚀 Using cached model: {filename}", file=sys.stderr)
+        return _model_cache[model_name]
+    
+    # Try loading from GridFS first
+    try:
+        pipeline = load_model_from_gridfs(filename)
+        _model_cache[model_name] = pipeline  # Cache for future use
+        
+    except Exception as gridfs_error:
+        # Fallback to local file system
+        print(f"⚠️  GridFS failed, trying local files...", file=sys.stderr)
+        try:
+            pipeline = load_model_from_local(filename)
+            _model_cache[model_name] = pipeline  # Cache for future use
+        except Exception as local_error:
+            raise Exception(f"Failed to load model from both GridFS and local: GridFS={gridfs_error}, Local={local_error}")
+    
+    # Handle special cases for xgboost
+    if model_name == "xgboost":
+        transformer = pipeline
         
         # Check if it's a ColumnTransformer without predict method
         if hasattr(transformer, 'predict'):
@@ -68,33 +138,12 @@ def load_model(model_name):
                         import numpy as np
                         return np.tile([0.5, 0.5], (len(X), 1))
             
-            return TransformerPredictorWrapper(transformer)
-    elif model_name == "spinal-net":
-        # Spinal Net pipeline
-        model_path = os.path.join(current_dir, "spinalnet_weights.pkl")
-        try:
-            pipeline = joblib.load(model_path)
+            pipeline = TransformerPredictorWrapper(transformer)
+            _model_cache[model_name] = pipeline  # Update cache with wrapper
             return pipeline
-        except Exception as e:
-            # Fallback to decision tree if there's an issue
-            print(f"Error loading spinal-net model: {e}. Falling back to decision tree.", file=sys.stderr)
-            model_path = os.path.join(current_dir, "decision_tree.pkl")
-            pipeline = joblib.load(model_path)
-            return pipeline
-    elif model_name == "gan-weights":
-        # GAN weights pipeline
-        model_path = os.path.join(current_dir, "gan_weights.pkl")
-        try:
-            pipeline = joblib.load(model_path)
-            return pipeline
-        except Exception as e:
-            # Fallback to decision tree if there's an issue
-            print(f"Error loading gan-weights model: {e}. Falling back to decision tree.", file=sys.stderr)
-            model_path = os.path.join(current_dir, "decision_tree.pkl")
-            pipeline = joblib.load(model_path)
-            return pipeline
-    else:
-        raise ValueError(f"Unknown model name: {model_name}")
+    
+    # Return the loaded pipeline
+    return pipeline
 
 if __name__ == "__main__":
     # 1) Check if user specified the model name as argv[1]

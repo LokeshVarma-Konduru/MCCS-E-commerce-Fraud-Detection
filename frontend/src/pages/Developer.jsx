@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { FaHome, FaCode, FaChartLine, FaExchangeAlt, FaChartPie, FaEnvelope, FaTimes } from 'react-icons/fa';
+import { FaChartPie, FaEnvelope } from 'react-icons/fa';
+import DeveloperNav from '../components/DeveloperNav';
 import { Line } from 'react-chartjs-2';
 import Report from '../components/Report';
 import PageHeader from '../components/PageHeader';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
-import { getTransactions, getDashboardStats, getApiUsageStats, sendReportEmail, getUserInfo } from '../api';
+import { getTransactions, getDashboardStats, getApiUsageStats, sendReportEmail } from '../api';
+import { useAuth } from '../context/AuthContext.jsx';
+import { useSocket } from '../context/SocketContext.jsx';
+import RealtimeAlertsPanel from '../components/RealtimeAlertsPanel.jsx';
 import '../styles/Developer.css';
 import '../styles/Report.css';
 
@@ -28,8 +31,8 @@ const Developer = () => {
   const [showReport, setShowReport] = useState(false);
   const [reportPeriod, setReportPeriod] = useState('7d');
   
-  // User state
-  const [currentUser, setCurrentUser] = useState(null);
+  const { user } = useAuth();
+  const { isConnected, fraudAlerts, removeAlert, clearAlerts } = useSocket();
   
   // Email report state
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -110,25 +113,6 @@ const Developer = () => {
     { value: 'bank transfer', label: 'Bank Transfer' },
     { value: 'paypal', label: 'PayPal' }
   ];
-
-  // Fetch user information when component mounts
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const userId = localStorage.getItem('userId');
-        if (userId) {
-          const response = await getUserInfo(userId);
-          if (response && response.data && response.data.user) {
-            setCurrentUser(response.data.user);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching user information:', error);
-      }
-    };
-    
-    fetchUserData();
-  }, []);
 
   // Fetch real transaction data
   useEffect(() => {
@@ -607,9 +591,9 @@ const Developer = () => {
       let userName = '';
       let userRole = '';
       
-      if (currentUser) {
-        userName = currentUser.name || '';
-        userRole = currentUser.role || '';
+      if (user) {
+        userName = user.name || '';
+        userRole = user.role || '';
       }
       
       // Send email with PDF attachment including current user's information
@@ -656,27 +640,8 @@ const Developer = () => {
 
   return (
     <div className="developer-container">
-      <div className="top-navigation">
-        <nav className="nav-menu">
-          <Link to="/developer" className="nav-item">
-            <FaHome className="nav-icon" />
-            <span>Dashboard</span>
-          </Link>
-          <Link to="/api-integration" className="nav-item">
-            <FaCode className="nav-icon" />
-            <span>API Integration</span>
-          </Link>
-          <Link to="/model-performance" className="nav-item">
-            <FaChartLine className="nav-icon" />
-            <span>Model Performance</span>
-          </Link>
-          <Link to="/transaction-monitoring" className="nav-item">
-            <FaExchangeAlt className="nav-icon" />
-            <span>Transaction Monitoring</span>
-          </Link>
-        </nav>
-      </div>
-      
+      <DeveloperNav activePath="/developer" />
+
       <div className="main-content">
         <PageHeader title="Developer Dashboard" />
         {/* Stats Cards */}
@@ -871,6 +836,17 @@ const Developer = () => {
           </div>
         </div>
 
+        {/* 🚨 Fraud Alerts Section */}
+        <RealtimeAlertsPanel
+          title="Real-Time Fraud Alerts"
+          description="Live stream of high-risk transactions detected across the platform."
+          alerts={fraudAlerts}
+          isConnected={isConnected}
+          onClearAlerts={clearAlerts}
+          onRemoveAlert={removeAlert}
+          scopeLabel="All stores"
+        />
+
         {/* Recent Logs */}
         <div className="logs-section">
           <div className="section-header">
@@ -974,9 +950,9 @@ const Developer = () => {
                       />
                     </div>
                     
-                    {currentUser && (
+                    {user && (
                       <div className="user-info-notice">
-                        <p>Report will be sent from: <strong>{currentUser.name}</strong> ({currentUser.role})</p>
+                        <p>Report will be sent from: <strong>{user.name}</strong> ({user.role})</p>
                       </div>
                     )}
                     
@@ -1004,3 +980,4 @@ const Developer = () => {
 };
 
 export default Developer;
+
