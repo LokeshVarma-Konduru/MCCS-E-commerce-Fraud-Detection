@@ -8,6 +8,7 @@ import ReportSummaries from "../components/adminDashboard/ReportSummaries.jsx";
 import USFraudHeatmap from "../components/adminDashboard/USFraudHeatmap.jsx";
 import { usaMapData } from "../components/adminDashboard/usMapData.js";
 import RealtimeAlertsPanel from "../components/RealtimeAlertsPanel.jsx";
+import { getStores } from "../api.js";
 import "../styles/AdminDashboard.css";
 
 const riskLevelLabels = {
@@ -146,12 +147,15 @@ const AdminDashboard = () => {
   const { isConnected, fraudAlerts, clearAlerts, removeAlert } = useSocket();
   const [filters, setFilters] = useState({
     dateRange: "30d",
+    store: "all",
     region: "all",
     paymentType: "all",
     riskLevel: "all"
   });
   const [isLoading, setIsLoading] = useState(true);
   const [displayedTransactions, setDisplayedTransactions] = useState([]);
+  const [stores, setStores] = useState([]);
+  const [loadingStores, setLoadingStores] = useState(true);
   const [pagination, setPagination] = useState({
     page: 1,
     pageSize: 6
@@ -181,6 +185,13 @@ const AdminDashboard = () => {
         { value: "30d", label: "Last 30 days" },
         { value: "quarter", label: "Last 90 days" }
       ],
+      store: [
+        { value: "all", label: "All Stores" },
+        ...stores.map(store => ({
+          value: store.storeID,
+          label: `${store.storeID} - ${store.storeName}`
+        }))
+      ],
       region: [
         { value: "all", label: "All Regions" },
         { value: "north", label: "Northern Markets" },
@@ -202,8 +213,27 @@ const AdminDashboard = () => {
         { value: "low", label: "Low risk" }
       ]
     }),
-    []
+    [stores]
   );
+
+  // Fetch stores on component mount
+  useEffect(() => {
+    const fetchStores = async () => {
+      try {
+        setLoadingStores(true);
+        const response = await getStores();
+        if (response.data && response.data.success) {
+          setStores(response.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching stores:', error);
+      } finally {
+        setLoadingStores(false);
+      }
+    };
+
+    fetchStores();
+  }, []);
 
   const baseTransactions = useMemo(
     () => [
@@ -211,6 +241,7 @@ const AdminDashboard = () => {
         id: "tx-1048",
         time: "08:42",
         store: "Store 104 - Midtown",
+        storeID: "S104",
         region: "North Region",
         regionKey: "north",
         transactionId: "TX-1048",
@@ -227,6 +258,7 @@ const AdminDashboard = () => {
         id: "tx-2051",
         time: "09:15",
         store: "Store 205 - Riverside",
+        storeID: "S205",
         region: "West Region",
         regionKey: "west",
         transactionId: "TX-2051",
@@ -243,6 +275,7 @@ const AdminDashboard = () => {
         id: "tx-3109",
         time: "09:48",
         store: "Store 310 - Downtown",
+        storeID: "S310",
         region: "Central Region",
         regionKey: "central",
         transactionId: "TX-3109",
@@ -259,6 +292,7 @@ const AdminDashboard = () => {
         id: "tx-4183",
         time: "10:22",
         store: "Store 418 - Lakeside",
+        storeID: "S418",
         region: "South Region",
         regionKey: "south",
         transactionId: "TX-4183",
@@ -275,6 +309,7 @@ const AdminDashboard = () => {
         id: "tx-5120",
         time: "11:03",
         store: "Store 512 - Harbor",
+        storeID: "S512",
         region: "North Region",
         regionKey: "north",
         transactionId: "TX-5120",
@@ -291,6 +326,7 @@ const AdminDashboard = () => {
         id: "tx-6094",
         time: "11:58",
         store: "Store 609 - Hillcrest",
+        storeID: "S609",
         region: "West Region",
         regionKey: "west",
         transactionId: "TX-6094",
@@ -307,6 +343,7 @@ const AdminDashboard = () => {
         id: "tx-7021",
         time: "12:34",
         store: "Store 702 - Seaside",
+        storeID: "S702",
         region: "South Region",
         regionKey: "south",
         transactionId: "TX-7021",
@@ -323,6 +360,7 @@ const AdminDashboard = () => {
         id: "tx-8450",
         time: "13:16",
         store: "Store 845 - Capital Plaza",
+        storeID: "S845",
         region: "Central Region",
         regionKey: "central",
         transactionId: "TX-8450",
@@ -339,6 +377,7 @@ const AdminDashboard = () => {
         id: "tx-9304",
         time: "14:07",
         store: "Store 930 - Innovation Hub",
+        storeID: "S930",
         region: "North Region",
         regionKey: "north",
         transactionId: "TX-9304",
@@ -355,6 +394,7 @@ const AdminDashboard = () => {
         id: "tx-10012",
         time: "15:42",
         store: "Store 1001 - Market Street",
+        storeID: "S1001",
         region: "West Region",
         regionKey: "west",
         transactionId: "TX-10012",
@@ -371,6 +411,7 @@ const AdminDashboard = () => {
         id: "tx-11045",
         time: "16:18",
         store: "Store 1104 - Lakeshore",
+        storeID: "S1104",
         region: "South Region",
         regionKey: "south",
         transactionId: "TX-11045",
@@ -387,6 +428,7 @@ const AdminDashboard = () => {
         id: "tx-12031",
         time: "17:26",
         store: "Store 1203 - Tech Park",
+        storeID: "S1203",
         region: "Central Region",
         regionKey: "central",
         transactionId: "TX-12031",
@@ -525,10 +567,11 @@ const AdminDashboard = () => {
     setIsLoading(true);
     const timeoutId = setTimeout(() => {
       const filtered = baseTransactions.filter((transaction) => {
+        const matchesStore = filters.store === "all" || transaction.storeID === filters.store;
         const matchesRegion = filters.region === "all" || transaction.regionKey === filters.region;
         const matchesPayment = filters.paymentType === "all" || transaction.paymentKey === filters.paymentType;
         const matchesRisk = filters.riskLevel === "all" || transaction.riskKey === filters.riskLevel;
-        return matchesRegion && matchesPayment && matchesRisk;
+        return matchesStore && matchesRegion && matchesPayment && matchesRisk;
       });
       setDisplayedTransactions(filtered);
       setIsLoading(false);

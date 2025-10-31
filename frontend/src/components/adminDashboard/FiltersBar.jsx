@@ -45,7 +45,14 @@ const FiltersBar = ({ filters, onChange, options }) => {
           onChange={(value) => onChange("dateRange", value)}
         />
         <FilterSelect
-          label="Store / Region"
+          label="Store"
+          id="admin-filter-store"
+          value={filters.store}
+          options={options.store}
+          onChange={(value) => onChange("store", value)}
+        />
+        <FilterSelect
+          label="Region"
           id="admin-filter-region"
           value={filters.region}
           options={options.region}
@@ -67,7 +74,7 @@ const FiltersBar = ({ filters, onChange, options }) => {
         />
       </form>
       <p className="admin-dashboard__inline-note">
-        TODO: replace with filter metadata supplied by configuration service.
+        Filter transactions by store, region, payment type, and risk level.
       </p>
     </section>
   );
@@ -76,6 +83,7 @@ const FiltersBar = ({ filters, onChange, options }) => {
 FiltersBar.propTypes = {
   filters: PropTypes.shape({
     dateRange: PropTypes.string.isRequired,
+    store: PropTypes.string.isRequired,
     region: PropTypes.string.isRequired,
     paymentType: PropTypes.string.isRequired,
     riskLevel: PropTypes.string.isRequired
@@ -83,6 +91,7 @@ FiltersBar.propTypes = {
   onChange: PropTypes.func.isRequired,
   options: PropTypes.shape({
     dateRange: PropTypes.array.isRequired,
+    store: PropTypes.array.isRequired,
     region: PropTypes.array.isRequired,
     paymentType: PropTypes.array.isRequired,
     riskLevel: PropTypes.array.isRequired
