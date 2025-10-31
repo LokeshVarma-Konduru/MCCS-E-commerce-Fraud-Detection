@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { FaHome, FaCode, FaChartLine, FaExchangeAlt, FaChartPie } from 'react-icons/fa';
+import React, { useState, useEffect, useRef } from 'react';
+import { FaChartPie, FaEnvelope } from 'react-icons/fa';
+import DeveloperNav from '../components/DeveloperNav';
 import { Line } from 'react-chartjs-2';
 import Report from '../components/Report';
-import Footer from '../components/Footer';
 import PageHeader from '../components/PageHeader';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
-import { getTransactions, getDashboardStats, getApiUsageStats } from '../api';
+import { getTransactions, getDashboardStats, getApiUsageStats, sendReportEmail } from '../api';
+import { useAuth } from '../context/AuthContext.jsx';
+import { useSocket } from '../context/SocketContext.jsx';
+import RealtimeAlertsPanel from '../components/RealtimeAlertsPanel.jsx';
 import '../styles/Developer.css';
 import '../styles/Report.css';
 
@@ -28,6 +30,19 @@ const Developer = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [reportPeriod, setReportPeriod] = useState('7d');
+  
+  const { user } = useAuth();
+  const { isConnected, fraudAlerts, removeAlert, clearAlerts } = useSocket();
+  
+  // Email report state
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailAddress, setEmailAddress] = useState('');
+  const [recipientName, setRecipientName] = useState('');
+  const [recipientRole, setRecipientRole] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [emailError, setEmailError] = useState(null);
+  const reportRef = useRef(null);
 
   const [transactions, setTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -408,37 +423,225 @@ const Developer = () => {
   };
 
   const getPeriodLabel = (period) => {
-    const labels = {
-      'last24h': 'Last 24 Hours',
-      'last7days': 'Last 7 Days',
-      'last30days': 'Last 30 Days'
-    };
-    return labels[period] || period;
+    switch(period) {
+      case '24h': return 'Last 24 Hours';
+      case '7d': return 'Last 7 Days';
+      case '30d': return 'Last 30 Days';
+      default: return 'Custom Period';
+    }
+  };
+  
+  // Function to convert HTML report to PDF and get base64 data
+  const getReportPdfData = async () => {
+    if (!reportRef.current) return null;
+    
+    try {
+      // Use html2canvas and jsPDF to convert the report to PDF
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+      
+      // Capture the entire report as a single image - using the same approach as the download function
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2, // Higher scale for better quality
+        useCORS: true, // Enable CORS for external images
+        logging: false,
+        backgroundColor: '#ffffff',
+        windowWidth: reportRef.current.scrollWidth,
+        windowHeight: reportRef.current.scrollHeight,
+        onclone: (clonedDoc) => {
+          // Make sure all elements are visible in the clone
+          const clonedReport = clonedDoc.querySelector('.report-container');
+          if (clonedReport) {
+            clonedReport.style.height = 'auto';
+            clonedReport.style.overflow = 'visible';
+            
+            // Fix header layout for PDF
+            const header = clonedDoc.querySelector('.report-header');
+            if (header) {
+              header.style.display = 'flex';
+              header.style.justifyContent = 'space-between';
+              header.style.alignItems = 'center';
+              header.style.width = '100%';
+              header.style.marginBottom = '40px';
+              header.style.paddingBottom = '24px';
+              header.style.borderBottom = '1px solid #e5e7eb';
+            }
+            
+            // Fix title container
+            const titleContainer = clonedDoc.querySelector('.report-title');
+            if (titleContainer) {
+              titleContainer.style.textAlign = 'center';
+              titleContainer.style.flexGrow = '1';
+              titleContainer.style.margin = '0';
+              titleContainer.style.padding = '0 20px';
+            }
+            
+            // Fix download button container (hide it in PDF)
+            const actionsContainer = clonedDoc.querySelector('.report-actions');
+            if (actionsContainer) {
+              actionsContainer.style.display = 'none';
+            }
+            
+            // Ensure charts grid is properly displayed side by side in PDF
+            const chartsGrid = clonedDoc.querySelector('.report-charts-grid');
+            if (chartsGrid) {
+              chartsGrid.style.display = 'grid';
+              chartsGrid.style.gridTemplateColumns = '1fr 1fr';
+              chartsGrid.style.gap = '32px';
+              chartsGrid.style.margin = '40px 0';
+              chartsGrid.style.width = '100%';
+            }
+            
+            // Style each chart column for PDF
+            const chartColumns = clonedDoc.querySelectorAll('.report-chart-column');
+            chartColumns.forEach(column => {
+              column.style.background = 'white';
+              column.style.borderRadius = '12px';
+              column.style.padding = '24px';
+              column.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.05)';
+              column.style.border = '1px solid #e5e7eb';
+              column.style.display = 'flex';
+              column.style.flexDirection = 'column';
+            });
+            
+            // Style chart containers for PDF
+            const chartContainers = clonedDoc.querySelectorAll('.report-chart-column .chart-container');
+            chartContainers.forEach(container => {
+              container.style.height = '350px';
+              container.style.flexGrow = '1';
+              container.style.minHeight = '300px';
+            });
+            
+            // Make sure all sections are visible
+            const sections = clonedReport.querySelectorAll('.report-charts-grid, .report-charts, .report-metrics, .insights-section, .financial-metrics, .monthly-trends, .key-insights');
+            sections.forEach(section => {
+              if (section) {
+                section.style.display = section.classList.contains('report-charts-grid') ? 'grid' : 'block';
+                section.style.visibility = 'visible';
+              }
+            });
+            
+            // Make sure the footer with timestamp is visible
+            const footer = clonedDoc.querySelector('.report-footer');
+            if (footer) {
+              footer.style.display = 'block';
+              footer.style.visibility = 'visible';
+            }
+          }
+        }
+      });
+      
+      // Create a PDF with dimensions matching the canvas aspect ratio
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      const pdf = new jsPDF({
+        orientation: imgHeight > imgWidth ? 'portrait' : 'landscape',
+        unit: 'mm',
+        format: [imgWidth, imgHeight]
+      });
+      
+      // Add the image to fill the entire PDF with high quality
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+      
+      // Convert PDF to base64
+      const pdfBase64 = pdf.output('datauristring');
+      return pdfBase64.split(',')[1]; // Remove the data URI prefix
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      return null;
+    }
+  };
+  
+  // Function to send report via email
+  const handleSendReportEmail = async () => {
+    if (!emailAddress) {
+      setEmailError('Please enter a valid email address');
+      return;
+    }
+    
+    try {
+      setSendingEmail(true);
+      setEmailError(null);
+      
+      // Get PDF data
+      const pdfData = await getReportPdfData();
+      if (!pdfData) {
+        throw new Error('Failed to generate PDF report');
+      }
+      
+      // Check if PDF data is too large (>10MB)
+      if (pdfData.length > 10 * 1024 * 1024) {
+        // Show warning and attempt to compress further
+        console.warn('PDF file is very large, attempting to compress further');
+        
+        // Reduce quality further if needed
+        // This is handled in the getReportPdfData function now
+      }
+      
+      // Create a more professional email message
+      const periodLabel = getPeriodLabel(reportPeriod);
+      const emailSubject = `MCCS Fraud Detection Report - ${periodLabel}`;
+      
+      // Create a more professional message
+      let emailMessage = `This report contains fraud detection metrics and insights for ${periodLabel}.`;
+      
+      // Use the current user's information automatically
+      let userName = '';
+      let userRole = '';
+      
+      if (user) {
+        userName = user.name || '';
+        userRole = user.role || '';
+      }
+      
+      // Send email with PDF attachment including current user's information
+      const response = await sendReportEmail(
+        emailAddress,
+        emailSubject,
+        emailMessage,
+        pdfData,
+        `fraud-detection-report-${reportPeriod}.pdf`,
+        userName,
+        userRole
+      );
+      
+      if (response.data.success) {
+        setEmailSent(true);
+        setTimeout(() => {
+          setShowEmailModal(false);
+          setEmailSent(false);
+          setEmailAddress('');
+        }, 3000);
+      } else {
+        throw new Error(response.data.message || 'Failed to send email');
+      }
+    } catch (error) {
+      console.error('Error sending report email:', error);
+      
+      // Handle specific error for payload too large
+      if (error.message && error.message.includes('too large')) {
+        setEmailError('The report is too large to send via email. Please try downloading it instead.');
+      } else {
+        setEmailError(error.message || 'Failed to send email. Please try again.');
+      }
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+  
+  // Function to toggle email modal
+  const toggleEmailModal = () => {
+    setShowEmailModal(!showEmailModal);
+    setEmailError(null);
+    setEmailSent(false);
   };
 
   return (
     <div className="developer-container">
-      <div className="top-navigation">
-        <nav className="nav-menu">
-          <Link to="/developer" className="nav-item">
-            <FaHome className="nav-icon" />
-            <span>Dashboard</span>
-          </Link>
-          <Link to="/api-integration" className="nav-item">
-            <FaCode className="nav-icon" />
-            <span>API Integration</span>
-          </Link>
-          <Link to="/model-performance" className="nav-item">
-            <FaChartLine className="nav-icon" />
-            <span>Model Performance</span>
-          </Link>
-          <Link to="/transaction-monitoring" className="nav-item">
-            <FaExchangeAlt className="nav-icon" />
-            <span>Transaction Monitoring</span>
-          </Link>
-        </nav>
-      </div>
-      
+      <DeveloperNav activePath="/developer" />
+
       <div className="main-content">
         <PageHeader title="Developer Dashboard" />
         {/* Stats Cards */}
@@ -633,6 +836,17 @@ const Developer = () => {
           </div>
         </div>
 
+        {/* 🚨 Fraud Alerts Section */}
+        <RealtimeAlertsPanel
+          title="Real-Time Fraud Alerts"
+          description="Live stream of high-risk transactions detected across the platform."
+          alerts={fraudAlerts}
+          isConnected={isConnected}
+          onClearAlerts={clearAlerts}
+          onRemoveAlert={removeAlert}
+          scopeLabel="All stores"
+        />
+
         {/* Recent Logs */}
         <div className="logs-section">
           <div className="section-header">
@@ -671,13 +885,24 @@ const Developer = () => {
                   <option value="30d">Last 30 Days</option>
                 </select>
               </div>
-              <button 
-                className="generate-report-button"
-                onClick={toggleReport}
-              >
-                <FaChartPie className="button-icon" />
-                {showReport ? 'Hide Report' : 'Generate Report'}
-              </button>
+              <div className="report-buttons">
+                <button 
+                  className="generate-report-button"
+                  onClick={toggleReport}
+                >
+                  <FaChartPie className="button-icon" />
+                  {showReport ? 'Hide Report' : 'Generate Report'}
+                </button>
+                {showReport && (
+                  <button 
+                    className="send-report-button"
+                    onClick={toggleEmailModal}
+                  >
+                    <FaEnvelope className="button-icon" />
+                    Send Report
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -691,15 +916,68 @@ const Developer = () => {
             boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
             margin: '24px 0'
           }}>
-            <Report 
-              data={reportData} 
-            />
+            <div ref={reportRef}>
+              <Report 
+                data={reportData} 
+              />
+            </div>
+          </div>
+        )}
+        
+        {/* Email Modal */}
+        {showEmailModal && (
+          <div className="email-modal-overlay">
+            <div className="email-modal">
+              <div className="email-modal-header">
+                <h3>Send Report via Email</h3>
+                <button className="close-button" onClick={toggleEmailModal}>
+                  ✕
+                </button>
+              </div>
+              <div className="email-modal-body">
+                {!emailSent ? (
+                  <>
+                    <div className="form-group">
+                      <label>Email Address: <span className="required">*</span></label>
+                      <input
+                        type="email"
+                        value={emailAddress}
+                        onChange={(e) => setEmailAddress(e.target.value)}
+                        placeholder="Enter recipient's email address"
+                        className="email-input"
+                        disabled={sendingEmail}
+                        required
+                      />
+                    </div>
+                    
+                    {user && (
+                      <div className="user-info-notice">
+                        <p>Report will be sent from: <strong>{user.name}</strong> ({user.role})</p>
+                      </div>
+                    )}
+                    
+                    {emailError && <p className="email-error">{emailError}</p>}
+                    <button 
+                      className="send-button"
+                      onClick={handleSendReportEmail}
+                      disabled={sendingEmail}
+                    >
+                      {sendingEmail ? 'Sending...' : 'Send Report'}
+                    </button>
+                  </>
+                ) : (
+                  <div className="success-message">
+                    <p>Report sent successfully!</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>
-      <Footer />
     </div>
   );
 };
 
 export default Developer;
+

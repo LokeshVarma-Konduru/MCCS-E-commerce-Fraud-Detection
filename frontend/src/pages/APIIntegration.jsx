@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
-import { FaHome, FaKey, FaHistory, FaBook, FaCopy, FaSync, FaChartLine, FaExchangeAlt, FaCode } from 'react-icons/fa';
+import { FaKey, FaHistory, FaBook, FaCopy, FaSync, FaCode } from 'react-icons/fa';
+import DeveloperNav from '../components/DeveloperNav';
 import '../styles/Developer.css';
-import { getApiKey, generateApiKey, regenerateApiKey, predictTransaction, getMLModelMetrics, API_URL } from '../api';
+import { getApiKey, generateApiKey, regenerateApiKey, predictTransaction, getMLModelMetrics, API_URL, getStores } from '../api';
 
 const APIIntegration = () => {
   const [apiKey, setApiKey] = useState('');
@@ -18,6 +18,8 @@ const APIIntegration = () => {
   const [accountAgeDays, setAccountAgeDays] = useState(365);
   const [isAddressMatch, setIsAddressMatch] = useState(1);
   const [transactionType, setTransactionType] = useState('online');
+  const [stores, setStores] = useState([]);
+  const [storeRef, setStoreRef] = useState('');
   const [response, setResponse] = useState('');
   const [recentCalls, setRecentCalls] = useState([]);
   const [models, setModels] = useState([]);
@@ -63,6 +65,16 @@ const APIIntegration = () => {
     fetchApiKey();
     // Still fetch models for other data, but we'll use our hardcoded list for the dropdown
     fetchModels();
+    // Load stores for in-store testing
+    (async () => {
+      try {
+        const res = await getStores();
+        const list = res?.data || [];
+        setStores(Array.isArray(list) ? list : (list.data || []));
+      } catch (e) {
+        // ignore
+      }
+    })();
     
     // Initialize with the first model in our list
     setSelectedModel(availableModels[0].value);
@@ -222,6 +234,10 @@ const APIIntegration = () => {
         "Transaction Type": [transactionType]
       };
 
+      if (transactionType === 'in-store' && storeRef) {
+        transactionData.storeRef = storeRef; // pass storeRef for backend to attach store
+      }
+
       const result = await predictTransaction(transactionData, apiKey, selectedModel);
       
       // Format the response for display
@@ -250,26 +266,7 @@ const APIIntegration = () => {
 
   return (
     <div className="developer-container">
-      <div className="top-navigation">
-        <nav className="nav-menu">
-          <Link to="/developer" className="nav-item">
-            <FaHome className="nav-icon" />
-            <span>Dashboard</span>
-          </Link>
-          <Link to="/api-integration" className="nav-item active">
-            <FaKey className="nav-icon" />
-            <span>API Integration</span>
-          </Link>
-          <Link to="/model-performance" className="nav-item">
-            <FaChartLine className="nav-icon" />
-            <span>Model Performance</span>
-          </Link>
-          <Link to="/transaction-monitoring" className="nav-item">
-            <FaExchangeAlt className="nav-icon" />
-            <span>Transaction Monitoring</span>
-          </Link>
-        </nav>
-      </div>
+      <DeveloperNav activePath="/api-integration" />
 
       <div className="main-content">
         <PageHeader title="API Integration" />
@@ -590,7 +587,7 @@ const APIIntegration = () => {
                     <label>Transaction Type</label>
                     <select 
                       value={transactionType}
-                      onChange={(e) => setTransactionType(e.target.value)}
+                      onChange={(e) => { setTransactionType(e.target.value); if (e.target.value !== 'in-store') setStoreRef(''); }}
                       className="form-select"
                       style={{ backgroundColor: '#f5f5f5', color: '#333' }}
                     >
@@ -598,6 +595,22 @@ const APIIntegration = () => {
                       <option value="in-store">In-store</option>
                     </select>
                   </div>
+                  {transactionType === 'in-store' && (
+                    <div className="form-group">
+                      <label>Store</label>
+                      <select
+                        value={storeRef}
+                        onChange={(e) => setStoreRef(e.target.value)}
+                        className="form-select"
+                        style={{ backgroundColor: '#f5f5f5', color: '#333' }}
+                      >
+                        <option value="">Select store</option>
+                        {stores.map(st => (
+                          <option key={st._id} value={st._id}>{st.storeID} — {st.storeName}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   <div className="form-group">
                     <label>Model</label>
                     <select 
@@ -703,3 +716,4 @@ const APIIntegration = () => {
 };
 
 export default APIIntegration;
+

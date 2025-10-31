@@ -7,6 +7,10 @@ backend/.env
 frontend/.env
 ML-Models/.env
 
+# Python virtual environments
+backend/.venv/
+ML-Models/.venv/
+
 # Build files
 # frontend/dist/
 backend/build/
@@ -27,4 +31,4 @@ Thumbs.db               # Windows
 
 # ML models csv files
 ML-Models/Fraudulent_E-Commerce_Transaction_Data.csv
-ML-Models/Fraudulent_E-Commerce_Transaction_Data_2.csv
+ML-Models/Fraudulent_E-Commerce_Transaction_Data_2.csv.DS_Store

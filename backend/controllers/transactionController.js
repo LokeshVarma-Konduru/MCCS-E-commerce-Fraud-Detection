@@ -2,7 +2,10 @@
 import { spawn } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import mongoose from 'mongoose';
 import Transaction from '../models/TransactionSchema.js';
+import Store from '../models/Store.js';
+import { io } from '../index.js';
 
 // We need these for ES module __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -49,12 +52,16 @@ export const predictTransaction = async (req, res) => {
         }
       }
 
+      // Gather optional store info (for in-store transactions)
+      const providedStoreRef = req.body.storeRef; // ObjectId string
+      const providedStoreID = req.body.storeID;   // human-readable ID
+
       // 2) Convert request body to JSON string for Python
-      // Create a copy of the request body without the Transaction Type field
+      // Create a copy of the request body without non-feature fields
       const predictionData = { ...req.body };
-      if (predictionData["Transaction Type"]) {
-        delete predictionData["Transaction Type"]; // Remove transaction type as it's not used for prediction
-      }
+      if (predictionData["Transaction Type"]) delete predictionData["Transaction Type"]; // not used by model
+      if (predictionData.storeRef) delete predictionData.storeRef; // avoid sending to python
+      if (predictionData.storeID) delete predictionData.storeID;   // avoid sending to python
       
       const dataToSend = JSON.stringify(predictionData);
   
@@ -100,7 +107,21 @@ export const predictTransaction = async (req, res) => {
             });
           }
   
-          // 9) Save transaction to database
+          // 9) Resolve store for in-store transactions if provided
+          let resolvedStore = null;
+          const requestedTxnType = req.body["Transaction Type"] ? 
+            (req.body["Transaction Type"][0] === 'online' || req.body["Transaction Type"][0] === 'in-store' ? req.body["Transaction Type"][0] : 'online') : 'online';
+          if (requestedTxnType === 'in-store' && (providedStoreRef || providedStoreID)) {
+            try {
+              if (providedStoreRef) {
+                resolvedStore = await Store.findById(providedStoreRef);
+              } else if (providedStoreID) {
+                resolvedStore = await Store.findOne({ storeID: providedStoreID });
+              }
+            } catch (_e) { /* ignore */ }
+          }
+
+          // 10) Save transaction to database
           const newTransaction = new Transaction({
             transactionAmount: req.body["Transaction Amount"][0],
             paymentMethod: req.body["Payment Method"][0],
@@ -116,18 +137,51 @@ export const predictTransaction = async (req, res) => {
             isAddressMatch: req.body["Is Address Match"][0],
             modelUsed: modelName,
             // Get transaction type if provided, ensure it's one of the valid values
-            transactionType: req.body["Transaction Type"] ? 
-              (req.body["Transaction Type"][0] === 'online' || req.body["Transaction Type"][0] === 'in-store' ? 
-                req.body["Transaction Type"][0] : 'online') : 
-              'online',
+            transactionType: requestedTxnType,
             predictions: parsed.predictions,
             probabilities: parsed.probabilities,
-            userId: req.apiKeyUserId // This is set by the validateApiKey middleware
+            userId: req.apiKeyUserId, // This is set by the validateApiKey middleware
+            ...(resolvedStore ? { storeRef: resolvedStore._id, storeID: resolvedStore.storeID } : {})
           });
   
           const savedTransaction = await newTransaction.save();
   
-          // 10) Return predictions + saved doc
+          // 🚨 EMIT REAL-TIME FRAUD ALERT if fraud is detected
+          if (parsed.predictions[0] === 1) {
+            // Calculate risk score based on probability
+            const fraudProbability = parsed.probabilities && parsed.probabilities[0] && parsed.probabilities[0][1] 
+              ? parsed.probabilities[0][1] 
+              : 0.5;
+            
+            let riskLevel = 'Medium';
+            if (fraudProbability > 0.8) riskLevel = 'High';
+            else if (fraudProbability < 0.6) riskLevel = 'Low';
+            
+            const alertData = {
+              type: 'fraud_detected',
+              transactionId: savedTransaction._id.toString(),
+              transactionIdShort: `TRX-${savedTransaction._id.toString().slice(-6).toUpperCase()}`,
+              amount: savedTransaction.transactionAmount,
+              paymentMethod: savedTransaction.paymentMethod,
+              productCategory: savedTransaction.productCategory,
+              deviceUsed: savedTransaction.deviceUsed,
+              transactionType: savedTransaction.transactionType,
+              riskLevel: riskLevel,
+              probability: (fraudProbability * 100).toFixed(1),
+              modelUsed: modelName,
+              timestamp: savedTransaction.createdAt || new Date(),
+              storeID: savedTransaction.storeID || null,
+              storeName: resolvedStore?.storeName || null
+            };
+            
+            console.log('🚨 FRAUD DETECTED! Emitting alert:', alertData.transactionIdShort);
+            io.to("alerts:all").emit("fraud_alert", alertData);
+            if (alertData.storeID) {
+              io.to(`store:${alertData.storeID}`).emit("fraud_alert", alertData);
+            }
+          }
+  
+          // 11) Return predictions + saved doc
           return res.json({
             success: true,
             predictions: parsed.predictions,
@@ -160,8 +214,138 @@ export const predictTransaction = async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Allow filtering by model, prediction value, status, and other parameters
-    const { model, prediction, status, userId, startDate, endDate, productCategory, paymentMethod, transactionType, minRiskScore, maxRiskScore, minAmount, maxAmount } = req.query;
+    const { model, prediction, status, userId, startDate, endDate, productCategory, paymentMethod, transactionType, minRiskScore, maxRiskScore, minAmount, maxAmount, search, storeRef, storeID } = req.query;
     const filter = {};
+    
+    // Add search functionality for transaction ID, amount, or status
+    if (search) {
+      try {
+        const searchTerm = search.trim();
+        
+        // Check if search term is a number (for amount)
+        const isNumber = !isNaN(parseFloat(searchTerm)) && isFinite(searchTerm);
+        
+        // Build the base filter for non-search related filters
+        const baseFilter = {};
+        
+        if (model) baseFilter.modelUsed = model;
+        if (prediction !== undefined) baseFilter.predictions = { $in: [Number(prediction)] };
+        if (status) baseFilter.status = status;
+        if (userId) baseFilter.userId = userId;
+        if (productCategory) baseFilter.productCategory = productCategory;
+        if (paymentMethod) baseFilter.paymentMethod = paymentMethod;
+        if (transactionType) baseFilter.transactionType = transactionType;
+        // Store filters
+        if (storeRef) {
+          try { baseFilter.storeRef = new mongoose.Types.ObjectId(storeRef); } catch (_e) { baseFilter.storeRef = storeRef; }
+        } else if (storeID) {
+          baseFilter.storeID = storeID;
+        }
+        
+        // Date range filter
+        if (startDate || endDate) {
+          baseFilter.createdAt = {};
+          if (startDate) baseFilter.createdAt.$gte = new Date(startDate);
+          if (endDate) {
+            const endOfDay = new Date(endDate);
+            endOfDay.setHours(23, 59, 59, 999);
+            baseFilter.createdAt.$lte = endOfDay;
+          }
+        }
+        
+        // Risk score range filter
+        if (minRiskScore !== undefined || maxRiskScore !== undefined) {
+          baseFilter.riskScore = {};
+          if (minRiskScore !== undefined) baseFilter.riskScore.$gte = Number(minRiskScore);
+          if (maxRiskScore !== undefined) baseFilter.riskScore.$lte = Number(maxRiskScore);
+        }
+        
+        // Amount range filter
+        if (minAmount !== undefined || maxAmount !== undefined) {
+          baseFilter.transactionAmount = {};
+          if (minAmount !== undefined) baseFilter.transactionAmount.$gte = Number(minAmount);
+          if (maxAmount !== undefined) baseFilter.transactionAmount.$lte = Number(maxAmount);
+        }
+        
+        // Create the aggregation pipeline
+        const pipeline = [
+          // First add string versions of fields we want to search
+          { $addFields: { 
+            idString: { $toString: "$_id" },
+            amountString: { $toString: "$transactionAmount" }
+          }}
+        ];
+        
+        // Build search conditions
+        const searchConditions = [];
+        
+        // 1. Search by transaction ID (if it looks like a hex string)
+        if (/^[0-9a-fA-F]{3,}$/.test(searchTerm)) {
+          searchConditions.push({ idString: { $regex: searchTerm, $options: 'i' } });
+        }
+        
+        // 2. Search by amount (if it's a number)
+        if (isNumber) {
+          const numericValue = parseFloat(searchTerm);
+          // Exact match
+          searchConditions.push({ transactionAmount: numericValue });
+          // Partial match
+          searchConditions.push({ amountString: { $regex: searchTerm, $options: 'i' } });
+        }
+        
+        // 3. Search by status
+        searchConditions.push({ status: { $regex: searchTerm, $options: 'i' } });
+        
+        // 4. Search by transaction type
+        searchConditions.push({ transactionType: { $regex: searchTerm, $options: 'i' } });
+        
+        // 5. Search by payment method
+        searchConditions.push({ paymentMethod: { $regex: searchTerm, $options: 'i' } });
+        
+        // Add the search conditions to the pipeline
+        pipeline.push({ $match: { $or: searchConditions } });
+        
+        // Add the base filter if it's not empty
+        if (Object.keys(baseFilter).length > 0) {
+          pipeline.push({ $match: baseFilter });
+        }
+        
+        // Add sorting, pagination, and counting
+        pipeline.push(
+          { $sort: { createdAt: -1 } },
+          { $facet: {
+            // Get paginated transactions
+            paginatedResults: [{ $skip: skip }, { $limit: limit }],
+            // Count total matching documents
+            totalCount: [{ $count: 'count' }]
+          }}
+        );
+        
+        // Execute the aggregation
+        const result = await Transaction.aggregate(pipeline);
+        
+        // Extract results
+        const transactions = result[0].paginatedResults || [];
+        const totalCount = result[0].totalCount.length > 0 ? result[0].totalCount[0].count : 0;
+        
+        return res.json({ 
+          success: true,
+          transactions,
+          pagination: {
+            total: totalCount,
+            page,
+            limit,
+            pages: Math.ceil(totalCount / limit)
+          }
+        });
+      } catch (err) {
+        console.error('Search error:', err);
+        return res.status(500).json({ 
+          success: false,
+          error: 'Server error during search' 
+        });
+      }
+    }
 
     if (model) {
       filter.modelUsed = model;
@@ -185,6 +369,12 @@ export const predictTransaction = async (req, res) => {
     }
     if (transactionType) {
       filter.transactionType = transactionType;
+    }
+    // Store filters
+    if (storeRef) {
+      try { filter.storeRef = new mongoose.Types.ObjectId(storeRef); } catch (_e) { filter.storeRef = storeRef; }
+    } else if (storeID) {
+      filter.storeID = storeID;
     }
     
     // Risk score range filter

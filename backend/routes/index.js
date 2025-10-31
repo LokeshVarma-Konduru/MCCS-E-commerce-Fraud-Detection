@@ -1,8 +1,9 @@
 import express from "express";
 
 import { getAllTeamMembers} from "../controllers/team.js";
-import { login, verifyLoginOTP, logout, updatePassword } from '../controllers/authController.js';
+import { login, verifyLoginOTP, logout, updatePassword, testLogin } from '../controllers/authController.js';
 import { getUserInfo } from "../controllers/userController.js";
+import { generateSampleTransactions } from '../controllers/sampleDataController.js';
 import { addUsers, getAllUsers, deleteUser, toggleUserStatus } from '../controllers/adminController.js';
 import { predictTransaction, getTransactions, getTransactionById, updateTransactionStatus, getFraudTrends as getTransactionFraudTrends, getHighRiskTransactions, migrateTransactions } from '../controllers/transactionController.js';
 import authMiddleware from '../middleware/auth.js';
@@ -12,6 +13,9 @@ import { getApiKey, generateApiKey, regenerateApiKey, validateApiKey } from '../
 import { logApiCall, getApiLogs, getApiUsageStats, getApiLogById } from '../controllers/apiLogController.js';
 import { getDashboardStats } from '../controllers/dashboardController.js';
 import { getStoreManagerStats, getFraudTrends, getTransactionTypeDistribution, getRecentAlerts } from '../controllers/storeManagerController.js';
+import { sendReportEmail } from '../controllers/reportController.js';
+import { getAllStores, getStoreById, getStoreByStoreId, createStore, updateStore, deleteStore, getStoresByManager, getStoresNearby, getStoresWithFraudStats } from '../controllers/storeController.js';
+import { seedStores, clearStores } from '../controllers/storeSeederController.js';
 
 const router = express.Router();
 
@@ -22,6 +26,7 @@ router.post('/login', login);
 router.post('/verify-login-otp', verifyLoginOTP);
 router.post('/logout', authMiddleware, logout);
 router.post('/update-password', authMiddleware, updatePassword);
+router.post('/test-login', testLogin);
 router.get('/user/:userId', authMiddleware, getUserInfo);
 
 // Admin routes
@@ -63,5 +68,28 @@ router.get('/transaction-monitoring/high-risk', authMiddleware, getHighRiskTrans
 
 // Migration endpoint - only for development/admin use
 router.post('/migrate-transactions', migrateTransactions);
+
+// Report routes
+router.post('/send-report', authMiddleware, sendReportEmail);
+
+// Sample data generation route - only for development
+router.post('/generate-sample-transactions', generateSampleTransactions);
+
+// Store routes
+router.get('/stores', authMiddleware, getAllStores);
+router.get('/stores/fraud-stats', authMiddleware, getStoresWithFraudStats);
+router.get('/stores/nearby', authMiddleware, getStoresNearby);
+router.get('/stores/manager/:managerId', authMiddleware, getStoresByManager);
+router.get('/stores/store-id/:storeId', authMiddleware, getStoreByStoreId);
+router.get('/stores/:id', authMiddleware, getStoreById);
+router.post('/stores', authMiddleware, adminMiddleware, createStore);
+router.put('/stores/:id', authMiddleware, adminMiddleware, updateStore);
+router.delete('/stores/:id', authMiddleware, adminMiddleware, deleteStore);
+
+// Store seeder routes (for development/testing)
+router.post('/seed-stores', authMiddleware, adminMiddleware, seedStores);
+router.delete('/clear-stores', authMiddleware, adminMiddleware, clearStores);
+
+
 
 export default router;
