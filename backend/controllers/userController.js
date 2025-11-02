@@ -3,7 +3,9 @@ import User from '../models/User.js';
 export const getUserInfo = async (req, res) => {
     const { userId } = req.params;
     try {
-        const user = await User.findById(userId, "name email role");
+        const user = await User.findById(userId)
+            .select('name email role storeID storeRef')
+            .populate({ path: 'storeRef', select: 'storeID storeName storeLocation' });
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }

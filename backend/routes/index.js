@@ -90,4 +90,6 @@ router.delete('/stores/:id', authMiddleware, adminMiddleware, deleteStore);
 router.post('/seed-stores', authMiddleware, adminMiddleware, seedStores);
 router.delete('/clear-stores', authMiddleware, adminMiddleware, clearStores);
 
+
+
 export default router;

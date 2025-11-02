@@ -124,6 +124,18 @@ export const regenerateApiKey = async () => {
     }
 };
 
+// Stores
+export const getStores = async (params = {}) => {
+    try {
+        return axios.get(`${API_URL}/stores`, { params });
+    } catch (error) {
+        throw {
+            message: error.response?.data?.message || 'Failed to fetch stores',
+            status: error.response?.status
+        };
+    }
+};
+
 // Transaction prediction with API key
 export const predictTransaction = async (data, apiKey, model) => {
     try {
@@ -181,40 +193,44 @@ export const getDashboardStats = (period = 'month') => {
 };
 
 // Store Manager endpoints
-export const getStoreManagerStats = (period = 'day', transactionType = 'All Transactions') => {
+export const getStoreManagerStats = (period = 'day', transactionType = 'All Transactions', storeCtx = {}) => {
   try {
+    const { storeRef, storeID } = storeCtx || {};
     return axios.get(`${API_URL}/store-manager/stats`, { 
-      params: { period, transactionType } 
+      params: { period, transactionType, storeRef, storeID } 
     });
   } catch (error) {
     throw error;
   }
 };
 
-export const getFraudTrends = (period = 'week', transactionType = 'All Transactions') => {
+export const getFraudTrends = (period = 'week', transactionType = 'All Transactions', storeCtx = {}) => {
   try {
+    const { storeRef, storeID } = storeCtx || {};
     return axios.get(`${API_URL}/store-manager/fraud-trends`, { 
-      params: { period, transactionType } 
+      params: { period, transactionType, storeRef, storeID } 
     });
   } catch (error) {
     throw error;
   }
 };
 
-export const getTransactionTypeDistribution = (period = 'day') => {
+export const getTransactionTypeDistribution = (period = 'day', typeFilter = null, storeCtx = {}) => {
   try {
+    const { storeRef, storeID } = storeCtx || {};
     return axios.get(`${API_URL}/store-manager/transaction-types`, { 
-      params: { period } 
+      params: { period, transactionType: typeFilter, storeRef, storeID } 
     });
   } catch (error) {
     throw error;
   }
 };
 
-export const getRecentAlerts = (limit = 5, transactionType = 'All Transactions') => {
+export const getRecentAlerts = (limit = 5, transactionType = 'All Transactions', storeCtx = {}) => {
   try {
+    const { storeRef, storeID } = storeCtx || {};
     return axios.get(`${API_URL}/store-manager/alerts`, { 
-      params: { limit, transactionType } 
+      params: { limit, transactionType, storeRef, storeID } 
     });
   } catch (error) {
     throw error;

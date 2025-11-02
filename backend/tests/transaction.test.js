@@ -32,8 +32,8 @@ beforeAll(async () => {
     storeLocation: "Test City",
     zipCode: "12345",
     coordinates: {
-      type: "Point",
-      coordinates: [-74.0060, 40.7128] // [longitude, latitude] for GeoJSON
+      latitude: 40.7128,
+      longitude: -74.0060
     },
     status: "active"
   });

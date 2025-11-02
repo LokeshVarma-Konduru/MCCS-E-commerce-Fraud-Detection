@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { FaHome, FaCode, FaChartLine, FaExchangeAlt, FaSearch, FaCalendar, FaExclamationTriangle } from 'react-icons/fa';
+import { FaSearch, FaCalendar, FaExclamationTriangle } from 'react-icons/fa';
+import DeveloperNav from '../components/DeveloperNav';
 import DatePicker from 'react-datepicker';
 import { Line } from 'react-chartjs-2';
 import FraudScoreIndicator from '../components/FraudScoreIndicator';
-import { getTransactions, getTransactionFraudTrends, getHighRiskTransactions, updateTransactionStatus } from '../api';
+import { getTransactions, getTransactionFraudTrends, getHighRiskTransactions, updateTransactionStatus, getStores } from '../api';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -39,6 +39,9 @@ const TransactionMonitoring = () => {
   const [amountRange, setAmountRange] = useState('All Amounts');
   const [fraudScore, setFraudScore] = useState('All Scores');
   const [prediction, setPrediction] = useState('All Predictions');
+  const [txnType, setTxnType] = useState('All'); // All | Online | In-store
+  const [stores, setStores] = useState([]);
+  const [selectedStoreId, setSelectedStoreId] = useState('');
   const [reviewStatus, setReviewStatus] = useState('All Status');
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -84,6 +87,20 @@ const TransactionMonitoring = () => {
 
     return () => clearTimeout(timer);
   }, [searchTerm]);
+
+  // Load stores once for in-store filter
+  useEffect(() => {
+    const loadStores = async () => {
+      try {
+        const res = await getStores();
+        const list = res?.data || [];
+        setStores(Array.isArray(list) ? list : (list.data || []));
+      } catch (e) {
+        // ignore
+      }
+    };
+    loadStores();
+  }, []);
 
   // Define fetchTransactions function
   const fetchTransactions = async () => {
@@ -156,6 +173,16 @@ const TransactionMonitoring = () => {
           }
         }
         
+        // Transaction type and store filter
+        if (txnType === 'Online') {
+          params.transactionType = 'online';
+        } else if (txnType === 'In-store') {
+          params.transactionType = 'in-store';
+          if (selectedStoreId) {
+            params.storeRef = selectedStoreId; // send storeRef (ObjectId)
+          }
+        }
+
         // Fetch transactions with filters
         const response = await getTransactions(params);
         
@@ -188,7 +215,7 @@ const TransactionMonitoring = () => {
   // Fetch transactions when filters change
   useEffect(() => {
     fetchTransactions();
-  }, [page, limit, prediction, reviewStatus, fraudScore, amountRange, startDate, endDate, debouncedSearchTerm]);
+  }, [page, limit, prediction, reviewStatus, fraudScore, amountRange, startDate, endDate, debouncedSearchTerm, txnType, selectedStoreId]);
   
   // Fetch fraud trends
   useEffect(() => {
@@ -380,26 +407,7 @@ const TransactionMonitoring = () => {
 
   return (
     <div className="developer-container transaction-monitoring" style={{ backgroundColor: '#f8fafc' }}>
-      <div className="top-navigation">
-        <nav className="nav-menu">
-          <Link to="/developer" className="nav-item">
-            <FaHome className="nav-icon" />
-            <span>Dashboard</span>
-          </Link>
-          <Link to="/api-integration" className="nav-item">
-            <FaCode className="nav-icon" />
-            <span>API Integration</span>
-          </Link>
-          <Link to="/model-performance" className="nav-item">
-            <FaChartLine className="nav-icon" />
-            <span>Model Performance</span>
-          </Link>
-          <Link to="/transaction-monitoring" className="nav-item active">
-            <FaExchangeAlt className="nav-icon" />
-            <span>Transaction Monitoring</span>
-          </Link>
-        </nav>
-      </div>
+      <DeveloperNav activePath="/transaction-monitoring" />
 
       <div className="main-content">
         <PageHeader title="Transaction Monitoring" />
@@ -422,6 +430,47 @@ const TransactionMonitoring = () => {
           </div>
 
           <div className="filters" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-start' }}>
+            <div className="filter-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: '1 0 200px' }}>
+              <label style={{ color: '#4a5568', fontWeight: '500' }}>Transaction Type</label>
+              <select 
+                value={txnType}
+                onChange={(e) => { setTxnType(e.target.value); if (e.target.value !== 'In-store') setSelectedStoreId(''); }}
+                style={{ 
+                  color: '#2d3748', 
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #cbd5e0',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  width: '100%'
+                }}
+              >
+                <option>All</option>
+                <option>Online</option>
+                <option>In-store</option>
+              </select>
+            </div>
+            {txnType === 'In-store' && (
+              <div className="filter-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: '1 0 260px' }}>
+                <label style={{ color: '#4a5568', fontWeight: '500' }}>Store</label>
+                <select 
+                  value={selectedStoreId}
+                  onChange={(e) => setSelectedStoreId(e.target.value)}
+                  style={{ 
+                    color: '#2d3748', 
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #cbd5e0',
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    width: '100%'
+                  }}
+                >
+                  <option value="">All Stores</option>
+                  {stores.map(st => (
+                    <option key={st._id} value={st._id}>{st.storeID} — {st.storeName}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="filter-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: '1 0 300px' }}>
               <label style={{ color: '#4a5568', fontWeight: '500' }}>Date Range</label>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -774,3 +823,4 @@ const TransactionMonitoring = () => {
 };
 
 export default TransactionMonitoring;
+

@@ -14,8 +14,7 @@ import {
   Filler
 } from 'chart.js';
 import { FaFilePdf, FaChartLine, FaExclamationTriangle, FaLightbulb } from 'react-icons/fa';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import useReportPdfExport from '../hooks/useReportPdfExport.js';
 import logo from '../assets/logo.jpg';
 
 ChartJS.register(
@@ -51,141 +50,18 @@ const StoreManagerReport = ({ data }) => {
       periodDisplay = period;
   }
 
-  const generatePDF = async () => {
-    const report = reportRef.current;
-    
-    // Show a loading indicator
-    const loadingElement = document.createElement('div');
-    loadingElement.style.position = 'fixed';
-    loadingElement.style.top = '50%';
-    loadingElement.style.left = '50%';
-    loadingElement.style.transform = 'translate(-50%, -50%)';
-    loadingElement.style.padding = '20px';
-    loadingElement.style.background = 'rgba(255, 255, 255, 0.9)';
-    loadingElement.style.borderRadius = '8px';
-    loadingElement.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
-    loadingElement.style.zIndex = '9999';
-    loadingElement.textContent = 'Generating PDF...';
-    document.body.appendChild(loadingElement);
-    
+  const exportReportPdf = useReportPdfExport(reportRef, {
+    fileName: () => `MCCS-Store-Manager-Report-${periodDisplay}.pdf`
+  });
+
+  const handleDownloadPdf = async () => {
     try {
-      // Capture the entire report as a single image
-      const canvas = await html2canvas(report, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-        windowWidth: report.scrollWidth,
-        windowHeight: report.scrollHeight,
-        onclone: (clonedDoc) => {
-          // Make sure all elements are visible in the clone
-          const clonedReport = clonedDoc.querySelector('.report-container');
-          if (clonedReport) {
-            clonedReport.style.height = 'auto';
-            clonedReport.style.overflow = 'visible';
-            
-            // Fix header layout for PDF
-            const header = clonedDoc.querySelector('.report-header');
-            if (header) {
-              header.style.display = 'flex';
-              header.style.justifyContent = 'space-between';
-              header.style.alignItems = 'center';
-              header.style.width = '100%';
-              header.style.marginBottom = '40px';
-              header.style.paddingBottom = '24px';
-              header.style.borderBottom = '1px solid #e5e7eb';
-            }
-            
-            // Fix logo container
-            const logoContainer = clonedDoc.querySelector('.logo-container');
-            if (logoContainer) {
-              logoContainer.style.width = '120px';
-              logoContainer.style.display = 'flex';
-              logoContainer.style.justifyContent = 'flex-start';
-              logoContainer.style.alignItems = 'center';
-            }
-            
-            // Fix title container
-            const titleContainer = clonedDoc.querySelector('.report-title');
-            if (titleContainer) {
-              titleContainer.style.textAlign = 'center';
-              titleContainer.style.flexGrow = '1';
-              titleContainer.style.margin = '0';
-              titleContainer.style.padding = '0 20px';
-            }
-            
-            // Fix download button container (hide it in PDF)
-            const actionsContainer = clonedDoc.querySelector('.report-actions');
-            if (actionsContainer) {
-              actionsContainer.style.display = 'none';
-            }
-            
-            // Ensure charts grid is properly displayed side by side in PDF
-            const chartsGrid = clonedDoc.querySelector('.report-charts-grid');
-            if (chartsGrid) {
-              chartsGrid.style.display = 'grid';
-              chartsGrid.style.gridTemplateColumns = '1fr 1fr';
-              chartsGrid.style.gap = '32px';
-              chartsGrid.style.margin = '40px 0';
-              chartsGrid.style.width = '100%';
-            }
-            
-            // Style each chart column for PDF
-            const chartColumns = clonedDoc.querySelectorAll('.report-chart-column');
-            chartColumns.forEach(column => {
-              column.style.background = 'white';
-              column.style.borderRadius = '12px';
-              column.style.padding = '24px';
-              column.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.05)';
-              column.style.border = '1px solid #e5e7eb';
-              column.style.display = 'flex';
-              column.style.flexDirection = 'column';
-            });
-            
-            // Style chart containers for PDF
-            const chartContainers = clonedDoc.querySelectorAll('.report-chart-column .chart-container');
-            chartContainers.forEach(container => {
-              container.style.height = '350px';
-              container.style.flexGrow = '1';
-              container.style.minHeight = '300px';
-            });
-            
-            // Make sure all sections are visible
-            const sections = clonedReport.querySelectorAll('.report-charts-grid, .report-charts, .report-metrics, .insights-section, .financial-metrics, .monthly-trends, .key-insights');
-            sections.forEach(section => {
-              if (section) {
-                section.style.display = section.classList.contains('report-charts-grid') ? 'grid' : 'block';
-                section.style.visibility = 'visible';
-              }
-            });
-          }
-        }
-      });
-      
-      // Create a PDF with dimensions matching the canvas aspect ratio
-      const imgWidth = 210; // A4 width in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      const pdf = new jsPDF({
-        orientation: imgHeight > imgWidth ? 'portrait' : 'landscape',
-        unit: 'mm',
-        format: [imgWidth, imgHeight]
-      });
-      
-      // Add the image to fill the entire PDF
-      const imgData = canvas.toDataURL('image/jpeg', 1.0);
-      pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
-      
-      // Save the PDF
-      pdf.save(`MCCS-Store-Manager-Report-${periodDisplay}.pdf`);
+      await exportReportPdf();
     } catch (error) {
-      console.error('Error generating PDF:', error);
       alert('There was an error generating the PDF. Please try again.');
-    } finally {
-      // Remove the loading indicator
-      document.body.removeChild(loadingElement);
     }
   };
+
 
   return (
     <div className="report-container" ref={reportRef}>
@@ -198,7 +74,7 @@ const StoreManagerReport = ({ data }) => {
           <p className="report-period">{periodDisplay}</p>
         </div>
         <div className="report-actions">
-          <button className="download-button" onClick={generatePDF}>
+          <button className="download-button" onClick={handleDownloadPdf}>
             <FaFilePdf className="button-icon" />
             Download PDF
           </button>

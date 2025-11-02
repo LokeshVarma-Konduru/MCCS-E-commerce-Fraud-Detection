@@ -1,67 +1,50 @@
 // eslint-disable-next-line no-unused-vars
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { getUserInfo, logout } from '../api';
-import ChangePasswordModal from './ChangePasswordModal';
 import '../styles/Navbar.css';
 import { FaSearch, FaBars } from 'react-icons/fa';
+import ChangePasswordModal from './ChangePasswordModal';
 import mccsLogo from '../assets/16_MCCSlogo_Comp_NoText.png';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
-  const [user, setUser] = useState(null);
+  const { user, loading, logout: logoutUser } = useAuth();
   const menuRef = useRef(null);
   const profileRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    const fetchUserInfo = async () => {
-      try {
-        const userId = localStorage.getItem('userId');
-        if (!userId) {
-          navigate('/login');
-          return;
-        }
-        
-        const response = await getUserInfo(userId);
-        if (response && response.data && response.data.user) {
-          setUser(response.data.user);
-          
-          // Role-based redirects for restricted pages
-          const userRole = response.data.user.role;
-          const currentPath = location.pathname;
-          
-          // Redirect from admin panel if not admin
-          if (currentPath === '/admin' && userRole !== 'Admin') {
-            navigate(userRole === 'Developer' ? '/developer' : '/store-manager');
-          }
-          
-          // Redirect from developer pages if not developer or admin
-          if (['Developer', 'Admin'].includes(userRole) === false && 
-              ['/developer', '/api-integration', '/model-performance', '/transaction-monitoring'].includes(currentPath)) {
-            navigate('/store-manager');
-          }
-          
-          // Redirect from store manager if not store manager or admin
-          if (['StoreManager', 'Admin'].includes(userRole) === false && currentPath === '/store-manager') {
-            navigate('/developer');
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching user info:', error);
-        if (error.response?.status === 401) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('userId');
-          navigate('/login');
-        }
-      }
-    };
+    if (loading) {
+      return;
+    }
 
-    fetchUserInfo();
-  }, [navigate, location.pathname]);
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    const userRole = user.role;
+    const currentPath = location.pathname;
+
+    if (['/admin', '/admin-dashboard'].includes(currentPath) && userRole !== 'Admin') {
+      navigate(userRole === 'Developer' ? '/developer' : '/store-manager');
+      return;
+    }
+
+    const developerPaths = ['/developer', '/api-integration', '/model-performance', '/transaction-monitoring'];
+    if (!['Developer', 'Admin'].includes(userRole) && developerPaths.includes(currentPath)) {
+      navigate('/store-manager');
+      return;
+    }
+
+    if (!['StoreManager', 'Admin'].includes(userRole) && currentPath === '/store-manager') {
+      navigate('/developer');
+    }
+  }, [user, loading, navigate, location.pathname]);
 
   // Remove debug logs
 
@@ -89,15 +72,8 @@ const Navbar = () => {
   }, []);
 
   const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      console.error('Error during logout:', error);
-    } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('userId');
-      navigate('/login');
-    }
+    await logoutUser();
+    navigate('/login');
   };
 
   const handleNavigation = (path, event) => {
@@ -146,6 +122,15 @@ const Navbar = () => {
                   onClick={(e) => handleNavigation('/dashboard', e)}
                 >
                   Dashboard
+                </li>
+              )}
+              
+              {user && user.role === 'Admin' && (
+                <li 
+                  className={currentPath === '/admin-dashboard' ? 'active' : ''}
+                  onClick={(e) => handleNavigation('/admin-dashboard', e)}
+                >
+                  Admin Dashboard
                 </li>
               )}
               
@@ -239,6 +224,22 @@ const Navbar = () => {
                 </div>
                 <div className="profile-body">
                   <div className="role-badge">{user ? (user.role || 'User') : 'User'}</div>
+                  {user && user.role === 'StoreManager' && (
+                    <div style={{ marginTop: '8px', fontSize: '12px', color: '#cbd5e1' }}>
+                      {(() => {
+                        const sid = user?.storeRef?.storeID || user?.storeID;
+                        const sname = user?.storeRef?.storeName;
+                        const sloc = user?.storeRef?.storeLocation;
+                        if (!sid && !sname) return null;
+                        return (
+                          <>
+                            <div>Store: {sid}{sname ? ` — ${sname}` : ''}</div>
+                            {sloc ? <div>Location: {sloc}</div> : null}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
                 </div>
                 <div className="profile-footer">
                   <button 
