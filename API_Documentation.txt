@@ -1,0 +1,918 @@
+# MCCS E-commerce Fraud Detection API Documentation
+
+## Overview
+This document provides comprehensive API documentation for the MCCS E-commerce Fraud Detection system, covering Store Management and Transaction Processing APIs.
+
+## Base URL
+```
+http://localhost:3000/api
+```
+
+## Authentication
+Most endpoints require authentication via JWT token or API key. Include the token in the Authorization header:
+```
+Authorization: Bearer <your-jwt-token>
+```
+or
+```
+X-API-Key: <your-api-key>
+```
+
+---
+
+# STORE MANAGEMENT APIs
+
+## 1. Get All Stores
+**Endpoint:** `GET /stores`  
+**Description:** Retrieve all stores with manager information  
+**Authentication:** Required  
+
+### Response
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "_id": "store_id",
+      "storeID": "ST001",
+      "storeName": "MCCS Manhattan Store",
+      "storeLocation": "123 Broadway, Manhattan, NY",
+      "zipCode": "10001",
+      "coordinates": {
+        "type": "Point",
+        "coordinates": [-73.9851, 40.7589]
+      },
+      "status": "active",
+      "managerId": {
+        "_id": "manager_id",
+        "name": "John Doe",
+        "email": "john@example.com",
+        "role": "store_manager"
+      },
+      "contactInfo": {
+        "phone": "+1-555-0101",
+        "email": "manhattan@mccs.com"
+      }
+    }
+  ],
+  "count": 15
+}
+```
+
+## 2. Get Store by ID
+**Endpoint:** `GET /stores/:id`  
+**Description:** Retrieve a specific store by MongoDB ObjectId  
+**Authentication:** Required  
+
+### Parameters
+- `id` (path): MongoDB ObjectId of the store
+
+### Response
+```json
+{
+  "success": true,
+  "data": {
+    "_id": "store_id",
+    "storeID": "ST001",
+    "storeName": "MCCS Manhattan Store",
+    "storeLocation": "123 Broadway, Manhattan, NY",
+    "zipCode": "10001",
+    "coordinates": {
+      "type": "Point",
+      "coordinates": [-73.9851, 40.7589]
+    },
+    "status": "active",
+    "managerId": {
+      "_id": "manager_id",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "role": "store_manager"
+    },
+    "contactInfo": {
+      "phone": "+1-555-0101",
+      "email": "manhattan@mccs.com"
+    }
+  }
+}
+```
+
+## 3. Get Store by Store ID
+**Endpoint:** `GET /stores/store/:storeId`  
+**Description:** Retrieve a specific store by human-readable store ID  
+**Authentication:** Required  
+
+### Parameters
+- `storeId` (path): Human-readable store ID (e.g., "ST001")
+
+### Response
+```json
+{
+  "success": true,
+  "data": {
+    "_id": "store_id",
+    "storeID": "ST001",
+    "storeName": "MCCS Manhattan Store",
+    "storeLocation": "123 Broadway, Manhattan, NY",
+    "zipCode": "10001",
+    "coordinates": {
+      "type": "Point",
+      "coordinates": [-73.9851, 40.7589]
+    },
+    "status": "active",
+    "managerId": {
+      "_id": "manager_id",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "role": "store_manager"
+    },
+    "contactInfo": {
+      "phone": "+1-555-0101",
+      "email": "manhattan@mccs.com"
+    }
+  }
+}
+```
+
+## 4. Create New Store
+**Endpoint:** `POST /stores`  
+**Description:** Create a new store  
+**Authentication:** Required (Admin only)  
+
+### Request Body
+```json
+{
+  "storeID": "ST001",
+  "storeName": "MCCS Manhattan Store",
+  "storeLocation": "123 Broadway, Manhattan, NY",
+  "zipCode": "10001",
+  "coordinates": {
+    "type": "Point",
+    "coordinates": [-73.9851, 40.7589]
+  },
+  "status": "active",
+  "managerId": "manager_object_id",
+  "contactInfo": {
+    "phone": "+1-555-0101",
+    "email": "manhattan@mccs.com"
+  }
+}
+```
+
+### Response
+```json
+{
+  "success": true,
+  "message": "Store created successfully",
+  "data": {
+    "_id": "new_store_id",
+    "storeID": "ST001",
+    "storeName": "MCCS Manhattan Store",
+    "storeLocation": "123 Broadway, Manhattan, NY",
+    "zipCode": "10001",
+    "coordinates": {
+      "type": "Point",
+      "coordinates": [-73.9851, 40.7589]
+    },
+    "status": "active",
+    "managerId": "manager_object_id",
+    "contactInfo": {
+      "phone": "+1-555-0101",
+      "email": "manhattan@mccs.com"
+    }
+  }
+}
+```
+
+## 5. Update Store
+**Endpoint:** `PUT /stores/:id`  
+**Description:** Update an existing store  
+**Authentication:** Required (Admin only)  
+
+### Parameters
+- `id` (path): MongoDB ObjectId of the store
+
+### Request Body
+```json
+{
+  "storeName": "Updated Store Name",
+  "status": "inactive",
+  "contactInfo": {
+    "phone": "+1-555-9999",
+    "email": "updated@mccs.com"
+  }
+}
+```
+
+### Response
+```json
+{
+  "success": true,
+  "message": "Store updated successfully",
+  "data": {
+    "_id": "store_id",
+    "storeID": "ST001",
+    "storeName": "Updated Store Name",
+    "storeLocation": "123 Broadway, Manhattan, NY",
+    "zipCode": "10001",
+    "coordinates": {
+      "type": "Point",
+      "coordinates": [-73.9851, 40.7589]
+    },
+    "status": "inactive",
+    "managerId": {
+      "_id": "manager_id",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "role": "store_manager"
+    },
+    "contactInfo": {
+      "phone": "+1-555-9999",
+      "email": "updated@mccs.com"
+    }
+  }
+}
+```
+
+## 6. Delete Store
+**Endpoint:** `DELETE /stores/:id`  
+**Description:** Delete a store  
+**Authentication:** Required (Admin only)  
+
+### Parameters
+- `id` (path): MongoDB ObjectId of the store
+
+### Response
+```json
+{
+  "success": true,
+  "message": "Store deleted successfully"
+}
+```
+
+## 7. Get Stores by Manager
+**Endpoint:** `GET /stores/manager/:managerId`  
+**Description:** Get all stores managed by a specific manager  
+**Authentication:** Required  
+
+### Parameters
+- `managerId` (path): MongoDB ObjectId of the manager
+
+### Response
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "_id": "store_id",
+      "storeID": "ST001",
+      "storeName": "MCCS Manhattan Store",
+      "storeLocation": "123 Broadway, Manhattan, NY",
+      "zipCode": "10001",
+      "coordinates": {
+        "type": "Point",
+        "coordinates": [-73.9851, 40.7589]
+      },
+      "status": "active",
+      "managerId": {
+        "_id": "manager_id",
+        "name": "John Doe",
+        "email": "john@example.com",
+        "role": "store_manager"
+      },
+      "contactInfo": {
+        "phone": "+1-555-0101",
+        "email": "manhattan@mccs.com"
+      }
+    }
+  ],
+  "count": 3
+}
+```
+
+## 8. Get Nearby Stores
+**Endpoint:** `GET /stores/nearby`  
+**Description:** Find stores within a specified radius of given coordinates  
+**Authentication:** Required  
+
+### Query Parameters
+- `latitude` (required): Latitude coordinate
+- `longitude` (required): Longitude coordinate
+- `radius` (optional): Search radius in kilometers (default: 10)
+
+### Example Request
+```
+GET /stores/nearby?latitude=40.7589&longitude=-73.9851&radius=5
+```
+
+### Response
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "_id": "store_id",
+      "storeID": "ST001",
+      "storeName": "MCCS Manhattan Store",
+      "storeLocation": "123 Broadway, Manhattan, NY",
+      "zipCode": "10001",
+      "coordinates": {
+        "type": "Point",
+        "coordinates": [-73.9851, 40.7589]
+      },
+      "status": "active",
+      "managerId": {
+        "_id": "manager_id",
+        "name": "John Doe",
+        "email": "john@example.com",
+        "role": "store_manager"
+      },
+      "contactInfo": {
+        "phone": "+1-555-0101",
+        "email": "manhattan@mccs.com"
+      }
+    }
+  ],
+  "count": 2
+}
+```
+
+## 9. Get Stores with Fraud Statistics
+**Endpoint:** `GET /stores/fraud-stats`  
+**Description:** Get all stores with their fraud statistics for a specified period  
+**Authentication:** Required  
+
+### Query Parameters
+- `period` (optional): Time period for statistics (7d, 30d, 90d, 1y) (default: 30d)
+
+### Example Request
+```
+GET /stores/fraud-stats?period=30d
+```
+
+### Response
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "_id": "store_id",
+      "storeID": "ST001",
+      "storeName": "MCCS Manhattan Store",
+      "storeLocation": "123 Broadway, Manhattan, NY",
+      "zipCode": "10001",
+      "coordinates": {
+        "type": "Point",
+        "coordinates": [-73.9851, 40.7589]
+      },
+      "status": "active",
+      "managerId": {
+        "_id": "manager_id",
+        "name": "John Doe",
+        "email": "john@example.com",
+        "role": "store_manager"
+      },
+      "contactInfo": {
+        "phone": "+1-555-0101",
+        "email": "manhattan@mccs.com"
+      },
+      "fraudStats": {
+        "totalTransactions": 150,
+        "fraudulentTransactions": 5,
+        "fraudRate": 3.33,
+        "transactionVolume": 45000.00,
+        "highRiskTransactions": 8,
+        "period": "30d"
+      }
+    }
+  ],
+  "count": 15,
+  "period": "30d"
+}
+```
+
+---
+
+# TRANSACTION MANAGEMENT APIs
+
+## 1. Predict Transaction Fraud
+**Endpoint:** `POST /transactions/predict`  
+**Description:** Analyze a transaction for fraud using machine learning models  
+**Authentication:** Required (API Key)  
+
+### Query Parameters
+- `model` (required): ML model to use (logistic-regression, bernoulli-nb, xgboost, decision-tree)
+
+### Request Body
+```json
+{
+  "Transaction Amount": [150.00],
+  "Payment Method": ["credit_card"],
+  "Product Category": ["electronics"],
+  "Quantity": [1],
+  "Customer Age": [35],
+  "Device Used": ["mobile"],
+  "Account Age Days": [365],
+  "Transaction Hour": [14],
+  "Transaction Day": [15],
+  "Transaction DOW": [1],
+  "Transaction Month": [6],
+  "Is Address Match": [1],
+  "Transaction Type": ["online"],
+  "storeRef": "store_object_id",
+  "storeID": "ST001"
+}
+```
+
+### Response
+```json
+{
+  "success": true,
+  "predictions": [0],
+  "probabilities": [[0.85, 0.15]],
+  "savedTransaction": {
+    "_id": "transaction_id",
+    "transactionAmount": 150.00,
+    "paymentMethod": "credit_card",
+    "productCategory": "electronics",
+    "quantity": 1,
+    "customerAge": 35,
+    "deviceUsed": "mobile",
+    "accountAgeDays": 365,
+    "transactionHour": 14,
+    "transactionDay": 15,
+    "transactionDOW": 1,
+    "transactionMonth": 6,
+    "isAddressMatch": 1,
+    "modelUsed": "logistic-regression",
+    "transactionType": "online",
+    "predictions": [0],
+    "probabilities": [[0.85, 0.15]],
+    "userId": "user_id",
+    "storeRef": "store_object_id",
+    "storeID": "ST001",
+    "status": "pending",
+    "riskScore": 15,
+    "createdAt": "2024-01-15T10:30:00.000Z"
+  }
+}
+```
+
+## 2. Get All Transactions
+**Endpoint:** `GET /transactions`  
+**Description:** Retrieve transactions with filtering, pagination, and search capabilities  
+**Authentication:** Required  
+
+### Query Parameters
+- `page` (optional): Page number (default: 1)
+- `limit` (optional): Items per page (default: 10)
+- `model` (optional): Filter by ML model used
+- `prediction` (optional): Filter by prediction value (0 or 1)
+- `status` (optional): Filter by status (pending, approved, rejected, under_review)
+- `userId` (optional): Filter by user ID
+- `startDate` (optional): Filter by start date (ISO format)
+- `endDate` (optional): Filter by end date (ISO format)
+- `productCategory` (optional): Filter by product category
+- `paymentMethod` (optional): Filter by payment method
+- `transactionType` (optional): Filter by transaction type (online, in-store)
+- `minRiskScore` (optional): Minimum risk score filter
+- `maxRiskScore` (optional): Maximum risk score filter
+- `minAmount` (optional): Minimum transaction amount filter
+- `maxAmount` (optional): Maximum transaction amount filter
+- `search` (optional): Search across transaction ID, amount, status, type, payment method
+- `storeRef` (optional): Filter by store reference (ObjectId)
+- `storeID` (optional): Filter by store ID
+
+### Example Request
+```
+GET /transactions?page=1&limit=20&prediction=1&status=under_review&search=fraud
+```
+
+### Response
+```json
+{
+  "success": true,
+  "transactions": [
+    {
+      "_id": "transaction_id",
+      "transactionAmount": 150.00,
+      "paymentMethod": "credit_card",
+      "productCategory": "electronics",
+      "quantity": 1,
+      "customerAge": 35,
+      "deviceUsed": "mobile",
+      "accountAgeDays": 365,
+      "transactionHour": 14,
+      "transactionDay": 15,
+      "transactionDOW": 1,
+      "transactionMonth": 6,
+      "isAddressMatch": 1,
+      "modelUsed": "logistic-regression",
+      "transactionType": "online",
+      "predictions": [1],
+      "probabilities": [[0.2, 0.8]],
+      "userId": "user_id",
+      "storeRef": "store_object_id",
+      "storeID": "ST001",
+      "status": "under_review",
+      "riskScore": 80,
+      "notes": "",
+      "reviewedBy": null,
+      "reviewedAt": null,
+      "createdAt": "2024-01-15T10:30:00.000Z"
+    }
+  ],
+  "pagination": {
+    "total": 150,
+    "page": 1,
+    "limit": 20,
+    "pages": 8
+  }
+}
+```
+
+## 3. Get Transaction by ID
+**Endpoint:** `GET /transactions/:id`  
+**Description:** Retrieve a specific transaction by ID  
+**Authentication:** Required  
+
+### Parameters
+- `id` (path): MongoDB ObjectId of the transaction
+
+### Response
+```json
+{
+  "success": true,
+  "transaction": {
+    "_id": "transaction_id",
+    "transactionAmount": 150.00,
+    "paymentMethod": "credit_card",
+    "productCategory": "electronics",
+    "quantity": 1,
+    "customerAge": 35,
+    "deviceUsed": "mobile",
+    "accountAgeDays": 365,
+    "transactionHour": 14,
+    "transactionDay": 15,
+    "transactionDOW": 1,
+    "transactionMonth": 6,
+    "isAddressMatch": 1,
+    "modelUsed": "logistic-regression",
+    "transactionType": "online",
+    "predictions": [1],
+    "probabilities": [[0.2, 0.8]],
+    "userId": "user_id",
+    "storeRef": "store_object_id",
+    "storeID": "ST001",
+    "status": "under_review",
+    "riskScore": 80,
+    "notes": "High risk transaction",
+    "reviewedBy": "reviewer_id",
+    "reviewedAt": "2024-01-15T11:00:00.000Z",
+    "createdAt": "2024-01-15T10:30:00.000Z"
+  }
+}
+```
+
+## 4. Update Transaction Status
+**Endpoint:** `PUT /transactions/:id/status`  
+**Description:** Update the review status of a transaction  
+**Authentication:** Required  
+
+### Parameters
+- `id` (path): MongoDB ObjectId of the transaction
+
+### Request Body
+```json
+{
+  "status": "approved",
+  "notes": "Transaction approved after manual review"
+}
+```
+
+### Valid Status Values
+- `pending`: Initial status for new transactions
+- `under_review`: Transaction flagged for review
+- `approved`: Transaction approved
+- `rejected`: Transaction rejected
+
+### Response
+```json
+{
+  "success": true,
+  "transaction": {
+    "_id": "transaction_id",
+    "transactionAmount": 150.00,
+    "paymentMethod": "credit_card",
+    "productCategory": "electronics",
+    "quantity": 1,
+    "customerAge": 35,
+    "deviceUsed": "mobile",
+    "accountAgeDays": 365,
+    "transactionHour": 14,
+    "transactionDay": 15,
+    "transactionDOW": 1,
+    "transactionMonth": 6,
+    "isAddressMatch": 1,
+    "modelUsed": "logistic-regression",
+    "transactionType": "online",
+    "predictions": [1],
+    "probabilities": [[0.2, 0.8]],
+    "userId": "user_id",
+    "storeRef": "store_object_id",
+    "storeID": "ST001",
+    "status": "approved",
+    "riskScore": 80,
+    "notes": "Transaction approved after manual review",
+    "reviewedBy": "reviewer_id",
+    "reviewedAt": "2024-01-15T11:00:00.000Z",
+    "createdAt": "2024-01-15T10:30:00.000Z"
+  }
+}
+```
+
+## 5. Get Fraud Trends
+**Endpoint:** `GET /transactions/fraud-trends`  
+**Description:** Get fraud trend data for monitoring dashboard  
+**Authentication:** Required  
+
+### Query Parameters
+- `period` (optional): Time period (day, week, month, year) (default: week)
+- `transactionType` (optional): Filter by transaction type (all, online, in-store) (default: all)
+
+### Example Request
+```
+GET /transactions/fraud-trends?period=month&transactionType=online
+```
+
+### Response
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "date": "2024-01-01T00:00:00.000Z",
+      "totalTransactions": 150,
+      "fraudulentTransactions": 5,
+      "fraudRate": 3.33
+    },
+    {
+      "date": "2024-01-02T00:00:00.000Z",
+      "totalTransactions": 200,
+      "fraudulentTransactions": 8,
+      "fraudRate": 4.00
+    }
+  ]
+}
+```
+
+## 6. Get High-Risk Transactions
+**Endpoint:** `GET /transactions/high-risk`  
+**Description:** Get high-risk transactions for alerts  
+**Authentication:** Required  
+
+### Query Parameters
+- `limit` (optional): Number of transactions to return (default: 5)
+- `transactionType` (optional): Filter by transaction type (all, online, in-store) (default: all)
+- `minRiskScore` (optional): Minimum risk score threshold (default: 70)
+
+### Example Request
+```
+GET /transactions/high-risk?limit=10&minRiskScore=80&transactionType=online
+```
+
+### Response
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "transaction_id",
+      "amount": 500.00,
+      "time": "2024-01-15T10:30:00.000Z",
+      "type": "online",
+      "paymentMethod": "credit_card",
+      "productCategory": "electronics",
+      "status": "under_review",
+      "riskScore": 95,
+      "fraudProbability": 0.95
+    }
+  ]
+}
+```
+
+## 7. Migrate Transactions
+**Endpoint:** `POST /transactions/migrate`  
+**Description:** Migration endpoint to update existing transactions with new fields  
+**Authentication:** Required (Admin only)  
+
+### Response
+```json
+{
+  "success": true,
+  "message": "Successfully migrated 150 transactions",
+  "migratedCount": 150
+}
+```
+
+---
+
+# ERROR RESPONSES
+
+## Common Error Formats
+
+### 400 Bad Request
+```json
+{
+  "success": false,
+  "error": "Invalid request parameters",
+  "message": "Detailed error message"
+}
+```
+
+### 401 Unauthorized
+```json
+{
+  "success": false,
+  "error": "Authentication required",
+  "message": "Please provide valid authentication token"
+}
+```
+
+### 403 Forbidden
+```json
+{
+  "success": false,
+  "error": "Access denied",
+  "message": "Insufficient permissions for this operation"
+}
+```
+
+### 404 Not Found
+```json
+{
+  "success": false,
+  "error": "Resource not found",
+  "message": "The requested resource was not found"
+}
+```
+
+### 500 Internal Server Error
+```json
+{
+  "success": false,
+  "error": "Internal server error",
+  "message": "An unexpected error occurred"
+}
+```
+
+---
+
+# DATA MODELS
+
+## Store Model
+```json
+{
+  "_id": "ObjectId",
+  "storeID": "String (unique)",
+  "storeName": "String",
+  "storeLocation": "String",
+  "zipCode": "String",
+  "coordinates": {
+    "type": "Point",
+    "coordinates": [longitude, latitude]
+  },
+  "status": "String (active, inactive, maintenance)",
+  "managerId": "ObjectId (ref: User)",
+  "contactInfo": {
+    "phone": "String",
+    "email": "String"
+  },
+  "createdAt": "Date",
+  "updatedAt": "Date"
+}
+```
+
+## Transaction Model
+```json
+{
+  "_id": "ObjectId",
+  "transactionAmount": "Number",
+  "paymentMethod": "String",
+  "productCategory": "String",
+  "quantity": "Number",
+  "customerAge": "Number",
+  "deviceUsed": "String",
+  "accountAgeDays": "Number",
+  "transactionHour": "Number",
+  "transactionDay": "Number",
+  "transactionDOW": "Number",
+  "transactionMonth": "Number",
+  "isAddressMatch": "Number",
+  "modelUsed": "String",
+  "transactionType": "String (online, in-store)",
+  "predictions": [Number],
+  "probabilities": [[Number]],
+  "userId": "ObjectId (ref: User)",
+  "storeRef": "ObjectId (ref: Store)",
+  "storeID": "String",
+  "status": "String (pending, under_review, approved, rejected)",
+  "riskScore": "Number (0-100)",
+  "notes": "String",
+  "reviewedBy": "ObjectId (ref: User)",
+  "reviewedAt": "Date",
+  "createdAt": "Date",
+  "updatedAt": "Date"
+}
+```
+
+---
+
+# REAL-TIME FEATURES
+
+## WebSocket Events
+
+### Fraud Alert Event
+When a transaction is predicted as fraudulent, a real-time alert is emitted:
+
+```javascript
+// Client-side WebSocket listener
+socket.on('fraud_alert', (alertData) => {
+  console.log('Fraud detected:', alertData);
+});
+```
+
+### Alert Data Structure
+```json
+{
+  "type": "fraud_detected",
+  "transactionId": "transaction_object_id",
+  "transactionIdShort": "TRX-ABC123",
+  "amount": 150.00,
+  "paymentMethod": "credit_card",
+  "productCategory": "electronics",
+  "deviceUsed": "mobile",
+  "transactionType": "online",
+  "riskLevel": "High",
+  "probability": "85.0",
+  "modelUsed": "logistic-regression",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "storeID": "ST001",
+  "storeName": "MCCS Manhattan Store"
+}
+```
+
+---
+
+# RATE LIMITING
+
+## API Rate Limits
+- **Standard endpoints:** 100 requests per minute per API key
+- **Prediction endpoints:** 50 requests per minute per API key
+- **Admin endpoints:** 200 requests per minute per admin user
+
+## Rate Limit Headers
+```
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 95
+X-RateLimit-Reset: 1640995200
+```
+
+---
+
+# VERSIONING
+
+## API Version
+Current API version: **v1**
+
+## Version Header
+```
+API-Version: v1
+```
+
+---
+
+# SUPPORT
+
+## Contact Information
+- **Email:** support@mccs.com
+- **Documentation:** https://docs.mccs.com
+- **Status Page:** https://status.mccs.com
+
+## Response Times
+- **Store APIs:** < 200ms average
+- **Transaction APIs:** < 500ms average
+- **Prediction APIs:** < 2s average
+
+---
+
+# CHANGELOG
+
+## Version 1.0.0 (2024-01-15)
+- Initial API release
+- Store management endpoints
+- Transaction processing endpoints
+- Fraud prediction capabilities
+- Real-time fraud alerts
+- Comprehensive filtering and search
+- Geospatial store queries
+- Fraud statistics and trends
