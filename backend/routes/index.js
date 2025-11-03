@@ -5,7 +5,7 @@ import { login, verifyLoginOTP, logout, updatePassword, testLogin } from '../con
 import { getUserInfo } from "../controllers/userController.js";
 import { generateSampleTransactions } from '../controllers/sampleDataController.js';
 import { addUsers, getAllUsers, deleteUser, toggleUserStatus } from '../controllers/adminController.js';
-import { predictTransaction, getTransactions, getTransactionById, updateTransactionStatus, getFraudTrends as getTransactionFraudTrends, getHighRiskTransactions, migrateTransactions } from '../controllers/transactionController.js';
+import { predictTransaction, getTransactions, getTransactionById, updateTransactionStatus, getFraudTrends as getTransactionFraudTrends, getHighRiskTransactions, migrateTransactions, getFlaggedTransactions } from '../controllers/transactionController.js';
 import authMiddleware from '../middleware/auth.js';
 import adminMiddleware from '../middleware/admin.js';
 import { getAllModels, getModelById } from '../controllers/mlModelController.js';
@@ -61,6 +61,7 @@ router.get('/store-manager/alerts', authMiddleware, getRecentAlerts);
 // Transaction routes
 router.post('/predict', validateApiKey, logApiCall, predictTransaction);
 router.get('/transactions', getTransactions);
+router.get('/transactions/flagged', authMiddleware, getFlaggedTransactions);
 router.get('/transaction/:id', getTransactionById);
 router.post('/transaction/:id/status', authMiddleware, updateTransactionStatus);
 router.get('/transaction-monitoring/fraud-trends', authMiddleware, getTransactionFraudTrends);

@@ -9,6 +9,7 @@ import { getTransactions, getDashboardStats, getApiUsageStats, sendReportEmail }
 import { useAuth } from '../context/AuthContext.jsx';
 import { useSocket } from '../context/SocketContext.jsx';
 import RealtimeAlertsPanel from '../components/RealtimeAlertsPanel.jsx';
+import FlaggedTransactionsPanel from '../components/FlaggedTransactionsPanel.jsx';
 import '../styles/Developer.css';
 import '../styles/Report.css';
 
@@ -835,6 +836,8 @@ const Developer = () => {
             )}
           </div>
         </div>
+
+        <FlaggedTransactionsPanel showStoreFilter pageSize={8} className="developer-flagged-panel" />
 
         {/* 🚨 Fraud Alerts Section */}
         <RealtimeAlertsPanel

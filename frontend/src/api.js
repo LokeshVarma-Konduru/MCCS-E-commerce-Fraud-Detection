@@ -177,6 +177,16 @@ export const getTransactions = (params = {}) => {
     return axios.get(`${API_URL}/transactions`, { params: queryParams });
 };
 
+// Get manually flagged transactions
+export const getFlaggedTransactions = (params = {}) => {
+    const queryParams = {
+        page: params.page || 1,
+        limit: params.limit || 10,
+        ...params
+    };
+    return axios.get(`${API_URL}/transactions/flagged`, { params: queryParams });
+};
+
 export const getTransactionById = (id) => {
     return axios.get(`${API_URL}/transaction/${id}`);
 };

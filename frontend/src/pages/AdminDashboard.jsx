@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useSocket } from "../context/SocketContext.jsx";
 import FiltersBar from "../components/adminDashboard/FiltersBar.jsx";
@@ -8,7 +8,10 @@ import ReportSummaries from "../components/adminDashboard/ReportSummaries.jsx";
 import USFraudHeatmap from "../components/adminDashboard/USFraudHeatmap.jsx";
 import { usaMapData } from "../components/adminDashboard/usMapData.js";
 import RealtimeAlertsPanel from "../components/RealtimeAlertsPanel.jsx";
-import { getStores } from "../api.js";
+import AdminReport from "../components/AdminReport.jsx";
+import FlaggedTransactionsPanel from "../components/FlaggedTransactionsPanel.jsx";
+import { FaFileAlt, FaEnvelope } from "react-icons/fa";
+import { getStores, sendReportEmail } from "../api.js";
 import "../styles/AdminDashboard.css";
 
 const riskLevelLabels = {
@@ -160,6 +163,13 @@ const AdminDashboard = () => {
     page: 1,
     pageSize: 6
   });
+  const [showReport, setShowReport] = useState(false);
+  const reportRef = useRef(null);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailAddress, setEmailAddress] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [emailError, setEmailError] = useState(null);
 
   const emitFilterChange = useCallback((_payload) => {
     // TODO: Wire filter analytics / backend query trigger.
@@ -615,6 +625,116 @@ const AdminDashboard = () => {
     emitMapSelect(stateMetric);
   };
 
+  const toggleEmailModal = () => {
+    setShowEmailModal(!showEmailModal);
+    setEmailSent(false);
+    setEmailError(null);
+    setEmailAddress("");
+  };
+
+  const handleGenerateReport = () => {
+    const newReportState = !showReport;
+    setShowReport(newReportState);
+
+    if (newReportState) {
+      setTimeout(() => {
+        if (reportRef.current) {
+          reportRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 100);
+    }
+  };
+
+  const getReportPdfData = async () => {
+    if (!reportRef.current) return null;
+
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const { jsPDF } = await import("jspdf");
+
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff"
+      });
+
+      const imgWidth = 210;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      const pdf = new jsPDF({
+        orientation: imgHeight > imgWidth ? "portrait" : "landscape",
+        unit: "mm",
+        format: [imgWidth, imgHeight]
+      });
+
+      const imgData = canvas.toDataURL("image/jpeg", 1.0);
+      pdf.addImage(imgData, "JPEG", 0, 0, imgWidth, imgHeight);
+
+      const pdfBase64 = pdf.output("datauristring");
+      return pdfBase64.split(",")[1];
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      return null;
+    }
+  };
+
+  const handleSendReportEmail = async () => {
+    if (!emailAddress) {
+      setEmailError("Please enter a valid email address");
+      return;
+    }
+
+    try {
+      setSendingEmail(true);
+      setEmailError(null);
+
+      const pdfData = await getReportPdfData();
+      if (!pdfData) {
+        throw new Error("Failed to generate PDF report");
+      }
+
+      const dateRangeLabels = {
+        today: "Today",
+        "7d": "Last 7 Days",
+        "30d": "Last 30 Days",
+        quarter: "Last 90 Days"
+      };
+      const periodLabel = dateRangeLabels[filters.dateRange] || "Custom Period";
+      const emailSubject = `MCCS Admin Report - ${periodLabel}`;
+      const emailMessage = `This report contains comprehensive fraud detection metrics and insights for ${periodLabel}.`;
+
+      const userName = user?.name || "";
+      const userRole = user?.role || "";
+
+      const response = await sendReportEmail(
+        emailAddress,
+        emailSubject,
+        emailMessage,
+        pdfData,
+        `admin-report-${filters.dateRange}.pdf`,
+        userName,
+        userRole
+      );
+
+      if (response.data.success) {
+        setEmailSent(true);
+        setTimeout(() => {
+          setShowEmailModal(false);
+          setEmailSent(false);
+          setEmailAddress("");
+        }, 3000);
+      } else {
+        throw new Error(response.data.message || "Failed to send email");
+      }
+    } catch (error) {
+      console.error("Error sending report email:", error);
+      setEmailError(error.message || "Failed to send email. Please try again.");
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="admin-dashboard__loading" role="status">
@@ -640,6 +760,65 @@ const AdminDashboard = () => {
           <p className="admin-dashboard__intro">
             Unified oversight for enterprise fraud prevention, combining Store Manager transaction intelligence with high-level report signals.
           </p>
+          <div 
+            className="admin-dashboard__actions" 
+            style={{ 
+              marginTop: "20px",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: "12px"
+            }}
+          >
+            <button
+              className="generate-report-button"
+              onClick={handleGenerateReport}
+              style={{
+                padding: "10px 20px",
+                backgroundColor: "#3b82f6",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontSize: "14px",
+                fontWeight: "500",
+                transition: "background-color 0.2s"
+              }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = "#2563eb"}
+              onMouseLeave={(e) => e.target.style.backgroundColor = "#3b82f6"}
+            >
+              <FaFileAlt />
+              {showReport ? "Hide Report" : "Generate Report"}
+            </button>
+            {showReport && (
+              <button
+                className="send-report-button"
+                onClick={toggleEmailModal}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "#10b981",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  transition: "background-color 0.2s"
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = "#059669"}
+                onMouseLeave={(e) => e.target.style.backgroundColor = "#10b981"}
+              >
+                <FaEnvelope />
+                Send Report
+              </button>
+            )}
+          </div>
         </div>
         <span className="admin-dashboard__role-badge" aria-label="Admins only access">
           Admins only
@@ -678,6 +857,10 @@ const AdminDashboard = () => {
         className="admin-dashboard__alerts-panel"
       />
 
+      <div style={{ marginTop: "24px" }}>
+        <FlaggedTransactionsPanel showStoreFilter />
+      </div>
+
       <TransactionsTable
         rows={paginatedRows}
         isLoading={isLoading}
@@ -685,6 +868,183 @@ const AdminDashboard = () => {
         onPaginate={handlePaginate}
         onViewTransaction={handleViewTransaction}
       />
+
+      {showReport && (
+        <div
+          ref={reportRef}
+          className="report-view"
+          style={{
+            background: "white",
+            padding: "32px",
+            borderRadius: "12px",
+            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)",
+            margin: "24px 0"
+          }}
+        >
+          <AdminReport
+            data={{
+              dateRange: filters.dateRange,
+              kpiCards,
+              reportMetrics,
+              transactionSummary: {
+                labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+                totalTransactions: [1200, 1350, 1180, 1420, 1560, 1890, 1650],
+                flaggedTransactions: [38, 42, 35, 45, 52, 61, 48]
+              },
+              regionalData: {
+                regions: ["North", "South", "East", "West", "Central"],
+                fraudRates: [2.8, 3.2, 2.4, 3.1, 2.6]
+              },
+              systemPerformance: {
+                labels: ["Week 1", "Week 2", "Week 3", "Week 4"],
+                accuracy: [96.8, 97.1, 97.2, 97.5]
+              }
+            }}
+          />
+        </div>
+      )}
+
+      {showEmailModal && (
+        <div
+          className="email-modal-overlay"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000
+          }}
+        >
+          <div
+            className="email-modal"
+            style={{
+              background: "white",
+              borderRadius: "12px",
+              padding: "24px",
+              minWidth: "400px",
+              maxWidth: "500px"
+            }}
+          >
+            <div
+              className="email-modal-header"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "20px"
+              }}
+            >
+              <h3>Send Report via Email</h3>
+              <button
+                className="close-button"
+                onClick={toggleEmailModal}
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontSize: "24px",
+                  cursor: "pointer",
+                  color: "#6b7280"
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="email-modal-body">
+              {!emailSent ? (
+                <>
+                  <div className="form-group" style={{ marginBottom: "16px" }}>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "8px",
+                        fontWeight: "500"
+                      }}
+                    >
+                      Email Address: <span style={{ color: "#ef4444" }}>*</span>
+                    </label>
+                    <input
+                      type="email"
+                      value={emailAddress}
+                      onChange={(e) => setEmailAddress(e.target.value)}
+                      placeholder="Enter recipient's email address"
+                      className="email-input"
+                      disabled={sendingEmail}
+                      required
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "6px",
+                        fontSize: "14px"
+                      }}
+                    />
+                  </div>
+
+                  {user && (
+                    <div
+                      className="user-info-notice"
+                      style={{
+                        backgroundColor: "#f3f4f6",
+                        borderRadius: "6px",
+                        padding: "12px",
+                        marginBottom: "16px",
+                        fontSize: "13px",
+                        color: "#4b5563"
+                      }}
+                    >
+                      Report will be sent from: <strong>{user.name}</strong> ({user.role})
+                    </div>
+                  )}
+
+                  {emailError && (
+                    <p
+                      className="email-error"
+                      style={{ color: "#ef4444", marginBottom: "16px" }}
+                    >
+                      {emailError}
+                    </p>
+                  )}
+
+                  <button
+                    className="send-button"
+                    onClick={handleSendReportEmail}
+                    disabled={sendingEmail}
+                    style={{
+                      padding: "10px 20px",
+                      backgroundColor: "#10b981",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      width: "100%"
+                    }}
+                  >
+                    {sendingEmail ? "Sending..." : "Send Report"}
+                  </button>
+                </>
+              ) : (
+                <div
+                  className="success-message"
+                  style={{
+                    textAlign: "center",
+                    color: "#10b981",
+                    fontWeight: "600"
+                  }}
+                >
+                  Report sent successfully!
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 };

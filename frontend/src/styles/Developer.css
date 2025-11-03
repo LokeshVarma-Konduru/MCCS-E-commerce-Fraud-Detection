@@ -1230,6 +1230,10 @@
   cursor: not-allowed;
 }
 
+.developer-flagged-panel {
+  margin-top: 24px;
+}
+
 .page-indicator {
   color: #64748b;
   font-size: 14px;

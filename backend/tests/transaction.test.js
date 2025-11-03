@@ -106,9 +106,12 @@ beforeAll(async () => {
       transactionType: "online",
       predictions: [1],
       probabilities: [[0.2, 0.8]],
-      status: "pending",
+      status: "rejected",
       riskScore: 80,
-      userId: userId
+      userId: userId,
+      reviewedBy: userId,
+      reviewedAt: new Date(),
+      notes: "Flagged during review"
     },
     {
       transactionAmount: 250.00,
@@ -129,9 +132,12 @@ beforeAll(async () => {
       storeID: "ST001",
       predictions: [0],
       probabilities: [[0.85, 0.15]],
-      status: "pending",
+      status: "under_review",
       riskScore: 15,
-      userId: userId
+      userId: userId,
+      reviewedBy: userId,
+      reviewedAt: new Date(),
+      notes: "Awaiting confirmation from store manager"
     }
   ]);
 });
@@ -263,6 +269,36 @@ describe("Transaction Controller Tests", () => {
       expect(response.body.transactions.length).toBe(1);
       expect(response.body.transactions[0].transactionType).toBe("in-store");
       expect(response.body.transactions[0].storeRef.toString()).toBe(storeId.toString());
+    });
+  });
+
+  describe("GET /mccs/transactions/flagged", () => {
+    it("should return manually flagged transactions", async () => {
+      const response = await request(app)
+        .get("/mccs/transactions/flagged")
+        .set("Cookie", authCookie);
+
+      expect(response.statusCode).toBe(200);
+      expect(response.body).toHaveProperty("success", true);
+      expect(Array.isArray(response.body.transactions)).toBe(true);
+      expect(response.body).toHaveProperty("pagination");
+      expect(response.body.pagination).toHaveProperty("page");
+      expect(response.body.transactions.length).toBeGreaterThan(0);
+      expect(response.body.transactions[0]).toHaveProperty("reviewedBy");
+    });
+
+    it("should filter flagged transactions by date range", async () => {
+      const startDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const endDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+      const response = await request(app)
+        .get("/mccs/transactions/flagged")
+        .query({ startDate, endDate })
+        .set("Cookie", authCookie);
+
+      expect(response.statusCode).toBe(200);
+      expect(response.body).toHaveProperty("success", true);
+      expect(Array.isArray(response.body.transactions)).toBe(true);
     });
   });
   
