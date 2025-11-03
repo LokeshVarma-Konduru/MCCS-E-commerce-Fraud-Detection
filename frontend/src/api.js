@@ -289,3 +289,76 @@ export const sendReportEmail = async (email, subject, message, pdfData, filename
     };
   }
 };
+
+// Training Dataset endpoints
+export const uploadTrainingDataset = async (file) => {
+  try {
+    const formData = new FormData();
+    formData.append('dataset', file);
+    
+    // Use axios for file upload
+    // axios automatically detects FormData and sets 'multipart/form-data' with boundary
+    // We need to remove the default 'application/json' Content-Type for this request
+    const response = await axios({
+      method: 'post',
+      url: `${API_URL}/datasets/upload`,
+      data: formData,
+      withCredentials: true,
+      headers: {
+        // Delete the default Content-Type - axios will set multipart/form-data automatically
+      },
+      transformRequest: [(data, headers) => {
+        // Remove Content-Type to let axios handle FormData automatically
+        delete headers['Content-Type'];
+        return data;
+      }]
+    });
+    
+    return response;
+  } catch (error) {
+    console.error('Error uploading training dataset:', error);
+    throw {
+      message: error.response?.data?.message || error.response?.data?.error || 'Failed to upload dataset',
+      status: error.response?.status
+    };
+  }
+};
+
+export const getAllTrainingDatasets = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/datasets`);
+    return response;
+  } catch (error) {
+    console.error('Error fetching training datasets:', error);
+    throw {
+      message: error.response?.data?.message || 'Failed to fetch datasets',
+      status: error.response?.status
+    };
+  }
+};
+
+export const getTrainingDatasetByVersion = async (version) => {
+  try {
+    const response = await axios.get(`${API_URL}/datasets/version/${version}`);
+    return response;
+  } catch (error) {
+    console.error('Error fetching training dataset:', error);
+    throw {
+      message: error.response?.data?.message || 'Failed to fetch dataset',
+      status: error.response?.status
+    };
+  }
+};
+
+export const getLatestTrainingDataset = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/datasets/latest`);
+    return response;
+  } catch (error) {
+    console.error('Error fetching latest training dataset:', error);
+    throw {
+      message: error.response?.data?.message || 'Failed to fetch latest dataset',
+      status: error.response?.status
+    };
+  }
+};

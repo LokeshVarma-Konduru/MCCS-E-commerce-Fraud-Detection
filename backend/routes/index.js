@@ -16,6 +16,7 @@ import { getStoreManagerStats, getFraudTrends, getTransactionTypeDistribution, g
 import { sendReportEmail } from '../controllers/reportController.js';
 import { getAllStores, getStoreById, getStoreByStoreId, createStore, updateStore, deleteStore, getStoresByManager, getStoresNearby, getStoresWithFraudStats } from '../controllers/storeController.js';
 import { seedStores, clearStores } from '../controllers/storeSeederController.js';
+import { uploadDataset, getAllDatasets, getDatasetByVersion, getLatestDataset } from '../controllers/datasetController.js';
 
 const router = express.Router();
 
@@ -69,6 +70,7 @@ router.get('/transaction-monitoring/high-risk', authMiddleware, getHighRiskTrans
 // Migration endpoint - only for development/admin use
 router.post('/migrate-transactions', migrateTransactions);
 
+
 // Report routes
 router.post('/send-report', authMiddleware, sendReportEmail);
 
@@ -90,6 +92,10 @@ router.delete('/stores/:id', authMiddleware, adminMiddleware, deleteStore);
 router.post('/seed-stores', authMiddleware, adminMiddleware, seedStores);
 router.delete('/clear-stores', authMiddleware, adminMiddleware, clearStores);
 
-
+// Dataset routes
+router.post('/datasets/upload', authMiddleware, uploadDataset);
+router.get('/datasets', authMiddleware, getAllDatasets);
+router.get('/datasets/version/:version', authMiddleware, getDatasetByVersion);
+router.get('/datasets/latest', getLatestDataset); // Public endpoint for VT rack
 
 export default router;
