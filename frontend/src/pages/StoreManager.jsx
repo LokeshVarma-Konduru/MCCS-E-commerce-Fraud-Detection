@@ -41,6 +41,11 @@ const StoreManager = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showReport, setShowReport] = useState(false);
+  const [reportType, setReportType] = useState('monthly-summary');
+  const [customDateRange, setCustomDateRange] = useState({
+    startDate: '',
+    endDate: ''
+  });
   
   // Create a reference for the report section
   const reportRef = useRef(null);
@@ -643,8 +648,8 @@ const StoreManager = () => {
         <div className="dashboard-controls">
           <div className="time-range-selector">
             <label>Time Range:</label>
-            <select 
-              value={timeRange} 
+            <select
+              value={timeRange}
               onChange={(e) => setTimeRange(e.target.value)}
               className="select-control"
             >
@@ -655,8 +660,8 @@ const StoreManager = () => {
           </div>
           <div className="transaction-type-selector">
             <label>Transaction Type:</label>
-            <select 
-              value={transactionType} 
+            <select
+              value={transactionType}
               onChange={(e) => setTransactionType(e.target.value)}
               className="select-control"
             >
@@ -664,23 +669,6 @@ const StoreManager = () => {
               <option>Online</option>
               <option>In-store</option>
             </select>
-          </div>
-          <div className="report-buttons">
-            <button 
-              className="generate-report-button"
-              onClick={handleGenerateReport}
-            >
-              {showReport ? 'Hide Report' : 'Generate Report'}
-            </button>
-            {showReport && (
-              <button 
-                className="send-report-button"
-                onClick={toggleEmailModal}
-              >
-                <FaEnvelope className="button-icon" />
-                Send Report
-              </button>
-            )}
           </div>
         </div>
 
@@ -852,17 +840,220 @@ const StoreManager = () => {
 
       {/* Reports Tab Content */}
       {activeTab === 'reports' && (
-        <div className="coming-soon-container">
-          <div className="coming-soon-card">
-            <h2>Reports Feature Coming Soon</h2>
-            <p>In the future, you'll be able to view all past reports here, including:</p>
-            <ul>
-              <li>Monthly fraud detection summaries</li>
-              <li>Transaction type analysis</li>
-              <li>Risk assessment reports</li>
-              <li>Custom date range reports</li>
-            </ul>
-            <p>Stay tuned for these exciting features!</p>
+        <div className="reports-content">
+          {/* Header Section */}
+          {!showReport && (
+            <div style={{
+              background: "white",
+              padding: "20px 24px",
+              borderRadius: "12px",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+              marginBottom: "20px",
+              textAlign: "center"
+            }}>
+              <h2 style={{ color: "#6366f1", fontSize: "20px", fontWeight: "600", marginBottom: "8px" }}>
+                Generate Your Report
+              </h2>
+              <p style={{ fontSize: "14px", color: "#6b7280", margin: 0 }}>
+                Select a report type below and click "Generate Report" to create a comprehensive fraud detection report for your store.
+              </p>
+            </div>
+          )}
+
+          {/* Report Type Selection */}
+          <div style={{
+            background: "white",
+            padding: "20px",
+            borderRadius: "12px",
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+            marginBottom: "20px"
+          }}>
+            <h2 style={{ marginBottom: "16px", fontSize: "16px", fontWeight: "600", color: "#111827" }}>
+              Select Report Type
+            </h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "12px" }}>
+              <div
+                onClick={() => setReportType('monthly-summary')}
+                style={{
+                  padding: "14px",
+                  borderRadius: "8px",
+                  border: reportType === 'monthly-summary' ? "2px solid #3b82f6" : "2px solid #e5e7eb",
+                  backgroundColor: reportType === 'monthly-summary' ? "#eff6ff" : "white",
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
+              >
+                <h3 style={{ fontSize: "15px", fontWeight: "600", marginBottom: "6px", color: "#111827" }}>
+                  Monthly Fraud Detection Summary
+                </h3>
+                <p style={{ fontSize: "13px", color: "#6b7280", margin: 0, lineHeight: "1.4" }}>
+                  Comprehensive monthly overview of fraud detection metrics and trends
+                </p>
+              </div>
+
+              <div
+                onClick={() => setReportType('transaction-analysis')}
+                style={{
+                  padding: "14px",
+                  borderRadius: "8px",
+                  border: reportType === 'transaction-analysis' ? "2px solid #3b82f6" : "2px solid #e5e7eb",
+                  backgroundColor: reportType === 'transaction-analysis' ? "#eff6ff" : "white",
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
+              >
+                <h3 style={{ fontSize: "15px", fontWeight: "600", marginBottom: "6px", color: "#111827" }}>
+                  Transaction Type Analysis
+                </h3>
+                <p style={{ fontSize: "13px", color: "#6b7280", margin: 0, lineHeight: "1.4" }}>
+                  Detailed breakdown of transactions by type (online vs in-store)
+                </p>
+              </div>
+
+              <div
+                onClick={() => setReportType('risk-assessment')}
+                style={{
+                  padding: "14px",
+                  borderRadius: "8px",
+                  border: reportType === 'risk-assessment' ? "2px solid #3b82f6" : "2px solid #e5e7eb",
+                  backgroundColor: reportType === 'risk-assessment' ? "#eff6ff" : "white",
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
+              >
+                <h3 style={{ fontSize: "15px", fontWeight: "600", marginBottom: "6px", color: "#111827" }}>
+                  Risk Assessment Report
+                </h3>
+                <p style={{ fontSize: "13px", color: "#6b7280", margin: 0, lineHeight: "1.4" }}>
+                  Risk score distribution and high-risk transaction analysis
+                </p>
+              </div>
+
+              <div
+                onClick={() => setReportType('custom-date-range')}
+                style={{
+                  padding: "14px",
+                  borderRadius: "8px",
+                  border: reportType === 'custom-date-range' ? "2px solid #3b82f6" : "2px solid #e5e7eb",
+                  backgroundColor: reportType === 'custom-date-range' ? "#eff6ff" : "white",
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
+              >
+                <h3 style={{ fontSize: "15px", fontWeight: "600", marginBottom: "6px", color: "#111827" }}>
+                  Custom Date Range Report
+                </h3>
+                <p style={{ fontSize: "13px", color: "#6b7280", margin: 0, lineHeight: "1.4" }}>
+                  Create a report for any specific date range you choose
+                </p>
+              </div>
+            </div>
+
+            {/* Custom Date Range Picker */}
+            {reportType === 'custom-date-range' && (
+              <div style={{
+                padding: "14px",
+                backgroundColor: "#f9fafb",
+                borderRadius: "8px",
+                marginTop: "12px"
+              }}>
+                <h3 style={{ fontSize: "14px", fontWeight: "600", marginBottom: "10px", color: "#111827" }}>
+                  Select Date Range
+                </h3>
+                <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: "block", fontSize: "12px", fontWeight: "500", marginBottom: "4px", color: "#374151" }}>
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      value={customDateRange.startDate}
+                      onChange={(e) => setCustomDateRange({ ...customDateRange, startDate: e.target.value })}
+                      style={{
+                        width: "100%",
+                        padding: "8px 10px",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "6px",
+                        fontSize: "14px"
+                      }}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: "block", fontSize: "12px", fontWeight: "500", marginBottom: "4px", color: "#374151" }}>
+                      End Date
+                    </label>
+                    <input
+                      type="date"
+                      value={customDateRange.endDate}
+                      onChange={(e) => setCustomDateRange({ ...customDateRange, endDate: e.target.value })}
+                      style={{
+                        width: "100%",
+                        padding: "8px 10px",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "6px",
+                        fontSize: "14px"
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Reports Controls */}
+          <div style={{
+            display: "flex",
+            gap: "10px",
+            alignItems: "center",
+            marginBottom: "20px"
+          }}>
+            <button
+              className="generate-report-button"
+              onClick={handleGenerateReport}
+              style={{
+                padding: "10px 20px",
+                backgroundColor: "#3b82f6",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontSize: "14px",
+                fontWeight: "500",
+                transition: "background-color 0.2s"
+              }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = "#2563eb"}
+              onMouseLeave={(e) => e.target.style.backgroundColor = "#3b82f6"}
+            >
+              {showReport ? 'Hide Report' : 'Generate Report'}
+            </button>
+            {showReport && (
+              <button
+                className="send-report-button"
+                onClick={toggleEmailModal}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "#10b981",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  transition: "background-color 0.2s"
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = "#059669"}
+                onMouseLeave={(e) => e.target.style.backgroundColor = "#10b981"}
+              >
+                <FaEnvelope className="button-icon" />
+                Send Report
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -883,22 +1074,24 @@ const StoreManager = () => {
       )}
 
       {/* Report View */}
-      {showReport && activeTab === 'dashboard' && (
-        <div ref={reportRef} className="report-view" style={{ 
-          background: 'white', 
-          padding: '32px', 
+      {showReport && (activeTab === 'dashboard' || activeTab === 'reports') && (
+        <div ref={reportRef} className="report-view" style={{
+          background: 'white',
+          padding: '32px',
           borderRadius: '12px',
           boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
           margin: '24px 0'
         }}>
-          <StoreManagerReport 
+          <StoreManagerReport
             data={{
               period: timeRange,
               fraudTrendData,
               transactionTypesData,
               stats,
-              recentAlerts
-            }} 
+              recentAlerts,
+              reportType: activeTab === 'reports' ? reportType : 'monthly-summary',
+              customDateRange
+            }}
           />
         </div>
       )}
