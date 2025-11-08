@@ -17,7 +17,11 @@ const ModelSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   metrics: [MetricSchema],
   plots: [PlotSchema],
-  additionalInfo: { type: mongoose.Schema.Types.Mixed }
+  additionalInfo: { type: mongoose.Schema.Types.Mixed },
+  // Version tracking fields
+  version: { type: String }, // e.g., "v1.0.0"
+  trainingDatasetVersion: { type: String }, // Links to TrainingDataset.version
+  gridFsFileId: { type: mongoose.Schema.Types.ObjectId } // Links to modelFiles.files._id
 },
 { timestamps: true }
 );

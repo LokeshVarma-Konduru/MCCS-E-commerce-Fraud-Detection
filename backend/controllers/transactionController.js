@@ -684,7 +684,7 @@ export const getFraudTrends = async (req, res) => {
   }
 };
 
-// Migration endpoint to update existing transactions with new fields
+
 export const migrateTransactions = async (req, res) => {
   try {
     // Find all transactions that don't have the status field set
