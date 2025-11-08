@@ -14,11 +14,12 @@ import {
 import { FaEnvelope } from 'react-icons/fa';
 import '../styles/StoreManager.css';
 import '../styles/Report.css';
-import { getStoreManagerStats, getFraudTrends, getTransactionTypeDistribution, getRecentAlerts, sendReportEmail } from '../api';
+import { getStoreManagerStats, getFraudTrends, getTransactionTypeDistribution, getRecentAlerts, sendReportEmail, updateTransactionStatus } from '../api';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useSocket } from '../context/SocketContext.jsx';
 import RealtimeAlertsPanel from '../components/RealtimeAlertsPanel.jsx';
 import StoreManagerReport from '../components/StoreManagerReport';
+import FlaggedTransactionsPanel from '../components/FlaggedTransactionsPanel.jsx';
 
 ChartJS.register(
   CategoryScale,
@@ -52,6 +53,10 @@ const StoreManager = () => {
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [emailError, setEmailError] = useState(null);
+  const [showFlagModal, setShowFlagModal] = useState(false);
+  const [flaggingTransaction, setFlaggingTransaction] = useState(null);
+  const [flagNotes, setFlagNotes] = useState('');
+  const [flagError, setFlagError] = useState(null);
 
   // State for real data
   const [stats, setStats] = useState({
@@ -312,6 +317,65 @@ const StoreManager = () => {
     }
   };
 
+  // Handle flagging a transaction
+  const handleFlagTransaction = (alert) => {
+    const transactionId = alert.fullTransactionId || alert.transactionId.replace('#TRX-', '');
+    
+    setFlaggingTransaction({
+      id: transactionId,
+      displayId: alert.transactionId,
+      amount: alert.amount,
+      type: alert.type
+    });
+    setShowFlagModal(true);
+    setFlagNotes('');
+    setFlagError(null);
+  };
+
+  // Submit flag transaction
+  const handleSubmitFlag = async () => {
+    if (!flaggingTransaction) return;
+    
+    try {
+      setFlagError(null);
+      
+      const response = await updateTransactionStatus(
+        flaggingTransaction.id,
+        'rejected',
+        flagNotes || 'Manually flagged as fraudulent by store manager'
+      );
+      
+      if (response.data.success) {
+        setShowFlagModal(false);
+        setFlaggingTransaction(null);
+        setFlagNotes('');
+        
+        const alertsResponse = await getRecentAlerts(5, transactionType, { 
+          storeRef: storeRefId, 
+          storeID: storeHumanId 
+        });
+        if (alertsResponse.data && alertsResponse.data.success) {
+          setRecentAlerts(alertsResponse.data.data);
+        }
+        
+        alert('Transaction successfully flagged as fraudulent');
+      } else {
+        throw new Error(response.data.error || 'Failed to flag transaction');
+      }
+    } catch (error) {
+      console.error('Error flagging transaction:', error);
+      setFlagError(error.message || 'Failed to flag transaction. Please try again.');
+    }
+  };
+
+  // Close flag modal
+  const handleCloseFlagModal = () => {
+    setShowFlagModal(false);
+    setFlaggingTransaction(null);
+    setFlagNotes('');
+    setFlagError(null);
+  };
+
   // Convert timeRange to period parameter for API calls
   const getPeriodFromTimeRange = (range) => {
     switch (range) {
@@ -335,6 +399,16 @@ const StoreManager = () => {
     : storeHumanId
       ? `Store ${storeHumanId}`
       : 'Assigned store';
+
+  const flaggedStoreContext = useMemo(() => {
+    if (!storeRefId && !storeHumanId) {
+      return null;
+    }
+    return {
+      ...(storeRefId ? { storeRef: storeRefId } : {}),
+      ...(storeHumanId ? { storeID: storeHumanId } : {})
+    };
+  }, [storeRefId, storeHumanId]);
 
   // Fetch stats data
   useEffect(() => {
@@ -832,16 +906,53 @@ const StoreManager = () => {
           ) : recentAlerts.length === 0 ? (
             <div className="text-sm text-gray-500 text-center py-8">No recent alerts found</div>
           ) : (
-            <div className="overflow-x-auto -mx-4 px-4 lg:mx-0 lg:px-0">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead>
-                  <tr className="bg-gray-50">
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Time</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Transaction ID</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Type</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Amount</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Risk Score</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Status</th>
+            <table>
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Transaction ID</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Risk Score</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentAlerts.map((alert, index) => (
+                  <tr key={index}>
+                    <td>{alert.time}</td>
+                    <td>{alert.transactionId}</td>
+                    <td>{alert.type}</td>
+                    <td>{alert.amount}</td>
+                    <td>
+                      <span className={`risk-badge ${alert.riskScore.toLowerCase()}`}>
+                        {alert.riskScore}
+                      </span>
+                    </td>
+                    <td>{alert.status}</td>
+                    <td>
+                      {alert.status !== 'Flagged' && alert.status !== 'Under Review' ? (
+                        <button
+                          onClick={() => handleFlagTransaction(alert)}
+                          className="flag-button"
+                          style={{
+                            padding: '6px 12px',
+                            backgroundColor: '#ef4444',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            fontWeight: '500'
+                          }}
+                        >
+                          Flag as Fraud
+                        </button>
+                      ) : (
+                        <span style={{ color: '#6b7280', fontSize: '12px' }}>Already flagged</span>
+                      )}
+                    </td>
                   </tr>
                 </thead>
                 <tbody>
@@ -868,7 +979,16 @@ const StoreManager = () => {
             </div>
           )}
         </div>
-      </>
+        <div style={{ marginTop: '24px' }}>
+          <FlaggedTransactionsPanel
+            title="Manual Review Activity"
+            pageSize={5}
+            storeContext={flaggedStoreContext}
+            emptyStateMessage="No manually flagged transactions for your store yet."
+            compact
+          />
+        </div>
+      </div>
       )}
 
       {/* Reports Tab Content */}
@@ -923,7 +1043,7 @@ const StoreManager = () => {
           />
         </div>
       )}
-      
+
       {/* Email Modal */}
       {showEmailModal && (
         <div className="email-modal-overlay">
@@ -970,6 +1090,89 @@ const StoreManager = () => {
                   <p>Report sent successfully!</p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Flag Transaction Modal */}
+      {showFlagModal && flaggingTransaction && (
+        <div className="email-modal-overlay">
+          <div className="email-modal">
+            <div className="email-modal-header">
+              <h3>Flag Transaction as Fraudulent</h3>
+              <button className="close-button" onClick={handleCloseFlagModal}>
+                ✕
+              </button>
+            </div>
+            <div className="email-modal-body">
+              <div style={{ marginBottom: '16px' }}>
+                <p><strong>Transaction:</strong> {flaggingTransaction.displayId}</p>
+                <p><strong>Amount:</strong> {flaggingTransaction.amount}</p>
+                <p><strong>Type:</strong> {flaggingTransaction.type}</p>
+              </div>
+              
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                  Notes (Optional):
+                </label>
+                <textarea
+                  value={flagNotes}
+                  onChange={(e) => setFlagNotes(e.target.value)}
+                  placeholder="Enter reason for flagging this transaction..."
+                  rows="4"
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    resize: 'vertical'
+                  }}
+                />
+              </div>
+              
+              {flagError && (
+                <p className="email-error" style={{ color: '#ef4444', marginBottom: '16px' }}>
+                  {flagError}
+                </p>
+              )}
+              
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button 
+                  className="send-button"
+                  onClick={handleSubmitFlag}
+                  style={{
+                    flex: 1,
+                    padding: '10px 20px',
+                    backgroundColor: '#ef4444',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500'
+                  }}
+                >
+                  Flag as Fraudulent
+                </button>
+                <button 
+                  onClick={handleCloseFlagModal}
+                  style={{
+                    flex: 1,
+                    padding: '10px 20px',
+                    backgroundColor: '#6b7280',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500'
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>

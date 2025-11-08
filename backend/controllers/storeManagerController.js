@@ -415,21 +415,36 @@ export const getRecentAlerts = async (req, res) => {
         }
       }
       
-      // Determine status
+      // Determine status - prioritize actual transaction status if manually reviewed
       let status = 'Flagged';
-      if (riskScore === 'High') {
-        status = 'Under Review';
-      } else if (riskScore === 'Low') {
-        status = 'Cleared';
+      
+      // If transaction has been manually reviewed, use that status
+      if (transaction.status && transaction.status !== 'pending') {
+        // Map database status to display status
+        const statusMap = {
+          'approved': 'Cleared',
+          'rejected': 'Flagged',
+          'under_review': 'Under Review'
+        };
+        status = statusMap[transaction.status] || 'Flagged';
+      } else {
+        // Otherwise, determine from risk score
+        if (riskScore === 'High') {
+          status = 'Under Review';
+        } else if (riskScore === 'Low') {
+          status = 'Cleared';
+        }
       }
       
       return {
         time: timeAgo,
-        transactionId: `#TRX-${transaction._id.toString().slice(-5)}`,
+        transactionId: `#TRX-${transaction._id.toString().slice(-5).toUpperCase()}`,
+        fullTransactionId: transaction._id.toString(),
         type: transaction.transactionType === 'online' ? 'Online' : 'In-store',
         amount: `$${transaction.transactionAmount.toFixed(2)}`,
         riskScore,
-        status
+        status,
+        actualStatus: transaction.status // Include actual DB status for debugging
       };
     });
     

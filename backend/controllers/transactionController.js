@@ -436,8 +436,83 @@ export const predictTransaction = async (req, res) => {
         error: 'Server error' 
       });
     }
-  };
-  
+};
+
+/**
+ * Get all manually flagged transactions
+ * Returns transactions that have been manually reviewed and flagged as rejected or under_review
+ */
+export const getFlaggedTransactions = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const { startDate, endDate, storeRef, storeID, reviewedBy } = req.query;
+
+    const filter = {
+      status: { $in: ["rejected", "under_review"] },
+      reviewedBy: { $exists: true, $ne: null }
+    };
+
+    if (startDate || endDate) {
+      filter.reviewedAt = {};
+      if (startDate) {
+        filter.reviewedAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        const endOfDay = new Date(endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        filter.reviewedAt.$lte = endOfDay;
+      }
+    }
+
+    if (storeRef) {
+      try {
+        filter.storeRef = new mongoose.Types.ObjectId(storeRef);
+      } catch (_e) {
+        filter.storeRef = storeRef;
+      }
+    } else if (storeID) {
+      filter.storeID = storeID;
+    }
+
+    if (reviewedBy) {
+      try {
+        filter.reviewedBy = new mongoose.Types.ObjectId(reviewedBy);
+      } catch (_e) {
+        filter.reviewedBy = reviewedBy;
+      }
+    }
+
+    const transactions = await Transaction.find(filter)
+      .populate("reviewedBy", "name email role")
+      .populate("storeRef", "storeID storeName")
+      .sort({ reviewedAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const totalCount = await Transaction.countDocuments(filter);
+
+    return res.json({
+      success: true,
+      transactions,
+      pagination: {
+        total: totalCount,
+        page,
+        limit,
+        pages: Math.ceil(totalCount / limit)
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching flagged transactions:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Server error while fetching flagged transactions",
+      message: error.message
+    });
+  }
+};
+
 export const getTransactionById = async (req, res) => {
   try {
     const { id } = req.params;
