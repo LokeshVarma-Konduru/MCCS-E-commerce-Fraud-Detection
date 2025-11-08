@@ -1,3 +1,39 @@
+/* ============================================
+   RESPONSIVE UTILITIES
+   ============================================ */
+
+/* Hide scrollbar for horizontal scrolling tabs */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Ensure flex/grid children can shrink to prevent overflow */
+.min-w-0 {
+  min-width: 0;
+}
+
+/* Responsive chart container with aspect ratio */
+.chart-responsive-container {
+  width: 100%;
+  aspect-ratio: 16/10;
+}
+
+@media (min-width: 1024px) {
+  .chart-responsive-container {
+    aspect-ratio: auto;
+    height: 320px;
+  }
+}
+
+/* ============================================
+   LEGACY STYLES (Keep for backward compatibility)
+   ============================================ */
+
 .store-manager-container {
   padding: 24px 24px 24px 24px; /* Add consistent padding on all sides */
   background-color: #f8fafc;
@@ -488,4 +524,314 @@ td {
   color: #334155;
   margin-bottom: 8px;
   line-height: 1.5;
+}
+
+/* ============================================
+   RESPONSIVE STYLES - MOBILE & TABLET
+   ============================================ */
+
+/* Tablet (768px - 1024px) */
+@media (max-width: 1024px) {
+  .store-manager-container {
+    padding: 20px 16px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .stats-grid .stat-card:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .charts-section {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .dashboard-controls {
+    gap: 12px;
+  }
+
+  .time-range-selector,
+  .transaction-type-selector {
+    min-width: 160px;
+  }
+
+  .select-control {
+    min-width: 150px;
+  }
+}
+
+/* Mobile (max-width: 768px) */
+@media (max-width: 768px) {
+  .store-manager-container {
+    padding: 16px 12px;
+    margin-top: 60px;
+  }
+
+  .nav-tabs {
+    gap: 8px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .nav-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab {
+    padding: 8px 12px;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  .dashboard-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .time-range-selector,
+  .transaction-type-selector {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .time-range-selector label,
+  .transaction-type-selector label {
+    min-width: 100px;
+  }
+
+  .select-control {
+    flex: 1;
+    min-width: auto;
+  }
+
+  .report-buttons {
+    width: 100%;
+    margin-left: 0;
+    flex-direction: column;
+  }
+
+  .generate-report-button,
+  .send-report-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .stat-card {
+    padding: 16px;
+  }
+
+  .stat-card h3 {
+    font-size: 13px;
+  }
+
+  .stat-value {
+    font-size: 24px;
+  }
+
+  .stat-change {
+    font-size: 12px;
+  }
+
+  .charts-section {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .chart-container,
+  .transaction-types {
+    padding: 16px;
+  }
+
+  .chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .chart-header h3 {
+    font-size: 14px;
+  }
+
+  .time-select,
+  .type-select {
+    width: 100%;
+    font-size: 13px;
+  }
+
+  .chart-wrapper {
+    min-height: 250px;
+  }
+
+  .recent-alerts {
+    padding: 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .recent-alerts h3 {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+
+  table {
+    min-width: 600px;
+  }
+
+  th,
+  td {
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  th {
+    white-space: nowrap;
+  }
+
+  .risk-badge {
+    padding: 3px 6px;
+    font-size: 11px;
+  }
+
+  .email-modal {
+    width: 95%;
+    max-width: 400px;
+  }
+
+  .email-modal-header {
+    padding: 12px;
+  }
+
+  .email-modal-header h3 {
+    font-size: 16px;
+  }
+
+  .email-modal-body {
+    padding: 12px;
+  }
+
+  .coming-soon-container {
+    padding: 24px 16px;
+  }
+
+  .coming-soon-card {
+    padding: 24px;
+  }
+
+  .coming-soon-card h2 {
+    font-size: 20px;
+  }
+
+  .coming-soon-card p {
+    font-size: 14px;
+  }
+
+  .report-view {
+    padding: 16px !important;
+    margin: 16px 0 !important;
+  }
+}
+
+/* Small Mobile (max-width: 480px) */
+@media (max-width: 480px) {
+  .store-manager-container {
+    padding: 12px 8px;
+  }
+
+  .nav-tabs {
+    gap: 4px;
+    padding: 0 0 6px 0;
+  }
+
+  .tab {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  .stat-card {
+    padding: 12px;
+  }
+
+  .stat-value {
+    font-size: 20px;
+  }
+
+  .stat-change {
+    font-size: 11px;
+  }
+
+  .chart-container,
+  .transaction-types {
+    padding: 12px;
+  }
+
+  .chart-wrapper {
+    min-height: 220px;
+  }
+
+  .recent-alerts {
+    padding: 12px;
+  }
+
+  table {
+    min-width: 550px;
+  }
+
+  th,
+  td {
+    padding: 6px;
+    font-size: 11px;
+  }
+
+  .generate-report-button,
+  .send-report-button {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  .button-icon {
+    font-size: 14px;
+  }
+
+  .coming-soon-card {
+    padding: 20px;
+  }
+
+  .coming-soon-card h2 {
+    font-size: 18px;
+  }
+
+  .coming-soon-card p,
+  .coming-soon-card li {
+    font-size: 13px;
+  }
+
+  .report-view {
+    padding: 12px !important;
+    margin: 12px 0 !important;
+  }
+}
+
+/* Landscape Mobile Optimization */
+@media (max-width: 768px) and (orientation: landscape) {
+  .chart-wrapper {
+    min-height: 200px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }

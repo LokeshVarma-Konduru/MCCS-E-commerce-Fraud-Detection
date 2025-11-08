@@ -464,146 +464,271 @@ const StoreManager = () => {
   }, [transactionType, authLoading, currentUser]);
 
   // Memoize chart options to prevent unnecessary re-renders
-  const chartOptions = useMemo(() => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false
+  const chartOptions = useMemo(() => {
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+    const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024;
+    
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: isDesktop,
+          position: isMobile ? 'bottom' : 'top',
+          labels: {
+            font: { size: isMobile ? 10 : 12 },
+            padding: isMobile ? 8 : 12
+          }
+        },
+        tooltip: {
+          enabled: true,
+          titleFont: { size: isMobile ? 11 : 14 },
+          bodyFont: { size: isMobile ? 10 : 13 },
+          padding: isMobile ? 8 : 12
+        }
       },
-      tooltip: {
-        enabled: true // Keep tooltips enabled
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: {
-          callback: value => value + '%'
+      scales: {
+        x: {
+          ticks: {
+            maxRotation: isMobile ? 45 : 0,
+            minRotation: isMobile ? 45 : 0,
+            font: { size: isMobile ? 9 : 12 },
+            callback: function(value, index) {
+              if (isMobile && index % 2 !== 0) return '';
+              return this.getLabelForValue(value);
+            }
+          },
+          grid: { display: isDesktop }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: value => value + '%',
+            font: { size: isMobile ? 9 : 12 }
+          },
+          grid: { lineWidth: isMobile ? 0.5 : 1 }
         }
-      }
-    },
-    animation: false, // Completely disable all animations
-    transitions: {
-      active: {
-        animation: {
-          duration: 0 // Disable transitions when hovering
+      },
+      animation: false,
+      transitions: {
+        active: { animation: { duration: 0 } }
+      },
+      elements: {
+        line: {
+          tension: 0.4,
+          borderWidth: isMobile ? 1.5 : 2
+        },
+        point: {
+          radius: isMobile ? 2 : 4,
+          hitRadius: isMobile ? 8 : 10
         }
-      }
-    },
-    elements: {
-      line: {
-        tension: 0.4 // Keep the curve smooth but don't animate it
-      }
-    },
-    hover: {
-      animationDuration: 0 // Disable hover animations
-    },
-    responsiveAnimationDuration: 0 // Disable animations on resize
-  }), []); // Empty dependency array means this will only be calculated once
+      },
+      hover: { animationDuration: 0 },
+      responsiveAnimationDuration: 0
+    };
+  }, []);
 
   // Memoize transaction types chart options
-  const transactionTypesOptions = useMemo(() => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'top',
-        labels: {
-          usePointStyle: true,
-          padding: 20
-        }
-      },
-      tooltip: {
-        enabled: true
-      }
-    },
-    scales: {
-      x: {
-        grid: {
-          display: false
-        }
-      },
-      y: {
-        beginAtZero: true,
-        grid: {
-          drawBorder: false
+  const transactionTypesOptions = useMemo(() => {
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+    const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024;
+    
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: isDesktop,
+          position: isMobile ? 'bottom' : 'top',
+          labels: {
+            usePointStyle: true,
+            padding: isMobile ? 8 : 20,
+            font: { size: isMobile ? 10 : 12 },
+            boxWidth: isMobile ? 10 : 15
+          }
         },
-        ticks: {
-          precision: 0
+        tooltip: {
+          enabled: true,
+          titleFont: { size: isMobile ? 11 : 14 },
+          bodyFont: { size: isMobile ? 10 : 13 }
         }
-      }
-    },
-    animation: false,
-    barPercentage: 0.7,
-    categoryPercentage: 0.6
-  }), []);
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: {
+            font: { size: isMobile ? 9 : 12 },
+            maxRotation: isMobile ? 45 : 0,
+            minRotation: isMobile ? 45 : 0
+          }
+        },
+        y: {
+          beginAtZero: true,
+          grid: {
+            drawBorder: false,
+            lineWidth: isMobile ? 0.5 : 1
+          },
+          ticks: {
+            precision: 0,
+            font: { size: isMobile ? 9 : 12 }
+          }
+        }
+      },
+      animation: false,
+      barPercentage: isMobile ? 0.6 : 0.7,
+      categoryPercentage: isMobile ? 0.5 : 0.6
+    };
+  }, []);
 
   return (
-    <div className="store-manager-container">
+    <div className="w-full px-6 sm:px-8 lg:px-12 py-4" style={{ marginTop: '80px', position: 'relative', zIndex: 1 }}>
       {/* Navigation Tabs */}
-      <div className="nav-tabs">
+      <div 
+        className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide"
+        style={{ 
+          display: 'flex', 
+          gap: '12px', 
+          marginBottom: '24px', 
+          overflowX: 'auto',
+          borderBottom: '1px solid #e2e8f0',
+          paddingBottom: '0'
+        }}
+      >
         <button 
-          className={`tab ${activeTab === 'dashboard' ? 'active' : ''}`}
+          className={`px-4 py-2 whitespace-nowrap transition-all flex-shrink-0`}
+          style={{
+            padding: '12px 20px',
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
+            fontSize: '15px',
+            fontWeight: activeTab === 'dashboard' ? '600' : '500',
+            color: activeTab === 'dashboard' ? '#3b82f6' : '#64748b',
+            borderBottom: activeTab === 'dashboard' ? '2px solid #3b82f6' : '2px solid transparent',
+            transition: 'all 0.2s ease',
+            outline: 'none'
+          }}
           onClick={() => setActiveTab('dashboard')}
+          onMouseEnter={(e) => {
+            if (activeTab !== 'dashboard') {
+              e.target.style.color = '#1e293b';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (activeTab !== 'dashboard') {
+              e.target.style.color = '#64748b';
+            }
+          }}
         >
           Dashboard
         </button>
         <button 
-          className={`tab ${activeTab === 'reports' ? 'active' : ''}`}
+          className={`px-4 py-2 whitespace-nowrap transition-all flex-shrink-0`}
+          style={{
+            padding: '12px 20px',
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
+            fontSize: '15px',
+            fontWeight: activeTab === 'reports' ? '600' : '500',
+            color: activeTab === 'reports' ? '#3b82f6' : '#64748b',
+            borderBottom: activeTab === 'reports' ? '2px solid #3b82f6' : '2px solid transparent',
+            transition: 'all 0.2s ease',
+            outline: 'none'
+          }}
           onClick={() => setActiveTab('reports')}
+          onMouseEnter={(e) => {
+            if (activeTab !== 'reports') {
+              e.target.style.color = '#1e293b';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (activeTab !== 'reports') {
+              e.target.style.color = '#64748b';
+            }
+          }}
         >
           Reports
         </button>
         <button 
-          className={`tab ${activeTab === 'alerts' ? 'active' : ''}`}
+          className={`px-4 py-2 whitespace-nowrap transition-all flex-shrink-0`}
+          style={{
+            padding: '12px 20px',
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
+            fontSize: '15px',
+            fontWeight: activeTab === 'alerts' ? '600' : '500',
+            color: activeTab === 'alerts' ? '#3b82f6' : '#64748b',
+            borderBottom: activeTab === 'alerts' ? '2px solid #3b82f6' : '2px solid transparent',
+            transition: 'all 0.2s ease',
+            outline: 'none'
+          }}
           onClick={() => setActiveTab('alerts')}
+          onMouseEnter={(e) => {
+            if (activeTab !== 'alerts') {
+              e.target.style.color = '#1e293b';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (activeTab !== 'alerts') {
+              e.target.style.color = '#64748b';
+            }
+          }}
         >
           Alerts
         </button>
       </div>
 
       {activeTab === 'dashboard' && (
-        <div className="dashboard-content">
+        <>
         {/* Dashboard Controls */}
-        <div className="dashboard-controls">
-          <div className="time-range-selector">
-            <label>Time Range:</label>
-            <select 
-              value={timeRange} 
-              onChange={(e) => setTimeRange(e.target.value)}
-              className="select-control"
-            >
-              <option>Last 24 h.</option>
-              <option>Last 7 days</option>
-              <option>Last 30 days</option>
-            </select>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+          <div className="flex flex-col sm:flex-row gap-3 flex-1 min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <label className="text-sm font-medium whitespace-nowrap text-gray-700">Time Range:</label>
+              <select 
+                value={timeRange} 
+                onChange={(e) => setTimeRange(e.target.value)}
+                className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option>Last 24 h.</option>
+                <option>Last 7 days</option>
+                <option>Last 30 days</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2 min-w-0">
+              <label className="text-sm font-medium whitespace-nowrap text-gray-700">Transaction Type:</label>
+              <select 
+                value={transactionType} 
+                onChange={(e) => setTransactionType(e.target.value)}
+                className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option>All Transactions</option>
+                <option>Online</option>
+                <option>In-store</option>
+              </select>
+            </div>
           </div>
-          <div className="transaction-type-selector">
-            <label>Transaction Type:</label>
-            <select 
-              value={transactionType} 
-              onChange={(e) => setTransactionType(e.target.value)}
-              className="select-control"
-            >
-              <option>All Transactions</option>
-              <option>Online</option>
-              <option>In-store</option>
-            </select>
-          </div>
-          <div className="report-buttons">
+          <div className="flex flex-col sm:flex-row gap-2">
             <button 
-              className="generate-report-button"
+              className="w-full sm:w-auto px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm"
               onClick={handleGenerateReport}
             >
               {showReport ? 'Hide Report' : 'Generate Report'}
             </button>
             {showReport && (
               <button 
-                className="send-report-button"
+                className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-sm flex items-center justify-center gap-2"
                 onClick={toggleEmailModal}
               >
-                <FaEnvelope className="button-icon" />
+                <FaEnvelope className="w-4 h-4" />
                 Send Report
               </button>
             )}
@@ -611,53 +736,53 @@ const StoreManager = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="stats-grid">
-          <div className="stat-card">
-            <h3>Total Transactions</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white rounded-xl shadow-sm p-6 min-w-0">
+            <h3 className="text-sm font-medium text-gray-600 mb-2 truncate" title="Total Transactions">Total Transactions</h3>
             {loading ? (
-              <div className="loading-indicator">Loading...</div>
+              <div className="text-sm text-gray-500">Loading...</div>
             ) : error ? (
-              <div className="error-message">{error}</div>
+              <div className="text-sm text-red-600">{error}</div>
             ) : (
               <>
-                <div className="stat-value">
+                <div className="text-3xl font-bold text-gray-900 mb-1">
                   {stats.totalTransactions.value.toLocaleString()}
                 </div>
-                <div className={`stat-change ${stats.totalTransactions.change.includes('+') ? 'positive' : 'negative'}`}>
+                <div className={`text-sm font-medium ${stats.totalTransactions.change.includes('+') ? 'text-green-600' : 'text-red-600'}`}>
                   {stats.totalTransactions.change}
                 </div>
               </>
             )}
           </div>
-          <div className="stat-card">
-            <h3>Fraud Rate</h3>
+          <div className="bg-white rounded-xl shadow-sm p-6 min-w-0">
+            <h3 className="text-sm font-medium text-gray-600 mb-2 truncate" title="Fraud Rate">Fraud Rate</h3>
             {loading ? (
-              <div className="loading-indicator">Loading...</div>
+              <div className="text-sm text-gray-500">Loading...</div>
             ) : error ? (
-              <div className="error-message">{error}</div>
+              <div className="text-sm text-red-600">{error}</div>
             ) : (
               <>
-                <div className="stat-value">
+                <div className="text-3xl font-bold text-gray-900 mb-1">
                   {stats.fraudRate.value}
                 </div>
-                <div className={`stat-change ${stats.fraudRate.change.includes('+') ? 'negative' : 'positive'}`}>
+                <div className={`text-sm font-medium ${stats.fraudRate.change.includes('+') ? 'text-red-600' : 'text-green-600'}`}>
                   {stats.fraudRate.change}
                 </div>
               </>
             )}
           </div>
-          <div className="stat-card">
-            <h3>Financial Impact</h3>
+          <div className="bg-white rounded-xl shadow-sm p-6 min-w-0">
+            <h3 className="text-sm font-medium text-gray-600 mb-2 truncate" title="Financial Impact">Financial Impact</h3>
             {loading ? (
-              <div className="loading-indicator">Loading...</div>
+              <div className="text-sm text-gray-500">Loading...</div>
             ) : error ? (
-              <div className="error-message">{error}</div>
+              <div className="text-sm text-red-600">{error}</div>
             ) : (
               <>
-                <div className="stat-value">
+                <div className="text-3xl font-bold text-gray-900 mb-1">
                   {stats.financialImpact.value}
                 </div>
-                <div className={`stat-change ${stats.financialImpact.change.includes('+') ? 'negative' : 'positive'}`}>
+                <div className={`text-sm font-medium ${stats.financialImpact.change.includes('+') ? 'text-red-600' : 'text-green-600'}`}>
                   {stats.financialImpact.change}
                 </div>
               </>
@@ -666,27 +791,25 @@ const StoreManager = () => {
         </div>
 
         {/* Charts Section */}
-        <div className="charts-section">
-          <div className="chart-container">
-            <div className="chart-header">
-              <h3>Fraud Detection Trend</h3>
-              <select className="time-select">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
+          <div className="col-span-12 lg:col-span-8 bg-white rounded-xl shadow-sm p-4 lg:p-6 min-w-0">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 truncate" title="Fraud Detection Trend">Fraud Detection Trend</h3>
+              <select className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-indigo-500">
                 <option>Last 7 days</option>
                 <option>Last 30 days</option>
                 <option>Last 90 days</option>
               </select>
             </div>
-            <div className="chart-wrapper">
-              <div style={{ height: '300px', width: '100%', position: 'relative' }}>
-                <Line data={fraudTrendData} options={chartOptions} />
-              </div>
+            <div className="w-full aspect-[16/10] lg:h-[320px] lg:aspect-auto min-w-0">
+              <Line data={fraudTrendData} options={chartOptions} />
             </div>
           </div>
-          <div className="transaction-types">
-            <div className="chart-header">
-              <h3>Transaction Types</h3>
+          <div className="col-span-12 lg:col-span-4 bg-white rounded-xl shadow-sm p-4 lg:p-6 min-w-0">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 truncate" title="Transaction Types">Transaction Types</h3>
               <select 
-                className="type-select"
+                className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-indigo-500"
                 value={transactionTypeFilter}
                 onChange={(e) => setTransactionTypeFilter(e.target.value)}
               >
@@ -695,53 +818,57 @@ const StoreManager = () => {
                 <option>In-store</option>
               </select>
             </div>
-            <div className="chart-wrapper">
-              <div style={{ height: '300px', width: '100%', position: 'relative' }}>
-                <Bar data={transactionTypesData} options={transactionTypesOptions} />
-              </div>
+            <div className="w-full aspect-[16/10] lg:h-[320px] lg:aspect-auto min-w-0">
+              <Bar data={transactionTypesData} options={transactionTypesOptions} />
             </div>
           </div>
         </div>
 
         {/* Recent Alerts Table */}
-        <div className="recent-alerts">
-          <h3>Recent Alerts</h3>
+        <div className="bg-white rounded-xl shadow-sm p-4 lg:p-6 mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 truncate" title="Recent Alerts">Recent Alerts</h3>
           {alertsLoading ? (
-            <div className="loading-indicator">Loading alerts...</div>
+            <div className="text-sm text-gray-500">Loading alerts...</div>
           ) : recentAlerts.length === 0 ? (
-            <div className="no-alerts">No recent alerts found</div>
+            <div className="text-sm text-gray-500 text-center py-8">No recent alerts found</div>
           ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Time</th>
-                  <th>Transaction ID</th>
-                  <th>Type</th>
-                  <th>Amount</th>
-                  <th>Risk Score</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentAlerts.map((alert, index) => (
-                  <tr key={index}>
-                    <td>{alert.time}</td>
-                    <td>{alert.transactionId}</td>
-                    <td>{alert.type}</td>
-                    <td>{alert.amount}</td>
-                    <td>
-                      <span className={`risk-badge ${alert.riskScore.toLowerCase()}`}>
-                        {alert.riskScore}
-                      </span>
-                    </td>
-                    <td>{alert.status}</td>
+            <div className="overflow-x-auto -mx-4 px-4 lg:mx-0 lg:px-0">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Time</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Transaction ID</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Type</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Amount</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Risk Score</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {recentAlerts.map((alert, index) => (
+                    <tr key={index} className="border-b border-gray-200 hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">{alert.time}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">{alert.transactionId}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">{alert.type}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">{alert.amount}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          alert.riskScore.toLowerCase() === 'high' ? 'bg-red-100 text-red-800' :
+                          alert.riskScore.toLowerCase() === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-green-100 text-green-800'
+                        }`}>
+                          {alert.riskScore}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">{alert.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
-      </div>
+      </>
       )}
 
       {/* Reports Tab Content */}
