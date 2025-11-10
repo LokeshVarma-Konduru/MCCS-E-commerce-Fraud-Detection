@@ -898,4 +898,96 @@
   }
 }
 
+/* Small Mobile (max-width: 480px) */
+@media (max-width: 480px) {
+  .report-container {
+    padding: 16px;
+  }
+
+  .report-header {
+    gap: 16px;
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+  }
+
+  .report-logo {
+    height: 50px;
+  }
+
+  .report-title h1 {
+    font-size: 20px;
+  }
+
+  .report-period {
+    font-size: 13px;
+  }
+
+  .download-button {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .summary-card {
+    padding: 16px;
+  }
+
+  .summary-card h3 {
+    font-size: 12px;
+  }
+
+  .summary-value {
+    font-size: 24px;
+  }
+
+  .summary-change {
+    font-size: 12px;
+  }
+
+  .section-header h2 {
+    font-size: 18px;
+  }
+
+  .section-description,
+  .section-subheader {
+    font-size: 13px;
+  }
+
+  .chart-container {
+    padding: 16px;
+    height: 220px;
+  }
+
+  .insight-card {
+    padding: 16px;
+  }
+
+  .insight-card h3 {
+    font-size: 15px;
+  }
+
+  .insight-card p {
+    font-size: 13px;
+  }
+
+  .alerts-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .alerts-table {
+    min-width: 550px;
+    font-size: 11px;
+  }
+
+  .alerts-table th,
+  .alerts-table td {
+    padding: 8px 6px;
+  }
+
+  .report-footer {
+    font-size: 11px;
+    padding: 12px 0;
+  }
+}
+
 

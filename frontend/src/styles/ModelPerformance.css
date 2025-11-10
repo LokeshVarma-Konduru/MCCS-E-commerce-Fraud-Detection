@@ -585,6 +585,32 @@
   font-weight: 500;
 }
 
+.upload-success {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background-color: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 8px;
+}
+
+.upload-success .success-message {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #166534;
+}
+
+.upload-success .success-version {
+  margin: 0;
+  font-size: 13px;
+  color: #15803d;
+}
+
+.upload-success .success-version strong {
+  font-weight: 600;
+  color: #166534;
+}
+
 .custom-params-panel {
   background-color: #f8fafc;
   border: 1px solid #dce4f0;
