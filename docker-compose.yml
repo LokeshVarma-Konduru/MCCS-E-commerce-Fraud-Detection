@@ -1,0 +1,59 @@
+services:
+  # Backend Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mccs-backend
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    environment:
+      NODE_ENV: development
+      PORT: 9000
+      MONGO_URI: mongodb+srv://dbMCCS:dbMCCS%402024@cluster1.q0klk.mongodb.net/mccs?retryWrites=true&w=majority
+      JWT_SECRET: "4sfs84grg6rdg4rg4d8gsesesfsef68s4se5f4es"
+      FRONTEND_URL: http://localhost:5173
+      EMAIL_USER: "loki1432varma@gmail.com"
+      EMAIL_PASS: "lpvjbfylrcbpaygq"
+    volumes:
+      # Mount uploads directory for file uploads
+      - backend_uploads:/app/uploads
+    networks:
+      - mccs-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9000/api/test"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: mccs-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - mccs-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+# Volumes for data persistence
+volumes:
+  backend_uploads:
+    driver: local
+
+# Network for inter-container communication
+networks:
+  mccs-network:
+    driver: bridge
+

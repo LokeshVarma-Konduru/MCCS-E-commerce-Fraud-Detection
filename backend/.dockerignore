@@ -1,0 +1,15 @@
+node_modules
+npm-debug.log
+.env
+.git
+.gitignore
+tests
+*.md
+*.test.js
+jest.config.js
+cookies.txt
+.DS_Store
+coverage
+.vscode
+.idea
+
