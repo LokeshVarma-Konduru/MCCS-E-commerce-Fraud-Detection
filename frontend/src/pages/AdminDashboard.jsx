@@ -156,6 +156,8 @@ const AdminDashboard = () => {
     page: 1,
     pageSize: 6
   });
+  const [storesLoading, setStoresLoading] = useState(true);
+  const [selectedStore, setSelectedStore] = useState(null);
 
   const emitFilterChange = useCallback((_payload) => {
     // TODO: Wire filter analytics / backend query trigger.
