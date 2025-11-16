@@ -16,6 +16,8 @@ import TransactionMonitoring from "./pages/TransactionMonitoring";
 import StoreManager from "./pages/StoreManager.jsx";
 import Help from "./pages/Help.jsx";
 import ApiDocs from "./pages/ApiDocs.jsx";
+import ChatbotPage from "./pages/ChatbotPage.jsx";
+import ChatbotWidget from "./components/ChatbotWidget.jsx";
 import { useAuth } from "./context/AuthContext.jsx";
 
 const ProtectedRoute = ({ children }) => {
@@ -35,6 +37,28 @@ const ProtectedRoute = ({ children }) => {
       <Navbar />
       {children}
       <Footer />
+      <ChatbotWidget />
+    </>
+  );
+};
+
+const ChatbotRoute = ({ children }) => {
+  const location = useLocation();
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return (
+    <>
+      <Navbar />
+      {children}
+      <ChatbotWidget />
     </>
   );
 };
@@ -239,6 +263,14 @@ const App = () => {
               <ProtectedRoute>
                 <ApiDocs />
               </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/chatbot"
+            element={
+              <ChatbotRoute>
+                <ChatbotPage />
+              </ChatbotRoute>
             }
           />
         </Routes>

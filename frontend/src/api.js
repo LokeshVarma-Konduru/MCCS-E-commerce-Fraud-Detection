@@ -372,3 +372,72 @@ export const getLatestTrainingDataset = async () => {
     };
   }
 };
+
+// Chatbot endpoints
+export const sendChatMessage = async (message, chatSessionId = null) => {
+  try {
+    const response = await axios.post(`${API_URL}/chatbot/ask`, {
+      message,
+      chatSessionId
+    });
+    return response;
+  } catch (error) {
+    console.error('Error sending chat message:', error);
+    throw {
+      message: error.response?.data?.error || 'Failed to get response from AI assistant',
+      status: error.response?.status
+    };
+  }
+};
+
+export const getChatHistory = async (limit = 10) => {
+  try {
+    const response = await axios.get(`${API_URL}/chatbot/history?limit=${limit}`);
+    return response;
+  } catch (error) {
+    console.error('Error fetching chat history:', error);
+    throw {
+      message: error.response?.data?.error || 'Failed to fetch chat history',
+      status: error.response?.status
+    };
+  }
+};
+
+export const getChatById = async (chatId) => {
+  try {
+    const response = await axios.get(`${API_URL}/chatbot/chat/${chatId}`);
+    return response;
+  } catch (error) {
+    console.error('Error fetching chat session:', error);
+    throw {
+      message: error.response?.data?.error || 'Failed to fetch chat session',
+      status: error.response?.status
+    };
+  }
+};
+
+export const createNewChat = async (title = 'New Conversation') => {
+  try {
+    const response = await axios.post(`${API_URL}/chatbot/new`, { title });
+    return response;
+  } catch (error) {
+    console.error('Error creating new chat:', error);
+    throw {
+      message: error.response?.data?.error || 'Failed to create new chat session',
+      status: error.response?.status
+    };
+  }
+};
+
+export const deleteChatSession = async (chatId) => {
+  try {
+    const response = await axios.delete(`${API_URL}/chatbot/chat/${chatId}`);
+    return response;
+  } catch (error) {
+    console.error('Error deleting chat session:', error);
+    throw {
+      message: error.response?.data?.error || 'Failed to delete chat session',
+      status: error.response?.status
+    };
+  }
+};
