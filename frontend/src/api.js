@@ -260,7 +260,7 @@ export const getHighRiskTransactions = (limit = 5, transactionType = 'all', minR
 
 export const updateTransactionStatus = (transactionId, status, notes = '') => {
   try {
-    return axios.post(`${API_URL}/transaction/:id/status`.replace(':id', transactionId), {
+    return axios.post(`${API_URL}/transaction/${transactionId}/status`, {
       status,
       notes
     });

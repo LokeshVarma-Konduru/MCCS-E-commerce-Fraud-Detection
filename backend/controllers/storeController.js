@@ -4,7 +4,19 @@ import Transaction from '../models/TransactionSchema.js';
 // Get all stores
 export const getAllStores = async (req, res) => {
     try {
-        const stores = await Store.find().populate('managerId', 'name email role');
+        // Filter stores to only include those within US bounds (continental US only)
+        // US bounds: lat 25.5-47.5, lng -124.5 to -66.5
+        // Using $geoWithin with a bounding box for GeoJSON coordinates
+        const stores = await Store.find({
+            coordinates: {
+                $geoWithin: {
+                    $box: [
+                        [-124.5, 25.5], // Southwest corner [lng, lat]
+                        [-66.5, 47.5]   // Northeast corner [lng, lat]
+                    ]
+                }
+            }
+        }).populate('managerId', 'name email role');
         res.status(200).json({
             success: true,
             data: stores,
@@ -272,8 +284,19 @@ export const getStoresWithFraudStats = async (req, res) => {
                 startDate.setDate(startDate.getDate() - 30);
         }
         
-        // Get all stores
-        const stores = await Store.find().populate('managerId', 'name email role');
+        // Get all stores within US bounds (continental US only)
+        // US bounds: lat 25.5-47.5, lng -124.5 to -66.5
+        // Using $geoWithin with a bounding box for GeoJSON coordinates
+        const stores = await Store.find({
+            coordinates: {
+                $geoWithin: {
+                    $box: [
+                        [-124.5, 25.5], // Southwest corner [lng, lat]
+                        [-66.5, 47.5]   // Northeast corner [lng, lat]
+                    ]
+                }
+            }
+        }).populate('managerId', 'name email role');
         
         // Get fraud statistics for each store
         const storesWithStats = await Promise.all(

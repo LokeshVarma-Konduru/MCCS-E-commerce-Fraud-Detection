@@ -13,7 +13,9 @@ export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [fraudAlerts, setFraudAlerts] = useState([]);
+  const [transactionUpdates, setTransactionUpdates] = useState([]);
   const socketRef = useRef(null);
+  const transactionUpdateCallbacksRef = useRef([]);
 
   const userId = user?._id || user?.id || null;
   const userRole = user?.role || null;
@@ -103,10 +105,26 @@ export const SocketProvider = ({ children }) => {
       }
     };
 
+    const handleTransactionUpdate = (updateData) => {
+      console.log("📝 Transaction update received:", updateData);
+      
+      setTransactionUpdates((prev) => [updateData, ...prev]);
+      
+      // Notify all registered callbacks
+      transactionUpdateCallbacksRef.current.forEach((callback) => {
+        try {
+          callback(updateData);
+        } catch (err) {
+          console.error("Error in transaction update callback:", err);
+        }
+      });
+    };
+
     socketInstance.on("connect", handleConnect);
     socketInstance.on("disconnect", handleDisconnect);
     socketInstance.on("connect_error", handleConnectError);
     socketInstance.on("fraud_alert", handleFraudAlert);
+    socketInstance.on("transaction_updated", handleTransactionUpdate);
 
     setSocket(socketInstance);
 
@@ -115,6 +133,7 @@ export const SocketProvider = ({ children }) => {
       socketInstance.off("disconnect", handleDisconnect);
       socketInstance.off("connect_error", handleConnectError);
       socketInstance.off("fraud_alert", handleFraudAlert);
+      socketInstance.off("transaction_updated", handleTransactionUpdate);
       socketInstance.disconnect();
 
       if (socketRef.current === socketInstance) {
@@ -131,12 +150,23 @@ export const SocketProvider = ({ children }) => {
     setFraudAlerts((prev) => prev.filter((alert) => alert.transactionId !== transactionId));
   };
 
+  const onTransactionUpdate = (callback) => {
+    transactionUpdateCallbacksRef.current.push(callback);
+    return () => {
+      transactionUpdateCallbacksRef.current = transactionUpdateCallbacksRef.current.filter(
+        (cb) => cb !== callback
+      );
+    };
+  };
+
   const value = {
     socket,
     isConnected,
     fraudAlerts,
     clearAlerts,
-    removeAlert
+    removeAlert,
+    transactionUpdates,
+    onTransactionUpdate
   };
 
   return (

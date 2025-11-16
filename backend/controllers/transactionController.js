@@ -504,6 +504,30 @@ export const updateTransactionStatus = async (req, res) => {
     
     await transaction.save();
     
+    // Populate store information for socket emission
+    const populatedTransaction = await Transaction.findById(id).populate('storeRef');
+    
+    // Emit socket event to notify clients of transaction status update
+    if (io) {
+      const updateData = {
+        type: 'transaction_status_updated',
+        transactionId: transaction._id.toString(),
+        status: transaction.status,
+        reviewedBy: userId.toString(),
+        reviewedAt: transaction.reviewedAt,
+        storeID: populatedTransaction?.storeID || null,
+        storeRef: populatedTransaction?.storeRef?._id?.toString() || null
+      };
+      
+      // Emit to all clients
+      io.to("alerts:all").emit("transaction_updated", updateData);
+      
+      // Emit to specific store room if transaction has a store
+      if (populatedTransaction?.storeID) {
+        io.to(`store:${populatedTransaction.storeID}`).emit("transaction_updated", updateData);
+      }
+    }
+    
     res.json({
       success: true,
       transaction

@@ -33,7 +33,7 @@ ChartJS.register(
 
 const StoreManager = () => {
   const { user: currentUser, loading: authLoading } = useAuth();
-  const { isConnected, fraudAlerts, clearAlerts, removeAlert } = useSocket();
+  const { isConnected, fraudAlerts, clearAlerts, removeAlert, onTransactionUpdate } = useSocket();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [timeRange, setTimeRange] = useState('Last 30 days');
   const [transactionType, setTransactionType] = useState('All Transactions');
@@ -462,6 +462,84 @@ const StoreManager = () => {
 
     fetchRecentAlerts();
   }, [transactionType, authLoading, currentUser]);
+
+  // Listen for transaction updates via WebSocket and refresh data
+  useEffect(() => {
+    if (!onTransactionUpdate) return;
+
+    const handleTransactionUpdate = (updateData) => {
+      console.log('Transaction updated, refreshing Store Manager data...', updateData);
+      
+      // Check if the update is relevant to this store manager
+      const isRelevant = 
+        !updateData.storeID || 
+        !storeHumanId || 
+        updateData.storeID === storeHumanId ||
+        updateData.storeRef === storeRefId;
+      
+      if (isRelevant) {
+        // Refresh all data
+        const period = getPeriodFromTimeRange(timeRange);
+        
+        // Refresh stats
+        getStoreManagerStats(period, transactionType, { storeRef: storeRefId, storeID: storeHumanId })
+          .then((response) => {
+            if (response.data && response.data.success) {
+              const { totalTransactions, fraudRate, financialImpact } = response.data.data;
+              setStats({
+                totalTransactions: {
+                  value: totalTransactions || 0,
+                  change: ''
+                },
+                fraudRate: {
+                  value: fraudRate || '0%',
+                  change: ''
+                },
+                financialImpact: {
+                  value: financialImpact || '$0',
+                  change: ''
+                }
+              });
+            }
+          })
+          .catch((err) => console.error('Error refreshing stats:', err));
+        
+        // Refresh alerts
+        getRecentAlerts(5, transactionType, { storeRef: storeRefId, storeID: storeHumanId })
+          .then((response) => {
+            if (response.data && response.data.success) {
+              setRecentAlerts(response.data.data);
+            }
+          })
+          .catch((err) => console.error('Error refreshing alerts:', err));
+        
+        // Refresh fraud trends
+        getFraudTrends(period, transactionType, { storeRef: storeRefId, storeID: storeHumanId })
+          .then((response) => {
+            if (response.data && response.data.success) {
+              const { labels, data } = response.data.data;
+              setFraudTrendData({
+                labels,
+                datasets: [
+                  {
+                    label: 'Fraud Rate',
+                    data,
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                  }
+                ]
+              });
+            }
+          })
+          .catch((err) => console.error('Error refreshing fraud trends:', err));
+      }
+    };
+
+    const unsubscribe = onTransactionUpdate(handleTransactionUpdate);
+    return unsubscribe;
+  }, [onTransactionUpdate, timeRange, transactionType, storeRefId, storeHumanId]);
 
   // Memoize chart options to prevent unnecessary re-renders
   const chartOptions = useMemo(() => ({

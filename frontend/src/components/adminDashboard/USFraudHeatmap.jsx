@@ -102,6 +102,96 @@ const USFraudHeatmap = ({ metrics, onSelectState, headline, description }) => {
               />
             );
           })}
+          
+          {/* Store Markers */}
+          {stores.map((store) => {
+            // Handle different coordinate formats
+            let latitude, longitude;
+            
+            if (store.coordinates && store.coordinates.coordinates && Array.isArray(store.coordinates.coordinates)) {
+              // GeoJSON format: [longitude, latitude]
+              [longitude, latitude] = store.coordinates.coordinates;
+            } else if (store.coordinates && typeof store.coordinates.latitude === 'number' && typeof store.coordinates.longitude === 'number') {
+              // Legacy format: { latitude, longitude }
+              latitude = store.coordinates.latitude;
+              longitude = store.coordinates.longitude;
+            } else {
+              // Invalid coordinates
+              return null;
+            }
+            
+            // Validate coordinates are numbers
+            if (typeof latitude !== 'number' || typeof longitude !== 'number' || 
+                isNaN(latitude) || isNaN(longitude) || 
+                !isFinite(latitude) || !isFinite(longitude)) {
+              return null;
+            }
+            
+            // Filter out stores outside US bounds completely - very strict filtering
+            // Continental US bounds: lat 25.5-47.5, lng -124.5 to -66.5
+            if (latitude < 25.5 || latitude > 47.5 || longitude < -124.5 || longitude > -66.5) {
+              return null;
+            }
+            
+            const coords = latLngToSvg(
+              latitude, 
+              longitude, 
+              usaMapData.viewBox
+            );
+            
+            // Determine store color based on fraud rate - only green and red
+            let storeColor = '#10b981'; // Default green
+            if (store.fraudStats) {
+              if (store.fraudStats.fraudRate > 3) {
+                storeColor = '#ef4444'; // Red for high fraud (>3%)
+              } else {
+                storeColor = '#10b981'; // Green for low fraud (≤3%)
+              }
+            } else {
+              // Fallback to status-based colors if no fraud stats
+              const statusColors = {
+                active: '#10b981',
+                inactive: '#ef4444',
+                maintenance: '#ef4444'
+              };
+              storeColor = statusColors[store.status] || statusColors.active;
+            }
+            
+            return (
+              <g 
+                key={store._id || store.storeID}
+                onMouseEnter={(e) => {
+                  e.stopPropagation();
+                  handleStoreEnter(store);
+                }}
+                onMouseLeave={(e) => {
+                  e.stopPropagation();
+                  handleStoreLeave();
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleStoreClick(store);
+                }}
+                style={{ cursor: 'pointer' }}
+              >
+                <circle
+                  cx={coords.x}
+                  cy={coords.y}
+                  r="6"
+                  fill={storeColor}
+                  stroke="white"
+                  strokeWidth="2"
+                  className="admin-dashboard__store-marker"
+                />
+                <circle
+                  cx={coords.x}
+                  cy={coords.y}
+                  r="3"
+                  fill="white"
+                />
+              </g>
+            );
+          })}
         </svg>
         {renderTooltip()}
       </div>
