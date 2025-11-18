@@ -19,6 +19,7 @@ import { sendReportEmail } from '../controllers/reportController.js';
 import { getAllStores, getStoreById, getStoreByStoreId, createStore, updateStore, deleteStore, getStoresByManager, getStoresNearby, getStoresWithFraudStats } from '../controllers/storeController.js';
 import { seedStores, clearStores } from '../controllers/storeSeederController.js';
 import { uploadDataset, getAllDatasets, getDatasetByVersion, getLatestDataset } from '../controllers/datasetController.js';
+import chatbotRoutes from './chatbot.js';
 
 const router = express.Router();
 
@@ -118,5 +119,8 @@ router.post('/datasets/upload', authMiddleware, developerAndAdminMiddleware, upl
 router.get('/datasets', authMiddleware, developerAndAdminMiddleware, getAllDatasets);
 router.get('/datasets/version/:version', authMiddleware, developerAndAdminMiddleware, getDatasetByVersion);
 router.get('/datasets/latest', getLatestDataset); // Public endpoint for VT rack
+
+// Chatbot routes
+router.use('/chatbot', chatbotRoutes);
 
 export default router;
