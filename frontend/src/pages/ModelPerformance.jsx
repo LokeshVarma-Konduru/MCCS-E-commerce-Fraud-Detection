@@ -45,10 +45,81 @@ const DEFAULT_CUSTOM_PARAMS = {
   scaler: "standard"
 };
 
+// Helper function to normalize names (handles case, spaces, underscores, prefixes)
+const normalizeName = (name) => {
+  if (!name || typeof name !== 'string') return '';
+  return name
+    .toLowerCase()
+    .replace(/^[^_]+_/, '') // Remove model prefix like "Logistic Regression_"
+    .replace(/[\s_-]+/g, '_') // Convert spaces, hyphens to underscores
+    .trim();
+};
+
+// Find metric by flexible name matching (works across all versions)
+const findMetric = (metrics, searchName) => {
+  if (!metrics || !Array.isArray(metrics)) return null;
+  const normalizedSearch = normalizeName(searchName);
+  
+  return metrics.find(m => {
+    if (!m || !m.name) return false;
+    const normalizedMetricName = normalizeName(m.name);
+    return normalizedMetricName === normalizedSearch;
+  });
+};
+
+// Check if plot type matches search string (for filtering)
+const plotTypeMatches = (plotType, searchString) => {
+  if (!plotType || !searchString) return false;
+  const normalizedType = normalizeName(plotType);
+  const normalizedSearch = normalizeName(searchString);
+  return normalizedType.includes(normalizedSearch);
+};
+
+// Group models by modelName for two-level dropdown
+const groupModelsByName = (models) => {
+  const grouped = {};
+  
+  models.forEach(model => {
+    const key = model.modelName;
+    
+    if (!grouped[key]) {
+      grouped[key] = {
+        modelName: model.modelName,
+        modelType: model.modelType,
+        versions: []
+      };
+    }
+    
+    // Extract version from root or additionalInfo
+    const version = model.version || model.additionalInfo?.version || 'v1.0.0';
+    
+    // Find accuracy for preview
+    const accuracyMetric = findMetric(model.metrics, 'accuracy');
+    
+    grouped[key].versions.push({
+      _id: model._id,
+      version: version,
+      createdAt: model.createdAt,
+      accuracy: accuracyMetric?.value || null
+    });
+    
+    // Sort versions by date (oldest first - v1.0.0 before v1.1.0)
+    grouped[key].versions.sort((a, b) => 
+      new Date(a.createdAt) - new Date(b.createdAt)
+    );
+  });
+  
+  return grouped;
+};
+
 const ModelPerformance = () => {
   // State for model data
   const [allModels, setAllModels] = useState([]);
-  const [primaryModelId, setPrimaryModelId] = useState(null);
+  const [groupedModels, setGroupedModels] = useState({});
+  const [selectedModelName, setSelectedModelName] = useState(null); // Model name (e.g., "Logistic Regression")
+  const [selectedVersionId, setSelectedVersionId] = useState(null); // Model _id (version)
+  const [primaryModelId, setPrimaryModelId] = useState(null); // Keep for backward compatibility
+  const [comparisonModelName, setComparisonModelName] = useState(null); // Comparison model name
   const [comparisonModelId, setComparisonModelId] = useState(null);
   const [primaryModel, setPrimaryModel] = useState(null);
   const [comparisonModel, setComparisonModel] = useState(null);
@@ -57,7 +128,7 @@ const ModelPerformance = () => {
   const [compareMode, setCompareMode] = useState(false);
   const [selectedClass, setSelectedClass] = useState('0'); // Default to Class 0
   
-  // Fetch all available models
+  // Fetch all available models and group them
   useEffect(() => {
     const fetchAllModels = async () => {
       try {
@@ -66,8 +137,23 @@ const ModelPerformance = () => {
         const response = await getMLModelMetrics();
         
         if (response.data.success && response.data.data.length > 0) {
-          setAllModels(response.data.data);
-          setPrimaryModelId(response.data.data[0]._id);
+          const models = response.data.data;
+          setAllModels(models);
+          
+          // Group models by name
+          const grouped = groupModelsByName(models);
+          setGroupedModels(grouped);
+          
+          // Auto-select first model and its oldest version (v1.0.0)
+          const firstModelName = Object.keys(grouped)[0];
+          if (firstModelName && grouped[firstModelName].versions.length > 0) {
+            setSelectedModelName(firstModelName);
+            // Select last version (oldest - v1.0.0) since we sort oldest first
+            const lastVersionIndex = grouped[firstModelName].versions.length - 1;
+            const oldestVersionId = grouped[firstModelName].versions[lastVersionIndex]._id;
+            setSelectedVersionId(oldestVersionId);
+            setPrimaryModelId(oldestVersionId);
+          }
         } else {
           setError('No model data available');
         }
@@ -82,6 +168,13 @@ const ModelPerformance = () => {
     fetchAllModels();
   }, []);
   
+  // Sync selectedVersionId with primaryModelId
+  useEffect(() => {
+    if (selectedVersionId && selectedVersionId !== primaryModelId) {
+      setPrimaryModelId(selectedVersionId);
+    }
+  }, [selectedVersionId]);
+
   // Fetch primary model data when primaryModelId changes
   useEffect(() => {
     const fetchPrimaryModel = async () => {
@@ -135,15 +228,37 @@ const ModelPerformance = () => {
     fetchComparisonModel();
   }, [comparisonModelId, compareMode]);
   
-  // Extract metrics from model data based on selected class
+  // Extract metrics from model data based on selected class (using normalized search)
   const getModelMetrics = (model) => {
     if (!model || !model.metrics) return null;
     
-    // Get metrics from model data
-    const accuracyMetric = model.metrics?.find(m => m.name === 'accuracy');
-    const classificationReport = model.metrics?.find(m => m.name === 'classification_report')?.value;
+    // Get metrics using normalized search (works for all versions)
+    const accuracyMetric = findMetric(model.metrics, 'accuracy');
+    
+    // Try multiple name variations for classification report (v1.0.0 uses "classification_report", v1.1.0 uses "Classification Report")
+    let classificationReportMetric = findMetric(model.metrics, 'classification_report');
+    if (!classificationReportMetric) {
+      classificationReportMetric = findMetric(model.metrics, 'Classification Report');
+    }
+    if (!classificationReportMetric) {
+      classificationReportMetric = findMetric(model.metrics, 'classification report');
+    }
+    
+    // Handle classification report - might be stored as JSON string or object
+    let classificationReport = classificationReportMetric?.value;
+    if (classificationReport && typeof classificationReport === 'string') {
+      try {
+        classificationReport = JSON.parse(classificationReport);
+      } catch (e) {
+        console.error('Error parsing classification report JSON:', e);
+      }
+    }
     
     if (!classificationReport) {
+      const precisionMetric = findMetric(model.metrics, 'precision');
+      const recallMetric = findMetric(model.metrics, 'recall');
+      const f1ScoreMetric = findMetric(model.metrics, 'f1_score');
+      
       return {
         accuracy: {
           label: 'Accuracy',
@@ -152,28 +267,54 @@ const ModelPerformance = () => {
         },
         precision: {
           label: 'Precision',
-          value: `${(model.metrics.find(m => m.name === 'precision')?.value * 100 || 0).toFixed(1)}%`,
+          value: `${(precisionMetric?.value * 100 || 0).toFixed(1)}%`,
           change: model.additionalInfo?.precisionChange || ''
         },
         recall: {
           label: 'Recall',
-          value: `${(model.metrics.find(m => m.name === 'recall')?.value * 100 || 0).toFixed(1)}%`,
+          value: `${(recallMetric?.value * 100 || 0).toFixed(1)}%`,
           change: model.additionalInfo?.recallChange || ''
         },
         f1Score: {
           label: 'F1 Score',
-          value: `${(model.metrics.find(m => m.name === 'f1_score')?.value * 100 || 0).toFixed(1)}%`,
+          value: `${(f1ScoreMetric?.value * 100 || 0).toFixed(1)}%`,
           change: model.additionalInfo?.f1Change || ''
         }
       };
     }
     
+    // Helper to get class data (handles both string '0' and number 0 keys)
+    const getClassData = (report, classKey) => {
+      if (!report || typeof report !== 'object') return null;
+      
+      // Try string key first
+      if (report[String(classKey)]) return report[String(classKey)];
+      // Try number key
+      if (report[Number(classKey)] !== undefined) return report[Number(classKey)];
+      
+      // Try iterating all keys
+      for (const key in report) {
+        if (String(key) === String(classKey) || Number(key) === Number(classKey)) {
+          return report[key];
+        }
+      }
+      
+      return null;
+    };
+    
     // Get the appropriate metrics based on selected class
     const classKey = selectedClass;
-    const classData = classificationReport[classKey];
+    let classData = getClassData(classificationReport, classKey);
     
-    // For macro/weighted average, the structure is slightly different
-    const isSummary = classKey === 'macro avg' || classKey === 'weighted avg';
+    // If not found with helper, try direct access
+    if (!classData) {
+      classData = classificationReport[classKey] || classificationReport[Number(classKey)] || null;
+    }
+    
+    // Fallback metrics if class data not found
+    const precisionMetric = findMetric(model.metrics, 'precision');
+    const recallMetric = findMetric(model.metrics, 'recall');
+    const f1ScoreMetric = findMetric(model.metrics, 'f1_score');
     
     // Format metrics for display
     return {
@@ -184,23 +325,23 @@ const ModelPerformance = () => {
       },
       precision: {
         label: 'Precision',
-        value: classData ? 
+        value: classData && classData.precision !== undefined ? 
           `${(classData.precision * 100).toFixed(1)}%` : 
-          `${(model.metrics.find(m => m.name === 'precision')?.value * 100 || 0).toFixed(1)}%`,
+          `${(precisionMetric?.value * 100 || 0).toFixed(1)}%`,
         change: model.additionalInfo?.precisionChange || ''
       },
       recall: {
         label: 'Recall',
-        value: classData ? 
+        value: classData && classData.recall !== undefined ? 
           `${(classData.recall * 100).toFixed(1)}%` : 
-          `${(model.metrics.find(m => m.name === 'recall')?.value * 100 || 0).toFixed(1)}%`,
+          `${(recallMetric?.value * 100 || 0).toFixed(1)}%`,
         change: model.additionalInfo?.recallChange || ''
       },
       f1Score: {
         label: 'F1 Score',
-        value: classData ? 
-          `${(classData['f1-score'] * 100).toFixed(1)}%` : 
-          `${(model.metrics.find(m => m.name === 'f1_score')?.value * 100 || 0).toFixed(1)}%`,
+        value: classData && (classData['f1-score'] !== undefined || classData.f1_score !== undefined) ? 
+          `${((classData['f1-score'] || classData.f1_score) * 100).toFixed(1)}%` : 
+          `${(f1ScoreMetric?.value * 100 || 0).toFixed(1)}%`,
         change: model.additionalInfo?.f1Change || ''
       }
     };
@@ -239,13 +380,17 @@ const ModelPerformance = () => {
     // Default x-axis values (false positive rate)
     const defaultLabels = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
     
-    // Get ROC data from primary model if available
-    const primaryRocData = primaryModel?.metrics?.find(m => m.name === 'roc_curve')?.value;
-    const primaryAuc = primaryModel?.metrics?.find(m => m.name === 'auc')?.value || 0.978;
+    // Get ROC data from primary model if available (using normalized search)
+    const primaryRocMetric = primaryModel ? findMetric(primaryModel.metrics, 'roc_curve') : null;
+    const primaryRocData = primaryRocMetric?.value;
+    const primaryAucMetric = primaryModel ? findMetric(primaryModel.metrics, 'auc') : null;
+    const primaryAuc = primaryAucMetric?.value || 0.978;
     
-    // Get ROC data from comparison model if available
-    const comparisonRocData = comparisonModel?.metrics?.find(m => m.name === 'roc_curve')?.value;
-    const comparisonAuc = comparisonModel?.metrics?.find(m => m.name === 'auc')?.value || 0.957;
+    // Get ROC data from comparison model if available (using normalized search)
+    const comparisonRocMetric = comparisonModel ? findMetric(comparisonModel.metrics, 'roc_curve') : null;
+    const comparisonRocData = comparisonRocMetric?.value;
+    const comparisonAucMetric = comparisonModel ? findMetric(comparisonModel.metrics, 'auc') : null;
+    const comparisonAuc = comparisonAucMetric?.value || 0.957;
     
     // Create datasets array
     const datasets = [];
@@ -397,8 +542,9 @@ const ModelPerformance = () => {
       };
     }
     
-    // Get confusion matrix data from model
-    const matrixData = model.metrics.find(m => m.name === 'confusion_matrix')?.value;
+    // Get confusion matrix data from model (using normalized search)
+    const confusionMatrixMetric = findMetric(model.metrics, 'confusion_matrix');
+    const matrixData = confusionMatrixMetric?.value;
     
     if (!matrixData) {
       // Return default data if no confusion matrix data is available
@@ -611,22 +757,62 @@ const ModelPerformance = () => {
           <>
             <div className="performance-header">
               <div className="model-controls">
-                <div className="control-section primary-model-section">
-                  <div className="section-label">Primary Model</div>
-                  <div className="model-selector">
-                    <select 
-                      value={primaryModelId || ''} 
-                      onChange={(e) => setPrimaryModelId(e.target.value)}
-                      className="model-select"
-                    >
-                      <option value="">Select a model</option>
-                      {allModels.map(model => (
-                        <option key={model._id} value={model._id}>
-                          {model.modelName} ({model.modelType})
-                        </option>
-                      ))}
-                    </select>
+                {/* Left side: Model and Version stacked vertically */}
+                <div className="primary-model-section">
+                  <div className="control-section">
+                    <div className="section-label">Model</div>
+                    <div className="model-selector">
+                      <select 
+                        value={selectedModelName || ''} 
+                        onChange={(e) => {
+                          const modelName = e.target.value;
+                          setSelectedModelName(modelName);
+                          
+                          // Auto-select oldest version (v1.0.0) of selected model
+                          if (groupedModels[modelName]?.versions.length > 0) {
+                            // Select last version (oldest - v1.0.0) since we sort oldest first
+                            const lastVersionIndex = groupedModels[modelName].versions.length - 1;
+                            const oldestVersionId = groupedModels[modelName].versions[lastVersionIndex]._id;
+                            setSelectedVersionId(oldestVersionId);
+                            setPrimaryModelId(oldestVersionId);
+                          }
+                        }}
+                        className="model-select"
+                      >
+                        <option value="">Select a model</option>
+                        {Object.keys(groupedModels).map(modelName => (
+                          <option key={modelName} value={modelName}>
+                            {modelName} ({groupedModels[modelName].modelType})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
+                  
+                  {selectedModelName && groupedModels[selectedModelName] && (
+                    <div className="control-section version-section">
+                      <div className="section-label">Version</div>
+                      <div className="version-selector">
+                        <select 
+                          value={selectedVersionId || ''} 
+                          onChange={(e) => {
+                            const versionId = e.target.value;
+                            setSelectedVersionId(versionId);
+                            setPrimaryModelId(versionId);
+                          }}
+                          className="model-select"
+                        >
+                          {groupedModels[selectedModelName].versions.map(version => (
+                            <option key={version._id} value={version._id}>
+                              {version.version}
+                              {version.accuracy && ` (${(version.accuracy * 100).toFixed(2)}%)`}
+                              {` - ${new Date(version.createdAt).toLocaleDateString()}`}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="control-section metrics-class-section">
@@ -656,23 +842,54 @@ const ModelPerformance = () => {
                   </div>
                   
                   {compareMode && (
-                    <div className="comparison-model-selector">
-                      <div className="section-label">Comparison Model</div>
-                      <select 
-                        value={comparisonModelId || ''} 
-                        onChange={(e) => setComparisonModelId(e.target.value)}
-                        className="model-select comparison-select"
-                      >
-                        <option value="">Select a model</option>
-                        {allModels
-                          .filter(model => model._id !== primaryModelId)
-                          .map(model => (
-                            <option key={model._id} value={model._id}>
-                              {model.modelName} ({model.modelType})
+                    <>
+                      <div className="comparison-model-selector">
+                        <div className="section-label">Comparison Model</div>
+                        <select 
+                          value={comparisonModelName || ''} 
+                          onChange={(e) => {
+                            const compModelName = e.target.value;
+                            setComparisonModelName(compModelName);
+                            
+                            // Auto-select oldest version (v1.0.0) of comparison model
+                            if (compModelName && groupedModels[compModelName]?.versions.length > 0) {
+                              // Select last version (oldest - v1.0.0) since we sort oldest first
+                              const lastVersionIndex = groupedModels[compModelName].versions.length - 1;
+                              const oldestVersionId = groupedModels[compModelName].versions[lastVersionIndex]._id;
+                              setComparisonModelId(oldestVersionId);
+                            } else {
+                              setComparisonModelId(null);
+                            }
+                          }}
+                          className="model-select comparison-select"
+                        >
+                          <option value="">Select a model</option>
+                          {Object.keys(groupedModels).map(modelName => (
+                            <option key={modelName} value={modelName}>
+                              {modelName} ({groupedModels[modelName].modelType})
                             </option>
                           ))}
-                      </select>
-                    </div>
+                        </select>
+                      </div>
+                      {comparisonModelName && groupedModels[comparisonModelName] && (
+                        <div className="comparison-version-selector">
+                          <div className="section-label">Comparison Version</div>
+                          <select 
+                            value={comparisonModelId || ''} 
+                            onChange={(e) => setComparisonModelId(e.target.value)}
+                            className="model-select"
+                          >
+                            {groupedModels[comparisonModelName].versions.map(version => (
+                              <option key={version._id} value={version._id}>
+                                {version.version}
+                                {version.accuracy && ` (${(version.accuracy * 100).toFixed(2)}%)`}
+                                {` - ${new Date(version.createdAt).toLocaleDateString()}`}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

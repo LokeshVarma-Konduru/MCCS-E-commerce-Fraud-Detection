@@ -25,15 +25,15 @@ beforeAll(async () => {
   // Seed test data
   await User.insertMany(users);
   
-  // Create a test store
+  // Create a test store with GeoJSON format coordinates
   const testStore = new Store({
     storeID: "ST001",
     storeName: "Test Store",
     storeLocation: "Test City",
     zipCode: "12345",
     coordinates: {
-      latitude: 40.7128,
-      longitude: -74.0060
+      type: 'Point',
+      coordinates: [-74.0060, 40.7128] // [longitude, latitude] as required by GeoJSON
     },
     status: "active"
   });

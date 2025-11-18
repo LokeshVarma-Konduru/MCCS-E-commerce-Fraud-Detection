@@ -3,7 +3,87 @@ import PageHeader from '../components/PageHeader';
 import { FaKey, FaHistory, FaBook, FaCopy, FaSync, FaCode } from 'react-icons/fa';
 import DeveloperNav from '../components/DeveloperNav';
 import '../styles/Developer.css';
-import { getApiKey, generateApiKey, regenerateApiKey, predictTransaction, getMLModelMetrics, API_URL, getStores } from '../api';
+import { getApiKey, generateApiKey, regenerateApiKey, predictTransaction, getModelsWithWeights, API_URL, getStores } from '../api';
+
+// Helper to map model type to backend identifier
+const getModelIdentifier = (modelType) => {
+  const modelTypeLower = modelType.toLowerCase();
+  if (modelTypeLower.includes('logistic')) {
+    return 'logistic-regression';
+  } else if (modelTypeLower.includes('bernoulli') || modelTypeLower.includes('naive bayes')) {
+    return 'bernoulli-nb';
+  } else if (modelTypeLower.includes('decision') || modelTypeLower.includes('tree')) {
+    return 'decision-tree';
+  } else if (modelTypeLower.includes('xgboost') || modelTypeLower.includes('xgb')) {
+    return 'xgboost';
+  }
+  return 'logistic-regression'; // Default fallback
+};
+
+// Group models by modelName for two-level dropdown
+const groupModelsByName = (models) => {
+  const grouped = {};
+  
+  models.forEach(model => {
+    const key = model.modelName;
+    
+    if (!grouped[key]) {
+      grouped[key] = {
+        modelName: model.modelName,
+        modelType: model.modelType,
+        modelIdentifier: getModelIdentifier(model.modelType),
+        versions: []
+      };
+    }
+    
+    // Extract version from root or additionalInfo
+    const version = model.version || model.additionalInfo?.version || 'v1.0.0';
+    
+    // Get accuracy - prefer direct accuracy field from modelFiles.files, then check metrics
+    let accuracy = null;
+    if (model.accuracy !== undefined && model.accuracy !== null) {
+      // Direct accuracy from modelFiles.files
+      accuracy = model.accuracy;
+    } else {
+      // Fallback: find accuracy in metrics array
+      const accuracyMetric = model.metrics?.find(m => 
+        m.name && m.name.toLowerCase().includes('accuracy')
+      );
+      accuracy = accuracyMetric?.value || null;
+    }
+    
+    grouped[key].versions.push({
+      _id: model._id,
+      version: version,
+      createdAt: model.createdAt,
+      accuracy: accuracy
+    });
+    
+    // Sort versions by date (oldest first - v1.0.0 before v1.1.0)
+    grouped[key].versions.sort((a, b) => 
+      new Date(a.createdAt) - new Date(b.createdAt)
+    );
+  });
+  
+  // Sort grouped models - Logistic Regression first, then alphabetically
+  const sortedKeys = Object.keys(grouped).sort((a, b) => {
+    if (a === "Logistic Regression" && b !== "Logistic Regression") {
+      return -1;
+    }
+    if (a !== "Logistic Regression" && b === "Logistic Regression") {
+      return 1;
+    }
+    return a.localeCompare(b);
+  });
+  
+  // Rebuild grouped object with sorted keys
+  const sortedGrouped = {};
+  for (const key of sortedKeys) {
+    sortedGrouped[key] = grouped[key];
+  }
+  
+  return sortedGrouped;
+};
 
 const APIIntegration = () => {
   const [apiKey, setApiKey] = useState('');
@@ -22,8 +102,11 @@ const APIIntegration = () => {
   const [storeRef, setStoreRef] = useState('');
   const [response, setResponse] = useState('');
   const [recentCalls, setRecentCalls] = useState([]);
-  const [models, setModels] = useState([]);
-  const [selectedModel, setSelectedModel] = useState('logistic-regression');
+  const [allModels, setAllModels] = useState([]);
+  const [groupedModels, setGroupedModels] = useState({});
+  const [selectedModelName, setSelectedModelName] = useState(null);
+  const [selectedVersionId, setSelectedVersionId] = useState(null);
+  const [selectedVersion, setSelectedVersion] = useState(null); // Store full version object
   const [apiUrl, setApiUrl] = useState('');
   const [error, setError] = useState('');
   const [copySuccess, setCopySuccess] = useState('');
@@ -52,18 +135,9 @@ const APIIntegration = () => {
     { value: 'desktop', label: 'Desktop' }
   ];
 
-  // Available model types that match backend expectations
-  const availableModels = [
-    { value: 'logistic-regression', label: 'Logistic Regression' },
-    { value: 'bernoulli-nb', label: 'Bernoulli Naive Bayes' },
-    { value: 'decision-tree', label: 'Decision Tree' },
-    { value: 'xgboost', label: 'XGBoost' }
-  ];
-
-  // Fetch API key on component mount
+  // Fetch API key and models on component mount
   useEffect(() => {
     fetchApiKey();
-    // Still fetch models for other data, but we'll use our hardcoded list for the dropdown
     fetchModels();
     // Load stores for in-store testing
     (async () => {
@@ -75,19 +149,18 @@ const APIIntegration = () => {
         // ignore
       }
     })();
-    
-    // Initialize with the first model in our list
-    setSelectedModel(availableModels[0].value);
   }, []);
 
-  // Update API URL when API key or model changes
+  // Update API URL when API key, model, or version changes
   useEffect(() => {
-    if (apiKey && selectedModel) {
-      console.log("Updating API URL with model:", selectedModel);
-      // Use the API_URL imported from api.js
-      setApiUrl(`${API_URL}/predict?apikey=${apiKey}&model=${selectedModel}`);
+    if (apiKey && selectedModelName && groupedModels[selectedModelName] && selectedVersion) {
+      const modelIdentifier = groupedModels[selectedModelName].modelIdentifier;
+      const version = selectedVersion.version;
+      console.log("Updating API URL with model:", modelIdentifier, "version:", version);
+      // Use the API_URL imported from api.js, include version parameter
+      setApiUrl(`${API_URL}/predict?apikey=${apiKey}&model=${modelIdentifier}&version=${version}`);
     }
-  }, [apiKey, selectedModel]);
+  }, [apiKey, selectedModelName, selectedVersion, groupedModels]);
 
   const fetchApiKey = async () => {
     setIsLoading(true);
@@ -109,46 +182,39 @@ const APIIntegration = () => {
 
   const fetchModels = async () => {
     try {
-      const response = await getMLModelMetrics();
+      // Fetch models with weight files from modelFiles GridFS (not all MLModel entries)
+      const response = await getModelsWithWeights();
       if (response.data.success) {
-        console.log("Raw model data:", response.data.data);
+        console.log("Raw model data (with weights):", response.data.data);
         
-        const modelList = response.data.data.map(model => {
-          // Map model types to the expected backend model identifiers
-          let modelIdentifier;
-          const modelTypeLower = model.modelType.toLowerCase();
-          
-          if (modelTypeLower.includes('logistic')) {
-            modelIdentifier = 'logistic-regression';
-          } else if (modelTypeLower.includes('bernoulli') || modelTypeLower.includes('naive bayes')) {
-            modelIdentifier = 'bernoulli-nb';
-          } else if (modelTypeLower.includes('decision') || modelTypeLower.includes('tree')) {
-            modelIdentifier = 'decision-tree';
-          } else if (modelTypeLower.includes('xgboost') || modelTypeLower.includes('xgb')) {
-            modelIdentifier = 'xgboost';
-          } else {
-            // Default fallback
-            modelIdentifier = 'logistic-regression';
-          }
-          
-          return {
-            id: model._id,
-            name: model.modelName,
-            type: model.modelType,
-            identifier: modelIdentifier
-          };
-        });
+        const models = response.data.data;
+        setAllModels(models);
         
-        console.log("Processed model list:", modelList);
-        setModels(modelList);
+        // Group models by name
+        const grouped = groupModelsByName(models);
+        setGroupedModels(grouped);
         
-        if (modelList.length > 0) {
-          console.log("Setting initial selected model to:", modelList[0].identifier);
-          setSelectedModel(modelList[0].identifier);
+        // Auto-select Logistic Regression first (if available), otherwise first model
+        // Find Logistic Regression in grouped models
+        let defaultModelName = null;
+        if (grouped["Logistic Regression"]) {
+          defaultModelName = "Logistic Regression";
+        } else {
+          // If Logistic Regression not available, use first model
+          defaultModelName = Object.keys(grouped)[0];
+        }
+        
+        if (defaultModelName && grouped[defaultModelName].versions.length > 0) {
+          setSelectedModelName(defaultModelName);
+          // Select last version (oldest - v1.0.0) since we sort oldest first
+          const lastVersionIndex = grouped[defaultModelName].versions.length - 1;
+          const oldestVersion = grouped[defaultModelName].versions[lastVersionIndex];
+          setSelectedVersionId(oldestVersion._id);
+          setSelectedVersion(oldestVersion);
         }
       }
     } catch (error) {
-      console.error('Error fetching models:', error);
+      console.error('Error fetching models with weights:', error);
       setError('Failed to load models. Please try again later.');
     }
   };
@@ -207,9 +273,9 @@ const APIIntegration = () => {
   const handleTestRequest = async (e) => {
     e.preventDefault();
     
-    if (!amount || !selectedModel) {
+    if (!amount || !selectedModelName || !selectedVersion) {
       setResponse(JSON.stringify({
-        error: 'Please fill in all required fields',
+        error: 'Please fill in all required fields and select a model version',
         status: 'error'
       }, null, 2));
       return;
@@ -238,7 +304,11 @@ const APIIntegration = () => {
         transactionData.storeRef = storeRef; // pass storeRef for backend to attach store
       }
 
-      const result = await predictTransaction(transactionData, apiKey, selectedModel);
+      // Get model identifier and version
+      const modelIdentifier = groupedModels[selectedModelName]?.modelIdentifier;
+      const version = selectedVersion.version;
+
+      const result = await predictTransaction(transactionData, apiKey, modelIdentifier, version);
       
       // Format the response for display
       setResponse(JSON.stringify(result.data, null, 2));
@@ -327,31 +397,77 @@ const APIIntegration = () => {
                 <h3><FaCode className="header-icon" /> API URL Generator</h3>
               </div>
               <div className="api-url-content" style={{ padding: '20px' }}>
-                <div className="form-group">
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#333' }}>Select Model</label>
-                  <select 
-                    value={selectedModel}
-                    onChange={(e) => {
-                      console.log("Model selected:", e.target.value);
-                      setSelectedModel(e.target.value);
-                    }}
-                    className="form-select"
-                    style={{ 
-                      width: '100%', 
-                      padding: '10px', 
-                      borderRadius: '4px', 
-                      border: '1px solid #ddd',
-                      backgroundColor: '#f8f9fa',
-                      color: '#333',
-                      fontSize: '14px'
-                    }}
-                  >
-                    {availableModels.map(model => (
-                      <option key={model.value} value={model.value}>
-                        {model.label}
-                      </option>
-                    ))}
-                  </select>
+                <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+                  <div className="form-group" style={{ flex: 1 }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#333' }}>Select Model</label>
+                    <select 
+                      value={selectedModelName || ''}
+                      onChange={(e) => {
+                        const modelName = e.target.value;
+                        setSelectedModelName(modelName);
+                        
+                        // Auto-select oldest version (v1.0.0) of selected model
+                        if (groupedModels[modelName]?.versions.length > 0) {
+                          // Select last version (oldest - v1.0.0) since we sort oldest first
+                          const lastVersionIndex = groupedModels[modelName].versions.length - 1;
+                          const oldestVersion = groupedModels[modelName].versions[lastVersionIndex];
+                          setSelectedVersionId(oldestVersion._id);
+                          setSelectedVersion(oldestVersion);
+                        }
+                      }}
+                      className="form-select"
+                      style={{ 
+                        width: '100%', 
+                        padding: '10px', 
+                        borderRadius: '4px', 
+                        border: '1px solid #ddd',
+                        backgroundColor: '#f8f9fa',
+                        color: '#333',
+                        fontSize: '14px'
+                      }}
+                    >
+                      <option value="">Select a model</option>
+                      {Object.keys(groupedModels).map(modelName => (
+                        <option key={modelName} value={modelName}>
+                          {modelName} ({groupedModels[modelName].modelType})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  {selectedModelName && groupedModels[selectedModelName] && (
+                    <div className="form-group" style={{ flex: 1 }}>
+                      <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#333' }}>Select Version</label>
+                      <select 
+                        value={selectedVersionId || ''}
+                        onChange={(e) => {
+                          const versionId = e.target.value;
+                          setSelectedVersionId(versionId);
+                          const version = groupedModels[selectedModelName].versions.find(v => v._id === versionId);
+                          setSelectedVersion(version || null);
+                        }}
+                        className="form-select"
+                        style={{ 
+                          width: '100%', 
+                          padding: '10px', 
+                          borderRadius: '4px', 
+                          border: '1px solid #ddd',
+                          backgroundColor: '#f8f9fa',
+                          color: '#333',
+                          fontSize: '14px'
+                        }}
+                      >
+                        <option value="">Select a version</option>
+                        {groupedModels[selectedModelName].versions.map(version => (
+                          <option key={version._id} value={version._id}>
+                            {version.version}
+                            {version.accuracy && ` (${(version.accuracy * 100).toFixed(2)}%)`}
+                            {` - ${new Date(version.createdAt).toLocaleDateString()}`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="api-url-display" style={{ 
@@ -614,22 +730,58 @@ const APIIntegration = () => {
                   <div className="form-group">
                     <label>Model</label>
                     <select 
-                      value={selectedModel}
+                      value={selectedModelName || ''}
                       onChange={(e) => {
-                        console.log("Test form model selected:", e.target.value);
-                        setSelectedModel(e.target.value);
+                        const modelName = e.target.value;
+                        setSelectedModelName(modelName);
+                        
+                        // Auto-select oldest version (v1.0.0) of selected model
+                        if (groupedModels[modelName]?.versions.length > 0) {
+                          // Select last version (oldest - v1.0.0) since we sort oldest first
+                          const lastVersionIndex = groupedModels[modelName].versions.length - 1;
+                          const oldestVersion = groupedModels[modelName].versions[lastVersionIndex];
+                          setSelectedVersionId(oldestVersion._id);
+                          setSelectedVersion(oldestVersion);
+                        }
                       }}
                       className="form-select"
                       style={{ backgroundColor: '#f5f5f5', color: '#333' }}
                       required
                     >
-                      {availableModels.map(model => (
-                        <option key={model.value} value={model.value}>
-                          {model.label}
+                      <option value="">Select a model</option>
+                      {Object.keys(groupedModels).map(modelName => (
+                        <option key={modelName} value={modelName}>
+                          {modelName} ({groupedModels[modelName].modelType})
                         </option>
                       ))}
                     </select>
                   </div>
+                  {selectedModelName && groupedModels[selectedModelName] && (
+                    <div className="form-group">
+                      <label>Version</label>
+                      <select 
+                        value={selectedVersionId || ''}
+                        onChange={(e) => {
+                          const versionId = e.target.value;
+                          setSelectedVersionId(versionId);
+                          const version = groupedModels[selectedModelName].versions.find(v => v._id === versionId);
+                          setSelectedVersion(version || null);
+                        }}
+                        className="form-select"
+                        style={{ backgroundColor: '#f5f5f5', color: '#333' }}
+                        required
+                      >
+                        <option value="">Select a version</option>
+                        {groupedModels[selectedModelName].versions.map(version => (
+                          <option key={version._id} value={version._id}>
+                            {version.version}
+                            {version.accuracy && ` (${(version.accuracy * 100).toFixed(2)}%)`}
+                            {` - ${new Date(version.createdAt).toLocaleDateString()}`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   <button type="submit" className="primary-button" disabled={isLoading}>
                     {isLoading ? 'Processing...' : 'Send Test Request'}
                   </button>

@@ -115,13 +115,13 @@ const Navbar = () => {
               <h3>Menu</h3>
             </div>
             <ul className="sidebar-menu">
-              {/* Dashboard - Only visible to Admin */}
+              {/* ML Model Dashboard - Only visible to Admin */}
               {user && user.role === 'Admin' && (
                 <li 
                   className={currentPath === '/dashboard' ? 'active' : ''}
                   onClick={(e) => handleNavigation('/dashboard', e)}
                 >
-                  Dashboard
+                  ML Model Dashboard
                 </li>
               )}
               

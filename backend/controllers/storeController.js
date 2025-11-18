@@ -1,10 +1,13 @@
 import Store from '../models/Store.js';
 import Transaction from '../models/TransactionSchema.js';
 
-// Get all stores
+// Get all stores - sorted by storeID in ascending order (ST001, ST002, etc.)
 export const getAllStores = async (req, res) => {
     try {
-        const stores = await Store.find().populate('managerId', 'name email role');
+        const stores = await Store.find()
+            .populate('managerId', 'name email role')
+            .sort({ storeID: 1 }); // Sort by storeID ascending (ST001, ST002, ST003...)
+        
         res.status(200).json({
             success: true,
             data: stores,
