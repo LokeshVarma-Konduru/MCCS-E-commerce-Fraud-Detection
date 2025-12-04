@@ -276,9 +276,20 @@
   margin-bottom: 1.5rem;  /* Space between heading and metrics content */
 }
 
-.model-selector {
-  margin: 1rem 0;
+.model-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
   width: 100%;
+  margin-bottom: 1rem;
+}
+
+.model-selector,
+.version-selector {
+  flex: 1;
+  min-width: 200px;
+  margin: 0;
 }
 
 .model-select {

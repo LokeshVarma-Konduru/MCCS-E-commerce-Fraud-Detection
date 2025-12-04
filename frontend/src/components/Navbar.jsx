@@ -115,13 +115,13 @@ const Navbar = () => {
               <h3>Menu</h3>
             </div>
             <ul className="sidebar-menu">
-              {/* Dashboard - Only visible to Admin */}
+              {/* ML Model Dashboard - Only visible to Admin */}
               {user && user.role === 'Admin' && (
                 <li 
                   className={currentPath === '/dashboard' ? 'active' : ''}
                   onClick={(e) => handleNavigation('/dashboard', e)}
                 >
-                  Dashboard
+                  ML Model Dashboard
                 </li>
               )}
               
@@ -158,7 +158,7 @@ const Navbar = () => {
               
               {/* Store Manager - Visible to Admin and StoreManager */}
               {user && ['Admin', 'StoreManager'].includes(user.role) && (
-                <li 
+                <li
                   className={currentPath === '/store-manager' ? 'active' : ''}
                   onClick={(e) => handleNavigation('/store-manager', e)}
                 >
@@ -166,7 +166,15 @@ const Navbar = () => {
                 </li>
               )}
 
-              <li 
+              {/* Chatbot - Visible to all authenticated users */}
+              <li
+                className={currentPath === '/chatbot' ? 'active' : ''}
+                onClick={(e) => handleNavigation('/chatbot', e)}
+              >
+                AI Chatbot
+              </li>
+
+              <li
                 className={currentPath === '/help' ? 'active' : ''}
                 onClick={(e) => handleNavigation('/help', e)}
               >

@@ -1,7 +1,7 @@
 // Synthetic data for API Integration page
 export const apiData = {
-  // Sample API key
-  sampleApiKey: 'sk_live_4eC39HqLyjWDarjtT1zdp7dc',
+  // Sample API key (placeholder - replace with your actual API key)
+  sampleApiKey: 'sk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
 
   // Recent API calls
   recentCalls: [

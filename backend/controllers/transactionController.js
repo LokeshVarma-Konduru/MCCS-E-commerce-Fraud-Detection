@@ -13,8 +13,9 @@ const __dirname = path.dirname(__filename);
 
 export const predictTransaction = async (req, res) => {
     try {
-      // 1) Which model do we want? E.g. ?model=lr
+      // 1) Which model do we want? E.g. ?model=logistic-regression&version=v1.0.0
       const modelName = req.query.model;
+      const version = req.query.version; // Optional version parameter
       if (!modelName) {
         return res.status(400).json({ error: "Please specify ?model=logistic-regression, bernoulli-nb, xgboost, or decision-tree" });
       }
@@ -68,8 +69,12 @@ export const predictTransaction = async (req, res) => {
       // 3) Build absolute path to predict.py
       const pythonScriptPath = path.join(__dirname, '../ml_models', 'predict.py');
   
-      // 4) Spawn Python with the model name as an argument
-      const pythonProcess = spawn('python', [pythonScriptPath, modelName]);
+      // 4) Spawn Python with the model name and optional version as arguments
+      const pythonArgs = [pythonScriptPath, modelName];
+      if (version) {
+        pythonArgs.push(version); // Pass version as second argument if provided
+      }
+      const pythonProcess = spawn('python', pythonArgs);
   
       let resultData = '';
       let errorData = '';
@@ -83,9 +88,14 @@ export const predictTransaction = async (req, res) => {
         resultData += chunk.toString();
       });
   
-      // Collect Python's stderr
+      // Collect Python's stderr (includes GridFS loading messages)
       pythonProcess.stderr.on('data', (chunk) => {
         errorData += chunk.toString();
+        // Also log to console to see GridFS loading confirmation
+        const message = chunk.toString();
+        if (message.includes('✅') || message.includes('Loaded') || message.includes('GridFS') || message.includes('🚀')) {
+          console.log('Python stderr:', message.trim());
+        }
       });
   
       // 7) On script close...

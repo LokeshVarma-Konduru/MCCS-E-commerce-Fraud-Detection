@@ -71,6 +71,20 @@ export const getMLModelMetrics = async () => {
     }
 };
 
+// Get models with weight files (for API Integration - only models with actual .pkl files)
+export const getModelsWithWeights = async () => {
+    try {
+        const response = await axios.get(`${API_URL}/models-with-weights`);
+        return response;
+    } catch (error) {
+        console.error('Error fetching models with weights:', error);
+        throw {
+            message: error.response?.data?.message || 'Failed to fetch models with weights',
+            status: error.response?.status
+        };
+    }
+};
+
 export const getModelById = async (modelId) => {
     try {
         const response = await axios.get(`${API_URL}/model/${modelId}`);
@@ -137,9 +151,14 @@ export const getStores = async (params = {}) => {
 };
 
 // Transaction prediction with API key
-export const predictTransaction = async (data, apiKey, model) => {
+export const predictTransaction = async (data, apiKey, model, version = null) => {
     try {
-        const response = await axios.post(`${API_URL}/predict?apikey=${apiKey}&model=${model}`, data);
+        // Build URL with optional version parameter
+        let url = `${API_URL}/predict?apikey=${apiKey}&model=${model}`;
+        if (version) {
+            url += `&version=${version}`;
+        }
+        const response = await axios.post(url, data);
         return response;
     } catch (error) {
         console.error('Error predicting transaction:', error);
@@ -368,6 +387,75 @@ export const getLatestTrainingDataset = async () => {
     console.error('Error fetching latest training dataset:', error);
     throw {
       message: error.response?.data?.message || 'Failed to fetch latest dataset',
+      status: error.response?.status
+    };
+  }
+};
+
+// Chatbot endpoints
+export const sendChatMessage = async (message, chatSessionId = null) => {
+  try {
+    const response = await axios.post(`${API_URL}/chatbot/ask`, {
+      message,
+      chatSessionId
+    });
+    return response;
+  } catch (error) {
+    console.error('Error sending chat message:', error);
+    throw {
+      message: error.response?.data?.error || 'Failed to get response from AI assistant',
+      status: error.response?.status
+    };
+  }
+};
+
+export const getChatHistory = async (limit = 10) => {
+  try {
+    const response = await axios.get(`${API_URL}/chatbot/history?limit=${limit}`);
+    return response;
+  } catch (error) {
+    console.error('Error fetching chat history:', error);
+    throw {
+      message: error.response?.data?.error || 'Failed to fetch chat history',
+      status: error.response?.status
+    };
+  }
+};
+
+export const getChatById = async (chatId) => {
+  try {
+    const response = await axios.get(`${API_URL}/chatbot/chat/${chatId}`);
+    return response;
+  } catch (error) {
+    console.error('Error fetching chat session:', error);
+    throw {
+      message: error.response?.data?.error || 'Failed to fetch chat session',
+      status: error.response?.status
+    };
+  }
+};
+
+export const createNewChat = async (title = 'New Conversation') => {
+  try {
+    const response = await axios.post(`${API_URL}/chatbot/new`, { title });
+    return response;
+  } catch (error) {
+    console.error('Error creating new chat:', error);
+    throw {
+      message: error.response?.data?.error || 'Failed to create new chat session',
+      status: error.response?.status
+    };
+  }
+};
+
+export const deleteChatSession = async (chatId) => {
+  try {
+    const response = await axios.delete(`${API_URL}/chatbot/chat/${chatId}`);
+    return response;
+  } catch (error) {
+    console.error('Error deleting chat session:', error);
+    throw {
+      message: error.response?.data?.error || 'Failed to delete chat session',
       status: error.response?.status
     };
   }
