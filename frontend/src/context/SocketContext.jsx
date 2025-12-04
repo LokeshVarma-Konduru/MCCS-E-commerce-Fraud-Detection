@@ -6,7 +6,8 @@ import { useAuth } from "./AuthContext.jsx";
 
 const SocketContext = createContext(null);
 
-const SOCKET_URL = "http://localhost:9000";
+const SOCKET_URL = "https://server-mccs.discovery.cs.vt.edu/mccs";
+console.log("version-4");
 
 export const SocketProvider = ({ children }) => {
   const { user, isAuthenticated, loading } = useAuth();

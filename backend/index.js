@@ -39,7 +39,7 @@ const parseCookies = (cookieHeader = "") => {
 // Initialize Socket.io with CORS settings
 export const io = new Server(httpServer, {
   cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: ["http://localhost:5173", "https://prod-mccs.discovery.cs.vt.edu"],
     credentials: true,
     methods: ["GET", "POST"]
   }
@@ -76,7 +76,7 @@ io.use(async (socket, next) => {
 
 app.use(cookieParser());
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
+  origin: ["http://localhost:5173", "https://prod-mccs.discovery.cs.vt.edu"],
   credentials: true,
 }));
 

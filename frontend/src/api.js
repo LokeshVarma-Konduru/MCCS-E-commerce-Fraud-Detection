@@ -1,9 +1,10 @@
 /* eslint-disable no-useless-catch */
 import axios from 'axios';
 
-export const API_URL = process.env.API_URL || 'http://backend:9000/mccs';
+export const API_URL = 'https://server-mccs.discovery.cs.vt.edu/mccs';
 // export const API_URL = 'http://35.164.210.165:9000/mccs';
-
+console.log(API_URL);
+console.log("v3");
 // Configure axios defaults
 axios.defaults.withCredentials = true;
 axios.defaults.headers.common['Content-Type'] = 'application/json';
