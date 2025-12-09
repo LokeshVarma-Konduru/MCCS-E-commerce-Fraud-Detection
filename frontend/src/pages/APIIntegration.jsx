@@ -353,9 +353,9 @@ const APIIntegration = ({ embedded = false }) => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="flex flex-col gap-6 mb-6">
           {/* API Keys Section */}
-          <div className="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow">
+          <div className="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow w-full">
             <h3 className="text-lg font-bold text-gray-900 mb-4">API Keys</h3>
             <div>
               {isLoading ? (
@@ -399,7 +399,7 @@ const APIIntegration = ({ embedded = false }) => {
 
           {/* API URL Generator */}
           {hasApiKey && (
-            <div className="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow">
+            <div className="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow w-full">
               <h3 className="text-lg font-bold text-gray-900 mb-4">API URL Generator</h3>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -509,7 +509,7 @@ const APIIntegration = ({ embedded = false }) => {
 
           {/* Test API Calls Section */}
           {hasApiKey && (
-            <div className="bg-white rounded-lg p-6 shadow-md">
+            <div className="bg-white rounded-lg p-6 shadow-md w-full">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Test API Calls</h3>
               <div className="test-api-content">
                 <form className="test-form" onSubmit={handleTestRequest}>
@@ -728,7 +728,7 @@ const APIIntegration = ({ embedded = false }) => {
           )}
 
           {/* Recent API Calls Section */}
-          <div className="bg-white rounded-lg p-6 shadow-md">
+          <div className="bg-white rounded-lg p-6 shadow-md w-full">
             <h3 className="text-lg font-bold text-gray-900 mb-4">Recent API Calls</h3>
             <div>
               <table className="api-calls-table">

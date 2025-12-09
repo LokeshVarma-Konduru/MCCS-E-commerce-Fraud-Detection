@@ -33,6 +33,8 @@ const Developer = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [reportPeriod, setReportPeriod] = useState('7d');
+  const [reportData, setReportData] = useState(null);
+  const [reportLoading, setReportLoading] = useState(false);
   
   const { user } = useAuth();
   const { isConnected, fraudAlerts, removeAlert, clearAlerts } = useSocket();
@@ -90,7 +92,7 @@ const Developer = () => {
     }
   });
   
-  const [statsPeriod, setStatsPeriod] = useState('month');
+  const [statsPeriod, setStatsPeriod] = useState('7d'); // Changed to match report period options
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState(null);
   
@@ -185,7 +187,14 @@ const Developer = () => {
     const fetchDashboardStats = async () => {
       try {
         setStatsLoading(true);
-        const response = await getDashboardStats(statsPeriod);
+        // Map statsPeriod (24h, 7d, 30d) to getDashboardStats period (day, week, month)
+        const periodMap = {
+          '24h': 'day',
+          '7d': 'week',
+          '30d': 'month'
+        };
+        const apiPeriod = periodMap[statsPeriod] || 'week';
+        const response = await getDashboardStats(apiPeriod);
         
         if (response.data.success) {
           setStats(response.data.data);
@@ -396,60 +405,320 @@ const Developer = () => {
     }
   ];
 
-  const reportData = {
+  // Helper function to calculate date range from period
+  const getDateRange = (period) => {
+    const now = new Date();
+    const endDate = new Date(now);
+    
+    let startDate = new Date(now);
+    
+    switch(period) {
+      case '24h':
+        startDate.setHours(now.getHours() - 24);
+        // For 24h, endDate is current time
+        break;
+      case '7d':
+        startDate.setDate(now.getDate() - 7);
+        startDate.setHours(0, 0, 0, 0);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+      case '30d':
+        startDate.setDate(now.getDate() - 30);
+        startDate.setHours(0, 0, 0, 0);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+      default:
+        startDate.setDate(now.getDate() - 7);
+        startDate.setHours(0, 0, 0, 0);
+        endDate.setHours(23, 59, 59, 999);
+    }
+    
+    return { startDate: startDate.toISOString(), endDate: endDate.toISOString() };
+  };
+
+  // Helper function to group transactions by time buckets
+  const groupTransactionsByTime = (transactions, period) => {
+    const groups = {};
+    
+    transactions.forEach(txn => {
+      const date = new Date(txn.createdAt);
+      let key;
+      
+      if (period === '24h') {
+        // Group by hour
+        key = date.getHours();
+      } else if (period === '7d') {
+        // Group by day of week (0 = Sunday, 1 = Monday, etc.)
+        key = date.getDay();
+      } else {
+        // Group by day of month for 30d
+        key = date.getDate();
+      }
+      
+      if (!groups[key]) {
+        groups[key] = 0;
+      }
+      groups[key]++;
+    });
+    
+    return groups;
+  };
+
+  // Helper function to generate timeline labels
+  const getTimelineLabels = (period) => {
+    if (period === '24h') {
+      return ['12 AM', '4 AM', '8 AM', '12 PM', '4 PM', '8 PM', '11 PM'];
+    } else if (period === '7d') {
+      return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    } else {
+      // For 30d, generate day labels
+      const labels = [];
+      const today = new Date();
+      for (let i = 29; i >= 0; i -= 4) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - i);
+        labels.push(`${date.getMonth() + 1}/${date.getDate()}`);
+      }
+      return labels;
+    }
+  };
+
+  // Helper function to generate timeline data array
+  const getTimelineData = (groups, period) => {
+    if (period === '24h') {
+      // Return hourly data (24 hours) - but Report component expects sampled data
+      // The Report component will handle the full 24h display internally
+      const data = Array(24).fill(0);
+      Object.keys(groups).forEach(hour => {
+        data[parseInt(hour)] = groups[hour];
+      });
+      // Return sampled hours for display (matches Report component expectation)
+      return [data[0], data[4], data[8], data[12], data[16], data[20], data[23]];
+    } else if (period === '7d') {
+      // Return daily data (7 days) - map day of week to array index
+      const data = Array(7).fill(0);
+      Object.keys(groups).forEach(day => {
+        const dayIndex = parseInt(day);
+        // Map Sunday (0) to index 0, Monday (1) to index 1, etc.
+        data[dayIndex] = groups[day];
+      });
+      return data;
+    } else {
+      // For 30d, return daily data sampled (8 data points for 30 days)
+      const data = [];
+      const today = new Date();
+      for (let i = 29; i >= 0; i -= 4) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - i);
+        const dayKey = date.getDate();
+        data.push(groups[dayKey] || 0);
+      }
+      return data;
+    }
+  };
+
+  // Fetch and calculate report data
+  useEffect(() => {
+    const fetchReportData = async () => {
+      if (!showReport) return; // Only fetch when report is visible
+      
+      setReportLoading(true);
+      try {
+        // Calculate date range
+        const { startDate, endDate } = getDateRange(reportPeriod);
+        
+        // Fetch all transactions for the period
+        const transactionsResponse = await getTransactions({
+          startDate,
+          endDate,
+          limit: 9999 // Get all transactions
+        });
+        
+        // Fetch dashboard stats for avgResponseTime
+        const periodMap = {
+          '24h': 'day',
+          '7d': 'week',
+          '30d': 'month'
+        };
+        const statsResponse = await getDashboardStats(periodMap[reportPeriod] || 'week');
+        
+        if (transactionsResponse.data.success && statsResponse.data.success) {
+          const allTransactions = transactionsResponse.data.transactions || [];
+          
+          // Calculate metrics
+          const total = allTransactions.length;
+          const legitimate = allTransactions.filter(t => t.predictions && t.predictions[0] === 0).length;
+          const fraudulent = allTransactions.filter(t => t.predictions && t.predictions[0] === 1).length;
+          const suspicious = allTransactions.filter(t => t.status === 'under_review').length;
+          const detectionRate = total > 0 ? ((legitimate / total) * 100).toFixed(1) : 0;
+          
+          // Calculate average transaction value
+          const totalAmount = allTransactions.reduce((sum, t) => sum + (t.transactionAmount || 0), 0);
+          const avgTransactionValue = total > 0 ? (totalAmount / total).toFixed(2) : 0;
+          
+          // Get avgResponseTime from stats
+          const avgResponseTimeStr = statsResponse.data.data?.apiResponseTime?.value || '0ms';
+          const avgResponseTime = parseInt(avgResponseTimeStr.replace('ms', '')) || 0;
+          
+          // Group transactions by merchant category
+          const categoryGroups = {};
+          allTransactions.forEach(txn => {
+            const category = txn.productCategory || 'Unknown';
+            // Map product categories to display names
+            const displayCategory = category.charAt(0).toUpperCase() + category.slice(1);
+            if (!categoryGroups[displayCategory]) {
+              categoryGroups[displayCategory] = 0;
+            }
+            categoryGroups[displayCategory]++;
+          });
+          
+          // Group transactions by time for timeline
+          const timeGroups = groupTransactionsByTime(allTransactions, reportPeriod);
+          const timelineLabels = getTimelineLabels(reportPeriod);
+          const timelineData = getTimelineData(timeGroups, reportPeriod);
+          
+          // Calculate financial impact (for 30d only)
+          let financialImpact = {
+            preventedLoss: 0,
+            operationalSavings: 0,
+            roi: 0
+          };
+          
+          if (reportPeriod === '30d') {
+            const fraudulentAmount = allTransactions
+              .filter(t => t.predictions && t.predictions[0] === 1)
+              .reduce((sum, t) => sum + (t.transactionAmount || 0), 0);
+            
+            financialImpact = {
+              preventedLoss: parseFloat(fraudulentAmount.toFixed(2)),
+              operationalSavings: parseFloat((fraudulentAmount * 0.4).toFixed(2)), // Estimate 40% savings
+              roi: fraudulent > 0 ? Math.round((fraudulentAmount / fraudulent) * 100) : 0
+            };
+          }
+          
+          // Calculate risk score based on fraud rate
+          const fraudRate = total > 0 ? (fraudulent / total) * 100 : 0;
+          let riskScore = 50; // Base score
+          if (fraudRate > 5) riskScore = 85; // High risk
+          else if (fraudRate > 2) riskScore = 65; // Medium risk
+          else if (fraudRate > 0.5) riskScore = 45; // Low-medium risk
+          else riskScore = 25; // Low risk
+          
+          // Build report data
+          const calculatedReportData = {
+            period: reportPeriod,
+            timeline: {
+              labels: timelineLabels,
+              transactions: timelineData
+            },
+            metrics: {
+              total: total,
+              legitimate: legitimate,
+              fraudulent: fraudulent,
+              suspicious: suspicious,
+              detectionRate: parseFloat(detectionRate),
+              avgResponseTime: avgResponseTime,
+              avgTransactionValue: parseFloat(avgTransactionValue)
+            },
+            merchantCategories: categoryGroups,
+            insights: {
+              fraudPatterns: `Analysis of ${total} transactions shows ${fraudulent} fraudulent transactions detected (${((fraudulent/total)*100).toFixed(2)}% fraud rate). The system successfully identified and prevented potential losses.`,
+              riskAssessment: `Current risk level is ${fraudRate > 5 ? 'HIGH' : fraudRate > 2 ? 'MODERATE' : 'LOW'}. Key factors include transaction volume and fraud detection patterns.`,
+              recommendations: `Continue monitoring transaction patterns. ${fraudulent > 0 ? 'Review flagged transactions to improve detection accuracy.' : 'System is performing well with current detection rules.'}`,
+              riskScore: riskScore
+            },
+            anomalies: [
+              {
+                id: 'A001',
+                time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+                description: `Total of ${fraudulent} fraudulent transactions detected in the selected period`,
+                severity: fraudulent > 10 ? 'high' : fraudulent > 5 ? 'medium' : 'low'
+              },
+              {
+                id: 'A002',
+                time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+                description: `${suspicious} transactions currently under review`,
+                severity: suspicious > 5 ? 'medium' : 'low'
+              }
+            ],
+            financialImpact: financialImpact
+          };
+          
+          setReportData(calculatedReportData);
+        }
+      } catch (error) {
+        console.error('Error fetching report data:', error);
+        // Fallback to default data on error
+        setReportData({
+          period: reportPeriod,
+          timeline: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            transactions: [0, 0, 0, 0, 0, 0, 0]
+          },
+          metrics: {
+            total: 0,
+            legitimate: 0,
+            fraudulent: 0,
+            suspicious: 0,
+            detectionRate: 0,
+            avgResponseTime: 0,
+            avgTransactionValue: 0
+          },
+          merchantCategories: {},
+          insights: {
+            fraudPatterns: 'Unable to fetch transaction data. Please try again.',
+            riskAssessment: 'Data unavailable',
+            recommendations: 'Please refresh and try again.',
+            riskScore: 50
+          },
+          anomalies: [],
+          financialImpact: {
+            preventedLoss: 0,
+            operationalSavings: 0,
+            roi: 0
+          }
+        });
+      } finally {
+        setReportLoading(false);
+      }
+    };
+
+    fetchReportData();
+  }, [reportPeriod, showReport]);
+
+  // Default report data (used when report is not shown or loading)
+  const defaultReportData = {
     period: reportPeriod,
     timeline: {
       labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-      transactions: [245, 312, 287, 342, 398, 456, 321]
+      transactions: [0, 0, 0, 0, 0, 0, 0]
     },
     metrics: {
-      total: 2361,
-      legitimate: 2298,
-      fraudulent: 42,
-      suspicious: 21,
-      detectionRate: 97.5,
-      avgResponseTime: 185,
-      avgTransactionValue: 68.75
+      total: 0,
+      legitimate: 0,
+      fraudulent: 0,
+      suspicious: 0,
+      detectionRate: 0,
+      avgResponseTime: 0,
+      avgTransactionValue: 0
     },
-    merchantCategories: {
-      'Exchange': 1250,
-      'Commissary': 580,
-      'Food & Hospitality': 320,
-      'Recreation': 150,
-      'Marine Mart': 61
-    },
+    merchantCategories: {},
     insights: {
-      fraudPatterns: 'Recent analysis shows an increase in fraud attempts targeting PX/Exchange online purchases. Most attempts occur during deployment cycles and involve gift card purchases.',
-      riskAssessment: 'Current risk level is LOW to MODERATE. Key factors include increased online transaction volume at Camp Lejeune and Camp Pendleton locations.',
-      recommendations: 'Implement additional verification for gift card purchases over $100. Consider enhanced monitoring during PCS season when transaction patterns change significantly.',
-      riskScore: 72
+      fraudPatterns: 'Loading report data...',
+      riskAssessment: 'Calculating...',
+      recommendations: 'Please wait...',
+      riskScore: 50
     },
-    anomalies: [
-      {
-        id: 'A001',
-        time: '08:45 AM',
-        description: 'Unusual transaction pattern detected at Camp Pendleton Exchange',
-        severity: 'medium'
-      },
-      {
-        id: 'A002',
-        time: '11:23 AM',
-        description: 'Multiple failed authentication attempts at Commissary online store',
-        severity: 'high'
-      },
-      {
-        id: 'A003',
-        time: '02:17 PM',
-        description: 'Suspicious gift card purchases at Marine Mart',
-        severity: 'medium'
-      }
-    ],
+    anomalies: [],
     financialImpact: {
-      preventedLoss: 2887.50,
-      operationalSavings: 1250.00,
-      roi: 327
+      preventedLoss: 0,
+      operationalSavings: 0,
+      roi: 0
     }
   };
+
+  // Use calculated report data or default
+  const reportDataToUse = reportData || defaultReportData;
 
   const toggleReport = () => {
     setShowReport(!showReport);
@@ -867,6 +1136,23 @@ const Developer = () => {
       {/* Tab Content */}
       {activeTab === 'dashboard' ? (
         <>
+          {/* Period Filter for Stats */}
+          <div className="mb-4 flex justify-end">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">Period:</label>
+              <select
+                value={statsPeriod}
+                onChange={(e) => setStatsPeriod(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                style={{ minWidth: '150px' }}
+              >
+                <option value="24h">Last 24 Hours</option>
+                <option value="7d">Last 7 Days</option>
+                <option value="30d">Last 30 Days</option>
+              </select>
+            </div>
+          </div>
+          
           {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow">
@@ -1223,11 +1509,25 @@ const Developer = () => {
             boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
             margin: '24px 0'
           }}>
-            <div ref={reportRef}>
-              <Report 
-                data={reportData} 
-              />
-            </div>
+            {reportLoading ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                <div style={{ marginBottom: '16px' }}>Loading report data...</div>
+                <div className="animate-spin" style={{ 
+                  display: 'inline-block',
+                  width: '32px',
+                  height: '32px',
+                  border: '3px solid #e5e7eb',
+                  borderTopColor: '#3b82f6',
+                  borderRadius: '50%'
+                }}></div>
+              </div>
+            ) : (
+              <div ref={reportRef}>
+                <Report 
+                  data={reportDataToUse} 
+                />
+              </div>
+            )}
           </div>
         )}
         
