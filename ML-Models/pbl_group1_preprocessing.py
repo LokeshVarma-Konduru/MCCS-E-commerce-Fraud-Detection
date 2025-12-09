@@ -1,3 +1,20 @@
+#!/usr/bin/env python3
+"""
+PBL Group 1 Preprocessing Script - IEEE-CIS Version
+
+⚠️ NOTE: This script has been modified to work with IEEE-CIS competition data.
+Original MCCS preprocessing functionality has been replaced.
+
+For MCCS model training, the production model is stored in MongoDB and can be
+retrieved using: utils/retrieve_models_from_mongodb.py
+
+For new MCCS model training, create a separate script or restore original
+MCCS preprocessing from git history.
+
+Current Purpose: IEEE-CIS data preprocessing for methodology validation
+Status: Validation complete (Nov 20, 2025)
+"""
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -17,11 +34,36 @@ from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from xgboost import XGBClassifier
 from sklearn.model_selection import GridSearchCV
 import optuna
-from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+import joblib
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report, roc_auc_score, precision_score, recall_score, f1_score
+from sklearn.model_selection import StratifiedKFold
 
-train_df = pd.read_csv('Fraudulent_E-Commerce_Transaction_Data.csv')
+print("="*70)
+print("IEEE-CIS FRAUD DETECTION - COMPETITION DATA")
+print("="*70)
+print("Loading competition datasets...\n")
 
-test_df = pd.read_csv('Fraudulent_E-Commerce_Transaction_Data_2.csv')
+# Load IEEE-CIS competition data
+train_transaction = pd.read_csv('train_transaction.csv')
+train_identity = pd.read_csv('train_identity.csv')
+test_transaction = pd.read_csv('test_transaction.csv')
+test_identity = pd.read_csv('test_identity.csv')
+
+print(f"✅ Train transactions: {train_transaction.shape}")
+print(f"✅ Train identity: {train_identity.shape}")
+print(f"✅ Test transactions: {test_transaction.shape}")
+print(f"✅ Test identity: {test_identity.shape}")
+
+# Merge transaction and identity data
+train_df = train_transaction.merge(train_identity, on='TransactionID', how='left')
+test_df = test_transaction.merge(test_identity, on='TransactionID', how='left')
+
+print(f"\n📊 Merged train data: {train_df.shape}")
+print(f"📊 Merged test data: {test_df.shape}")
+print(f"\n🎯 Fraud rate in training: {train_df['isFraud'].mean()*100:.2f}%")
+print(f"   Fraud cases: {train_df['isFraud'].sum():,}")
+print(f"   Legitimate cases: {(~train_df['isFraud'].astype(bool)).sum():,}")
+print("="*70 + "\n")
 
 train_df.head()
 
@@ -78,7 +120,66 @@ def clean_data(df) -> pd.DataFrame:
 
     return df
 
+def engineer_advanced_features(df) -> pd.DataFrame:
+    """
+    Advanced feature engineering inspired by IEEE-CIS competition techniques
+    Creates interaction features, aggregations, and risk indicators
+    """
+    print("\n[Feature Engineering] Creating competition-inspired features...")
+    
+    # 1. Transaction amount transformations
+    df['Transaction_Amount_Log'] = np.log1p(df['Transaction Amount'])
+    df['Transaction_Amount_Sqrt'] = np.sqrt(df['Transaction Amount'])
+    df['Transaction_Amount_Squared'] = df['Transaction Amount'] ** 2
+    
+    # 2. Quantity-based features
+    df['Amount_Per_Item'] = df['Transaction Amount'] / (df['Quantity'] + 1)
+    df['High_Quantity_Flag'] = (df['Quantity'] > df['Quantity'].quantile(0.95)).astype(int)
+    df['Low_Quantity_High_Amount'] = ((df['Quantity'] == 1) & 
+                                       (df['Transaction Amount'] > df['Transaction Amount'].quantile(0.75))).astype(int)
+    
+    # 3. Account age features
+    df['Account_Age_Years'] = df['Account Age Days'] / 365.25
+    df['New_Account_Flag'] = (df['Account Age Days'] < 30).astype(int)
+    df['Mature_Account_Flag'] = (df['Account Age Days'] > 365).astype(int)
+    df['Account_Age_Log'] = np.log1p(df['Account Age Days'])
+    
+    # 4. Temporal features (if Transaction Hour exists)
+    if 'Transaction Hour' in df.columns:
+        df['Is_Weekend'] = (df['Transaction DOW'].isin([5, 6])).astype(int)
+        df['Is_Night'] = ((df['Transaction Hour'] >= 22) | (df['Transaction Hour'] <= 6)).astype(int)
+        df['Is_Business_Hours'] = ((df['Transaction Hour'] >= 9) & (df['Transaction Hour'] <= 17)).astype(int)
+        df['Is_Late_Night'] = ((df['Transaction Hour'] >= 0) & (df['Transaction Hour'] <= 4)).astype(int)
+    else:
+        df['Is_Weekend'] = (df['Transaction DOW'].isin([5, 6])).astype(int)
+    
+    # 5. Risk indicators
+    df['Address_Mismatch_Flag'] = 1 - df['Is Address Match']
+    df['High_Amount_New_Account'] = ((df['New_Account_Flag'] == 1) & 
+                                      (df['Transaction Amount'] > df['Transaction Amount'].quantile(0.75))).astype(int)
+    
+    # 6. Customer age features
+    df['Customer_Age_Group'] = pd.cut(df['Customer Age'], 
+                                       bins=[0, 25, 35, 50, 65, 100], 
+                                       labels=['Young', 'Adult', 'Middle', 'Senior', 'Elderly'])
+    df['Young_Customer_Flag'] = (df['Customer Age'] < 25).astype(int)
+    df['Senior_Customer_Flag'] = (df['Customer Age'] >= 65).astype(int)
+    
+    # 7. Transaction day features
+    df['Is_Month_Start'] = (df['Transaction Day'] <= 5).astype(int)
+    df['Is_Month_End'] = (df['Transaction Day'] >= 25).astype(int)
+    
+    # 8. Interaction features (high-risk combinations)
+    df['New_Account_Address_Mismatch'] = (df['New_Account_Flag'] * df['Address_Mismatch_Flag'])
+    if 'Is_Night' in df.columns:
+        df['Night_High_Amount'] = (df['Is_Night'] * (df['Transaction Amount'] > df['Transaction Amount'].median()).astype(int))
+    
+    print(f"[Feature Engineering] Created {len(df.columns)} total features (added {len(df.columns) - len(df.columns)} new features)")
+    
+    return df
+
 train_df = clean_data(train_df)
+train_df = engineer_advanced_features(train_df)
 
 train_df.head()
 
@@ -238,6 +339,7 @@ train_label = train_df["Is Fraudulent"]
 
 
 clean_test_df = clean_data(test_df)
+clean_test_df = engineer_advanced_features(clean_test_df)
 test_data = clean_test_df.drop(columns=["Is Fraudulent"])
 test_label = clean_test_df["Is Fraudulent"]
 
@@ -456,16 +558,22 @@ from xgboost import XGBClassifier
 
 
 def objective(trial):
-
+    """
+    Optuna objective function optimized for ROC-AUC (IEEE-CIS competition metric)
+    """
     params = {
-              "learning_rate": trial.suggest_float("learning_rate", 0.001, 3.0),
-              "n_estimators": trial.suggest_int("n_estimators", 100, 700),
-              "max_depth": trial.suggest_int("max_depth", 3, 20),
-              "min_child_weight": trial.suggest_int("min_child_weight", 1, 10),
-              "gamma": trial.suggest_float("gamma", 0.0, 1.0),
-              "subsample": trial.suggest_float("subsample", 0.01, 1.0),
-              "colsample_bytree": trial.suggest_float("colsample_bytree", 0.01, 1.0),
+              "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.3),
+              "n_estimators": trial.suggest_int("n_estimators", 100, 500),
+              "max_depth": trial.suggest_int("max_depth", 3, 10),
+              "min_child_weight": trial.suggest_int("min_child_weight", 1, 7),
+              "gamma": trial.suggest_float("gamma", 0.0, 0.5),
+              "subsample": trial.suggest_float("subsample", 0.6, 1.0),
+              "colsample_bytree": trial.suggest_float("colsample_bytree", 0.6, 1.0),
               "reg_alpha": trial.suggest_float("reg_alpha", 0.0, 1.0),
+              "reg_lambda": trial.suggest_float("reg_lambda", 0.0, 1.0),
+              "scale_pos_weight": trial.suggest_float("scale_pos_weight", 1.0, 10.0),
+              "eval_metric": "auc",  # Use AUC for XGBoost internal evaluation
+              "random_state": 42
               }
 
     # Remove "tree_method": "gpu_hist" or change it to "hist" for CPU
@@ -479,11 +587,21 @@ def objective(trial):
     ])
     model.fit(train_data, train_label)
 
-    # Evaluate model performance
+    # Predict probabilities for ROC-AUC calculation
+    pred_proba = model.predict_proba(test_data)[:, 1]
+    
+    # Calculate ROC-AUC score (primary metric for fraud detection)
+    roc_auc = roc_auc_score(test_label, pred_proba)
+    
+    # Also calculate accuracy for reference
     preds = model.predict(test_data)
     accuracy = accuracy_score(test_label, preds)
+    
+    # Store both metrics as trial attributes
+    trial.set_user_attr("accuracy", accuracy)
+    trial.set_user_attr("roc_auc", roc_auc)
 
-    return accuracy
+    return roc_auc  # Optimize for ROC-AUC instead of accuracy
 
 
 study = optuna.create_study(direction="maximize")
@@ -493,8 +611,13 @@ study.optimize(objective, n_trials=70)
 best_params = study.best_params
 best_trial = study.best_trial
 
+print("\n" + "="*60)
+print("OPTIMIZATION RESULTS (IEEE-CIS Competition Metric)")
+print("="*60)
 print("Best Hyperparameters:", best_params)
-print("Best Accuracy:", best_trial.value)
+print(f"Best ROC-AUC Score: {best_trial.value:.6f}")
+print(f"Corresponding Accuracy: {best_trial.user_attrs.get('accuracy', 'N/A')}")
+print("="*60)
 
 optuna.visualization.plot_optimization_history(study)
 

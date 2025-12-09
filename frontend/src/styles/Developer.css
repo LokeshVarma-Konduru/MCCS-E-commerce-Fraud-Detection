@@ -251,9 +251,9 @@
 }
 
 .time-scale-buttons button.active {
-  background-color: #6366f1;
+  background-color: #3b82f6;
   color: white;
-  border-color: #6366f1;
+  border-color: #3b82f6;
 }
 
 .chart-container {

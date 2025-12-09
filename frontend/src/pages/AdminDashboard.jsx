@@ -858,48 +858,16 @@ const AdminDashboard = () => {
             }}
           >
             <button
-              className="generate-report-button"
+              className="px-4 py-2 text-sm font-medium bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors flex items-center gap-2"
               onClick={handleGenerateReport}
-              style={{
-                padding: "10px 20px",
-                backgroundColor: "#3b82f6",
-                color: "white",
-                border: "none",
-                borderRadius: "6px",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                fontSize: "14px",
-                fontWeight: "500",
-                transition: "background-color 0.2s"
-              }}
-              onMouseEnter={(e) => e.target.style.backgroundColor = "#2563eb"}
-              onMouseLeave={(e) => e.target.style.backgroundColor = "#3b82f6"}
             >
               <FaFileAlt />
               {showReport ? "Hide Report" : "Generate Report"}
             </button>
             {showReport && (
               <button
-                className="send-report-button"
+                className="px-4 py-2 text-sm font-medium bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors flex items-center gap-2"
                 onClick={toggleEmailModal}
-                style={{
-                  padding: "10px 20px",
-                  backgroundColor: "#10b981",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  transition: "background-color 0.2s"
-                }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = "#059669"}
-                onMouseLeave={(e) => e.target.style.backgroundColor = "#10b981"}
               >
                 <FaEnvelope />
                 Send Report
@@ -916,7 +884,7 @@ const AdminDashboard = () => {
         metrics={mapMetrics}
         onSelectState={handleSelectState}
         headline="Fraud intensity across the United States"
-        description="Placeholder fraud-rate gradient by state. TODO: hook into regional analytics feed."
+        description="Real-time fraud rate visualization by state. Click on any state to view detailed regional analytics."
       />
 
       <div className="admin-dashboard__controls">
@@ -946,7 +914,7 @@ const AdminDashboard = () => {
 
       {/* Recent Alerts Table */}
       <div style={{ background: "white", borderRadius: "12px", boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)", padding: "24px", marginTop: "24px" }}>
-        <h3 style={{ fontSize: "18px", fontWeight: "600", color: "#111827", marginBottom: "16px" }}>Recent Alerts</h3>
+        <h3 style={{ fontSize: "18px", fontWeight: "700", color: "#111827", marginBottom: "16px" }}>Recent Alerts</h3>
         {alertsLoading ? (
           <div style={{ textAlign: "center", padding: "32px", color: "#6b7280" }}>Loading alerts...</div>
         ) : recentAlerts.length === 0 ? (
@@ -1171,20 +1139,9 @@ const AdminDashboard = () => {
                   )}
 
                   <button
-                    className="send-button"
+                    className="w-full px-4 py-2 text-sm font-medium bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                     onClick={handleSendReportEmail}
                     disabled={sendingEmail}
-                    style={{
-                      padding: "10px 20px",
-                      backgroundColor: "#10b981",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                      width: "100%"
-                    }}
                   >
                     {sendingEmail ? "Sending..." : "Send Report"}
                   </button>
@@ -1239,7 +1196,7 @@ const AdminDashboard = () => {
                 marginBottom: "20px"
               }}
             >
-              <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "600" }}>Flag Transaction as Fraudulent</h3>
+              <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "700" }}>Flag Transaction as Fraudulent</h3>
               <button
                 onClick={handleCloseFlagModal}
                 style={{
@@ -1288,42 +1245,16 @@ const AdminDashboard = () => {
                 </p>
               )}
 
-              <div style={{ display: "flex", gap: "12px" }}>
+              <div className="flex gap-3">
                 <button
                   onClick={handleSubmitFlag}
-                  style={{
-                    flex: 1,
-                    padding: "10px 20px",
-                    backgroundColor: "#ef4444",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    transition: "background-color 0.2s"
-                  }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = "#dc2626"}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = "#ef4444"}
+                  className="flex-1 px-4 py-2 text-sm font-medium bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
                 >
                   Flag as Fraudulent
                 </button>
                 <button
                   onClick={handleCloseFlagModal}
-                  style={{
-                    flex: 1,
-                    padding: "10px 20px",
-                    backgroundColor: "#6b7280",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    transition: "background-color 0.2s"
-                  }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = "#4b5563"}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = "#6b7280"}
+                  className="flex-1 px-4 py-2 text-sm font-medium bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
                 >
                   Cancel
                 </button>

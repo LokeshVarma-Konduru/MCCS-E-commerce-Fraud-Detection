@@ -85,8 +85,8 @@ const StoreManager = () => {
       {
         label: 'Fraud Rate',
         data: [],
-        borderColor: '#6366f1',
-        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
         tension: 0.4,
         fill: true
       }
@@ -467,8 +467,8 @@ const StoreManager = () => {
               {
                 label: 'Fraud Rate',
                 data: trendData.map(item => item.fraudRate),
-                borderColor: '#6366f1',
-                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
                 tension: 0.4,
                 fill: true
               }
@@ -797,14 +797,14 @@ const StoreManager = () => {
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
             <button 
-              className="w-full sm:w-auto px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm"
+              className="w-full sm:w-auto px-4 py-2 text-sm font-medium bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
               onClick={handleGenerateReport}
             >
               {showReport ? 'Hide Report' : 'Generate Report'}
             </button>
             {showReport && (
               <button 
-                className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-sm flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-4 py-2 text-sm font-medium bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
                 onClick={toggleEmailModal}
               >
                 <FaEnvelope className="w-4 h-4" />
@@ -817,7 +817,7 @@ const StoreManager = () => {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-xl shadow-sm p-6 min-w-0">
-            <h3 className="text-sm font-medium text-gray-600 mb-2 truncate" title="Total Transactions">Total Transactions</h3>
+            <h3 className="text-sm font-semibold text-gray-600 uppercase mb-2 truncate" title="TOTAL TRANSACTIONS">Total Transactions</h3>
             {loading ? (
               <div className="text-sm text-gray-500">Loading...</div>
             ) : error ? (
@@ -834,7 +834,7 @@ const StoreManager = () => {
             )}
           </div>
           <div className="bg-white rounded-xl shadow-sm p-6 min-w-0">
-            <h3 className="text-sm font-medium text-gray-600 mb-2 truncate" title="Fraud Rate">Fraud Rate</h3>
+            <h3 className="text-sm font-semibold text-gray-600 uppercase mb-2 truncate" title="FRAUD RATE">Fraud Rate</h3>
             {loading ? (
               <div className="text-sm text-gray-500">Loading...</div>
             ) : error ? (
@@ -851,7 +851,7 @@ const StoreManager = () => {
             )}
           </div>
           <div className="bg-white rounded-xl shadow-sm p-6 min-w-0">
-            <h3 className="text-sm font-medium text-gray-600 mb-2 truncate" title="Financial Impact">Financial Impact</h3>
+            <h3 className="text-sm font-semibold text-gray-600 uppercase mb-2 truncate" title="FINANCIAL IMPACT">Financial Impact</h3>
             {loading ? (
               <div className="text-sm text-gray-500">Loading...</div>
             ) : error ? (
@@ -873,7 +873,7 @@ const StoreManager = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
           <div className="col-span-12 lg:col-span-8 bg-white rounded-xl shadow-sm p-4 lg:p-6 min-w-0">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 truncate" title="Fraud Detection Trend">Fraud Detection Trend</h3>
+              <h3 className="text-lg font-bold text-gray-900 truncate" title="Fraud Detection Trend">Fraud Detection Trend</h3>
               <select className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-indigo-500">
                 <option>Last 7 days</option>
                 <option>Last 30 days</option>
@@ -886,7 +886,7 @@ const StoreManager = () => {
           </div>
           <div className="col-span-12 lg:col-span-4 bg-white rounded-xl shadow-sm p-4 lg:p-6 min-w-0">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 truncate" title="Transaction Types">Transaction Types</h3>
+              <h3 className="text-lg font-bold text-gray-900 truncate" title="Transaction Types">Transaction Types</h3>
               <select 
                 className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-indigo-500"
                 value={transactionTypeFilter}
@@ -905,7 +905,7 @@ const StoreManager = () => {
 
         {/* Recent Alerts Table */}
         <div className="bg-white rounded-xl shadow-sm p-4 lg:p-6 mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 truncate" title="Recent Alerts">Recent Alerts</h3>
+          <h3 className="text-lg font-bold text-gray-900 mb-4 truncate" title="Recent Alerts">Recent Alerts</h3>
           {alertsLoading ? (
             <div className="text-sm text-gray-500">Loading alerts...</div>
           ) : recentAlerts.length === 0 ? (
@@ -940,17 +940,7 @@ const StoreManager = () => {
                       {alert.status !== 'Flagged' && alert.status !== 'Under Review' ? (
                         <button
                           onClick={() => handleFlagTransaction(alert)}
-                          className="flag-button"
-                          style={{
-                            padding: '6px 12px',
-                            backgroundColor: '#ef4444',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                            fontWeight: '500'
-                          }}
+                          className="px-3 py-1.5 text-xs font-medium bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
                         >
                           Flag as Fraud
                         </button>
@@ -978,110 +968,85 @@ const StoreManager = () => {
 
       {/* Reports Tab Content */}
       {activeTab === 'reports' && (
-        <div className="reports-content">
+        <div className="space-y-6">
           {/* Header Section */}
           {!showReport && (
-            <div style={{
-              background: "white",
-              padding: "20px 24px",
-              borderRadius: "12px",
-              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
-              marginBottom: "20px",
-              textAlign: "center"
-            }}>
-              <h2 style={{ color: "#6366f1", fontSize: "20px", fontWeight: "600", marginBottom: "8px" }}>
+            <div className="bg-white p-6 rounded-lg shadow-md text-center">
+              <h2 className="text-xl font-semibold text-blue-500 mb-2">
                 Generate Your Report
               </h2>
-              <p style={{ fontSize: "14px", color: "#6b7280", margin: 0 }}>
+              <p className="text-sm text-gray-600">
                 Select a report type below and click "Generate Report" to create a comprehensive fraud detection report for your store.
               </p>
             </div>
           )}
 
           {/* Report Type Selection */}
-          <div style={{
-            background: "white",
-            padding: "20px",
-            borderRadius: "12px",
-            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
-            marginBottom: "20px"
-          }}>
-            <h2 style={{ marginBottom: "16px", fontSize: "16px", fontWeight: "600", color: "#111827" }}>
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
               Select Report Type
             </h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "12px" }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div
                 onClick={() => setReportType('monthly-summary')}
-                style={{
-                  padding: "14px",
-                  borderRadius: "8px",
-                  border: reportType === 'monthly-summary' ? "2px solid #3b82f6" : "2px solid #e5e7eb",
-                  backgroundColor: reportType === 'monthly-summary' ? "#eff6ff" : "white",
-                  cursor: "pointer",
-                  transition: "all 0.2s"
-                }}
+                className={`p-4 rounded-lg cursor-pointer transition-all ${
+                  reportType === 'monthly-summary' 
+                    ? 'border-2 border-blue-500 bg-blue-50' 
+                    : 'border-2 border-gray-200 bg-white hover:border-gray-300'
+                }`}
               >
-                <h3 style={{ fontSize: "15px", fontWeight: "600", marginBottom: "6px", color: "#111827" }}>
+                <h3 className="text-base font-semibold text-gray-900 mb-1.5">
                   Monthly Fraud Detection Summary
                 </h3>
-                <p style={{ fontSize: "13px", color: "#6b7280", margin: 0, lineHeight: "1.4" }}>
+                <p className="text-sm text-gray-600 leading-snug">
                   Comprehensive monthly overview of fraud detection metrics and trends
                 </p>
               </div>
 
               <div
                 onClick={() => setReportType('transaction-analysis')}
-                style={{
-                  padding: "14px",
-                  borderRadius: "8px",
-                  border: reportType === 'transaction-analysis' ? "2px solid #3b82f6" : "2px solid #e5e7eb",
-                  backgroundColor: reportType === 'transaction-analysis' ? "#eff6ff" : "white",
-                  cursor: "pointer",
-                  transition: "all 0.2s"
-                }}
+                className={`p-4 rounded-lg cursor-pointer transition-all ${
+                  reportType === 'transaction-analysis' 
+                    ? 'border-2 border-blue-500 bg-blue-50' 
+                    : 'border-2 border-gray-200 bg-white hover:border-gray-300'
+                }`}
               >
-                <h3 style={{ fontSize: "15px", fontWeight: "600", marginBottom: "6px", color: "#111827" }}>
+                <h3 className="text-base font-semibold text-gray-900 mb-1.5">
                   Transaction Type Analysis
                 </h3>
-                <p style={{ fontSize: "13px", color: "#6b7280", margin: 0, lineHeight: "1.4" }}>
+                <p className="text-sm text-gray-600 leading-snug">
                   Detailed breakdown of transactions by type (online vs in-store)
                 </p>
               </div>
 
               <div
                 onClick={() => setReportType('risk-assessment')}
-                style={{
-                  padding: "14px",
-                  borderRadius: "8px",
-                  border: reportType === 'risk-assessment' ? "2px solid #3b82f6" : "2px solid #e5e7eb",
-                  backgroundColor: reportType === 'risk-assessment' ? "#eff6ff" : "white",
-                  cursor: "pointer",
-                  transition: "all 0.2s"
-                }}
+                className={`p-4 rounded-lg cursor-pointer transition-all ${
+                  reportType === 'risk-assessment' 
+                    ? 'border-2 border-blue-500 bg-blue-50' 
+                    : 'border-2 border-gray-200 bg-white hover:border-gray-300'
+                }`}
               >
-                <h3 style={{ fontSize: "15px", fontWeight: "600", marginBottom: "6px", color: "#111827" }}>
+                <h3 className="text-base font-semibold text-gray-900 mb-1.5">
                   Risk Assessment Report
                 </h3>
-                <p style={{ fontSize: "13px", color: "#6b7280", margin: 0, lineHeight: "1.4" }}>
+                <p className="text-sm text-gray-600 leading-snug">
                   Risk score distribution and high-risk transaction analysis
                 </p>
               </div>
 
               <div
                 onClick={() => setReportType('custom-date-range')}
-                style={{
-                  padding: "14px",
-                  borderRadius: "8px",
-                  border: reportType === 'custom-date-range' ? "2px solid #3b82f6" : "2px solid #e5e7eb",
-                  backgroundColor: reportType === 'custom-date-range' ? "#eff6ff" : "white",
-                  cursor: "pointer",
-                  transition: "all 0.2s"
-                }}
+                className={`p-4 rounded-lg cursor-pointer transition-all ${
+                  reportType === 'custom-date-range' 
+                    ? 'border-2 border-blue-500 bg-blue-50' 
+                    : 'border-2 border-gray-200 bg-white hover:border-gray-300'
+                }`}
               >
-                <h3 style={{ fontSize: "15px", fontWeight: "600", marginBottom: "6px", color: "#111827" }}>
+                <h3 className="text-base font-semibold text-gray-900 mb-1.5">
                   Custom Date Range Report
                 </h3>
-                <p style={{ fontSize: "13px", color: "#6b7280", margin: 0, lineHeight: "1.4" }}>
+                <p className="text-sm text-gray-600 leading-snug">
                   Create a report for any specific date range you choose
                 </p>
               </div>
@@ -1146,49 +1111,17 @@ const StoreManager = () => {
             marginBottom: "20px"
           }}>
             <button
-              className="generate-report-button"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
               onClick={handleGenerateReport}
-              style={{
-                padding: "10px 20px",
-                backgroundColor: "#3b82f6",
-                color: "white",
-                border: "none",
-                borderRadius: "6px",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                fontSize: "14px",
-                fontWeight: "500",
-                transition: "background-color 0.2s"
-              }}
-              onMouseEnter={(e) => e.target.style.backgroundColor = "#2563eb"}
-              onMouseLeave={(e) => e.target.style.backgroundColor = "#3b82f6"}
             >
               {showReport ? 'Hide Report' : 'Generate Report'}
             </button>
             {showReport && (
               <button
-                className="send-report-button"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
                 onClick={toggleEmailModal}
-                style={{
-                  padding: "10px 20px",
-                  backgroundColor: "#10b981",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  transition: "background-color 0.2s"
-                }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = "#059669"}
-                onMouseLeave={(e) => e.target.style.backgroundColor = "#10b981"}
               >
-                <FaEnvelope className="button-icon" />
+                <FaEnvelope />
                 Send Report
               </button>
             )}
@@ -1268,7 +1201,7 @@ const StoreManager = () => {
                   
                   {emailError && <p className="email-error">{emailError}</p>}
                   <button 
-                    className="send-button"
+                    className="w-full px-4 py-2 text-sm font-medium bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                     onClick={handleSendReportEmail}
                     disabled={sendingEmail}
                   >
@@ -1328,37 +1261,16 @@ const StoreManager = () => {
                 </p>
               )}
               
-              <div style={{ display: 'flex', gap: '12px' }}>
+              <div className="flex gap-3">
                 <button 
-                  className="send-button"
+                  className="flex-1 px-4 py-2 text-sm font-medium bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
                   onClick={handleSubmitFlag}
-                  style={{
-                    flex: 1,
-                    padding: '10px 20px',
-                    backgroundColor: '#ef4444',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500'
-                  }}
                 >
                   Flag as Fraudulent
                 </button>
                 <button 
+                  className="flex-1 px-4 py-2 text-sm font-medium bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
                   onClick={handleCloseFlagModal}
-                  style={{
-                    flex: 1,
-                    padding: '10px 20px',
-                    backgroundColor: '#6b7280',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500'
-                  }}
                 >
                   Cancel
                 </button>

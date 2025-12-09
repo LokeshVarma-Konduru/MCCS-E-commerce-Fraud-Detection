@@ -1,112 +1,213 @@
-/* Custom styles for Contact page */
+/* Contact Page - Matching Admin Panel Styling */
+
+/* Main Container - Matching AdminPanel.css */
 .contact-container {
-  padding: 24px 24px 0 24px; /* Remove bottom padding to allow footer to extend fully */
-  background-color: #f8fafc;
-  min-height: calc(100vh - 64px); /* Subtract navbar height */
-  margin-top: 64px; /* Add margin for navbar */
-  width: 100%;
-  overflow-x: hidden; /* Prevent horizontal scrolling */
   display: flex;
   flex-direction: column;
+  gap: 2rem;
+  padding: 4rem 2.5rem 3rem;
+  background: #f5f7fb;
+  color: #0f172a;
+  min-height: calc(100vh - 140px);
+  margin-top: 80px;
 }
 
 .contact-content {
-  flex: 1;
-  display: flex;
-  justify-content: space-between; /* Distribute space */
-  align-items: stretch;
-  padding: 2rem;
-  width: 100%; /* Ensure it fills the container width */
-  gap: 2rem;
-}
-
-.contact-section {
-  width: 100%;
-  max-width: none; /* Allow full width */
-  margin: 0; /* Remove margin to fill the screen */
-  padding: 2rem;
-  background-color: white;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
 }
 
-.contact-grid {
+/* Page Header */
+.contact-header {
   display: flex;
-  align-items: stretch;
-  height: 100%;
-  gap: 2rem;
-}
-
-.logo-section {
-  display: flex;
-  flex: 1; /* Logo section fills left space */
   flex-direction: column;
   align-items: center;
-  padding: 2rem;
-  background-color: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  text-align: center;
+  gap: 1.25rem;
 }
 
-.logo-section img {
+.contact-page-title {
+  margin: 0;
+  font-size: 2.1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* Grid Layout */
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 1.25rem;
   width: 100%;
-  max-width: 400px;
-  height: auto;
-  margin-bottom: 1.5rem;
 }
 
-.contact-details {
+/* Logo Card - Matching Admin Panel Card Style */
+.contact-logo-card {
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 2rem 1.65rem;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   display: flex;
-  flex: 2; /* Increase flex to fill right side */
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 1rem;
+}
+
+.contact-logo-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+}
+
+.contact-logo {
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+  margin-bottom: 1rem;
+}
+
+.contact-logo-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.contact-logo-subtitle {
+  margin: 0.4rem 0 0;
+  font-size: 1rem;
+  color: #475569;
+  font-style: italic;
+}
+
+/* Contact Details Card - Matching Admin Panel Card Style */
+.contact-details-card {
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 1.65rem;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  padding: 2rem;
-  background-color: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  justify-content: space-around; /* Spread content evenly */
 }
 
+.contact-details-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+}
+
+/* Contact Items */
 .contact-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 1rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 0.75rem;
+  transition: background 0.2s ease;
+}
+
+.contact-item:hover {
+  background: #f1f5f9;
 }
 
 .contact-icon {
   font-size: 1.5rem;
-  color: #6366f1;
+  color: #3b82f6;
+  flex-shrink: 0;
+  margin-top: 0.25rem;
 }
 
 .contact-text {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-h1 {
-  margin-top: 40px; /* Reduce gap between header and navbar */
-  text-align: center;
-  color: #1e293b;
+.contact-item-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.contact-item-text {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #334155;
+  line-height: 1.6;
+}
+
+/* Responsive Design - Matching Admin Panel */
+@media (max-width: 1024px) {
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
-  .contact-grid {
-    flex-direction: column;
+  .contact-container {
+    padding: 4rem 0.5rem 3rem;
   }
   
-  .contact-section {
-    height: auto;
+  .contact-logo-card {
+    padding: 1.5rem 1rem;
+  }
+  
+  .contact-details-card {
     padding: 1rem;
   }
+  
+  .contact-item {
+    padding: 0.75rem;
+  }
+  
+  .contact-page-title {
+    font-size: 1.75rem;
+  }
+  
+  .contact-logo {
+    max-width: 200px;
+  }
+  
+  .contact-logo-title {
+    font-size: 1.1rem;
+  }
+}
 
-  .contact-content {
+@media (max-width: 480px) {
+  .contact-container {
+    padding: 3.5rem 0.25rem 3rem;
+  }
+  
+  .contact-logo-card {
+    padding: 1rem 0.75rem;
+  }
+  
+  .contact-details-card {
+    padding: 0.75rem;
+  }
+  
+  .contact-item {
     flex-direction: column;
-    padding: 1rem;
+    align-items: center;
+    text-align: center;
+    padding: 0.75rem;
   }
-
-  .logo-section img {
-    max-width: 300px;
+  
+  .contact-icon {
+    margin-top: 0;
+  }
+  
+  .contact-logo {
+    max-width: 150px;
   }
 }

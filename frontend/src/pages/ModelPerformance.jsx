@@ -112,7 +112,7 @@ const groupModelsByName = (models) => {
   return grouped;
 };
 
-const ModelPerformance = () => {
+const ModelPerformance = ({ embedded = false }) => {
   // State for model data
   const [allModels, setAllModels] = useState([]);
   const [groupedModels, setGroupedModels] = useState({});
@@ -399,8 +399,8 @@ const ModelPerformance = () => {
     datasets.push({
       label: `${primaryModel?.modelName || 'Current Model'} (AUC = ${primaryAuc.toFixed(3)})`,
       data: primaryRocData?.y || [0, 0.72, 0.85, 0.91, 0.94, 0.96, 0.97, 0.98, 0.99, 0.995, 1.0],
-      borderColor: '#3498db',
-      backgroundColor: 'rgba(52, 152, 219, 0.1)',
+      borderColor: '#3b82f6',
+      backgroundColor: 'rgba(59, 130, 246, 0.1)',
       tension: 0.4,
       fill: false,
       borderWidth: 2
@@ -684,13 +684,13 @@ const ModelPerformance = () => {
     const isPositive = hasChange && !metric.change.startsWith('-');
     
     return (
-      <div className="metric-card">
-        <div className="metric-label">{metric.label}</div>
-        <div className="metric-value">
+      <div className="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow">
+        <h3 className="text-sm font-semibold text-gray-600 uppercase mb-4">{metric.label}</h3>
+        <div className="text-3xl font-bold text-gray-900 mb-2">
           {metric.value}
         </div>
         {hasChange && (
-          <div className={`metric-change ${isPositive ? 'positive' : 'negative'}`}>
+          <div className={`text-sm font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
             {metric.change}
           </div>
         )}
@@ -701,24 +701,24 @@ const ModelPerformance = () => {
   const renderConfusionMatrix = (matrix, title = null) => {
     const total = matrix.data.flat().reduce((a, b) => a + b, 0);
     return (
-      <div className="confusion-matrix-container">
-        {title && <h5 className="matrix-title">{title}</h5>}
-        <table className="confusion-matrix-table">
+      <div className="bg-white rounded-lg p-6 shadow-md">
+        {title && <h3 className="text-lg font-bold text-gray-900 mb-4">{title}</h3>}
+        <table className="w-full border-collapse">
           <thead>
-            <tr>
-              <th></th>
-              <th>Predicted Non-Fraud</th>
-              <th>Predicted Fraud</th>
+            <tr className="border-b-2 border-gray-300">
+              <th className="p-3 text-left text-sm font-semibold text-gray-700"></th>
+              <th className="p-3 text-center text-sm font-semibold text-gray-700">Predicted Non-Fraud</th>
+              <th className="p-3 text-center text-sm font-semibold text-gray-700">Predicted Fraud</th>
             </tr>
           </thead>
           <tbody>
             {matrix.data.map((row, i) => (
-              <tr key={i}>
-                <th>{matrix.labels[i]}</th>
+              <tr key={i} className="border-b border-gray-200">
+                <th className="p-3 text-left text-sm font-semibold text-gray-700">{matrix.labels[i]}</th>
                 {row.map((value, j) => (
-                  <td key={j} className={j === i ? 'correct' : 'incorrect'}>
-                    <div className="cell-value">{value.toLocaleString()}</div>
-                    <div className="cell-percentage">
+                  <td key={j} className={`p-3 text-center ${j === i ? 'bg-green-50' : 'bg-red-50'}`}>
+                    <div className="text-lg font-bold text-gray-900">{value.toLocaleString()}</div>
+                    <div className="text-xs text-gray-600">
                       {((value / total) * 100).toFixed(1)}%
                     </div>
                   </td>
@@ -732,22 +732,22 @@ const ModelPerformance = () => {
   };
 
   return (
-    <div className="developer-container model-performance">
-      <DeveloperNav activePath="/model-performance" />
+    <div className={embedded ? "" : "developer-container model-performance"}>
+      {!embedded && <DeveloperNav activePath="/model-performance" />}
 
-      <div className="main-content">
-        <PageHeader title="Model Performance" />
+      <div className={embedded ? "" : "main-content"}>
+        {!embedded && <PageHeader title="Model Performance" />}
         
         {loading ? (
-          <div className="loading-container">
-            <div className="loading-spinner"></div>
-            <p>Loading model data...</p>
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="animate-spin h-12 w-12 border-4 border-blue-500 border-t-transparent rounded-full mb-4"></div>
+            <p className="text-gray-600">Loading model data...</p>
           </div>
         ) : error ? (
-          <div className="error-container">
-            <p className="error-message">Error: {error}</p>
+          <div className="flex flex-col items-center justify-center py-12">
+            <p className="text-red-600 mb-4">Error: {error}</p>
             <button 
-              className="retry-button"
+              className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
               onClick={() => window.location.reload()}
             >
               Retry
@@ -755,53 +755,50 @@ const ModelPerformance = () => {
           </div>
         ) : (
           <>
-            <div className="performance-header">
-              <div className="model-controls">
-                {/* Left side: Model and Version stacked vertically */}
-                <div className="primary-model-section">
-                  <div className="control-section">
-                    <div className="section-label">Model</div>
-                    <div className="model-selector">
-                      <select 
-                        value={selectedModelName || ''} 
-                        onChange={(e) => {
-                          const modelName = e.target.value;
-                          setSelectedModelName(modelName);
-                          
-                          // Auto-select oldest version (v1.0.0) of selected model
-                          if (groupedModels[modelName]?.versions.length > 0) {
-                            // Select last version (oldest - v1.0.0) since we sort oldest first
-                            const lastVersionIndex = groupedModels[modelName].versions.length - 1;
-                            const oldestVersionId = groupedModels[modelName].versions[lastVersionIndex]._id;
-                            setSelectedVersionId(oldestVersionId);
-                            setPrimaryModelId(oldestVersionId);
-                          }
-                        }}
-                        className="model-select"
-                      >
+            <div className="bg-white rounded-lg p-6 shadow-md mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Model Selector */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Model</label>
+                  <select 
+                    value={selectedModelName || ''} 
+                    onChange={(e) => {
+                      const modelName = e.target.value;
+                      setSelectedModelName(modelName);
+                      
+                      // Auto-select oldest version (v1.0.0) of selected model
+                      if (groupedModels[modelName]?.versions.length > 0) {
+                        // Select last version (oldest - v1.0.0) since we sort oldest first
+                        const lastVersionIndex = groupedModels[modelName].versions.length - 1;
+                        const oldestVersionId = groupedModels[modelName].versions[lastVersionIndex]._id;
+                        setSelectedVersionId(oldestVersionId);
+                        setPrimaryModelId(oldestVersionId);
+                      }
+                    }}
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
                         <option value="">Select a model</option>
                         {Object.keys(groupedModels).map(modelName => (
                           <option key={modelName} value={modelName}>
                             {modelName} ({groupedModels[modelName].modelType})
                           </option>
                         ))}
-                      </select>
-                    </div>
-                  </div>
-                  
-                  {selectedModelName && groupedModels[selectedModelName] && (
-                    <div className="control-section version-section">
-                      <div className="section-label">Version</div>
-                      <div className="version-selector">
-                        <select 
-                          value={selectedVersionId || ''} 
-                          onChange={(e) => {
-                            const versionId = e.target.value;
-                            setSelectedVersionId(versionId);
-                            setPrimaryModelId(versionId);
-                          }}
-                          className="model-select"
-                        >
+                  </select>
+                </div>
+                
+                {/* Version Selector */}
+                {selectedModelName && groupedModels[selectedModelName] && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Version</label>
+                    <select 
+                      value={selectedVersionId || ''} 
+                      onChange={(e) => {
+                        const versionId = e.target.value;
+                        setSelectedVersionId(versionId);
+                        setPrimaryModelId(versionId);
+                      }}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
                           {groupedModels[selectedModelName].versions.map(version => (
                             <option key={version._id} value={version._id}>
                               {version.version}
@@ -809,112 +806,106 @@ const ModelPerformance = () => {
                               {` - ${new Date(version.createdAt).toLocaleDateString()}`}
                             </option>
                           ))}
-                        </select>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                    </select>
+                  </div>
+                )}
                 
-                <div className="control-section metrics-class-section">
-                  <div className="section-label">Metrics Class</div>
-                  <div className="class-selector">
-                    <select
-                      value={selectedClass}
-                      onChange={(e) => setSelectedClass(e.target.value)}
-                      className="class-select"
-                    >
+                {/* Metrics Class Selector */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Metrics Class</label>
+                  <select
+                    value={selectedClass}
+                    onChange={(e) => setSelectedClass(e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
                       <option value="0">Class 0 (Non-Fraud)</option>
                       <option value="1">Class 1 (Fraud)</option>
                       <option value="macro avg">Macro Average</option>
                       <option value="weighted avg">Weighted Average</option>
-                    </select>
-                  </div>
+                  </select>
                 </div>
                 
-                <div className="control-section comparison-section">
-                  <div className="comparison-toggle">
-                    <button 
-                      className={`compare-button ${compareMode ? 'active' : ''}`}
-                      onClick={() => setCompareMode(!compareMode)}
-                    >
-                      {compareMode ? 'Comparison Active' : 'Compare Models'}
-                    </button>
-                  </div>
-                  
-                  {compareMode && (
-                    <>
-                      <div className="comparison-model-selector">
-                        <div className="section-label">Comparison Model</div>
-                        <select 
-                          value={comparisonModelName || ''} 
-                          onChange={(e) => {
-                            const compModelName = e.target.value;
-                            setComparisonModelName(compModelName);
-                            
-                            // Auto-select oldest version (v1.0.0) of comparison model
-                            if (compModelName && groupedModels[compModelName]?.versions.length > 0) {
-                              // Select last version (oldest - v1.0.0) since we sort oldest first
-                              const lastVersionIndex = groupedModels[compModelName].versions.length - 1;
-                              const oldestVersionId = groupedModels[compModelName].versions[lastVersionIndex]._id;
-                              setComparisonModelId(oldestVersionId);
-                            } else {
-                              setComparisonModelId(null);
-                            }
-                          }}
-                          className="model-select comparison-select"
-                        >
-                          <option value="">Select a model</option>
-                          {Object.keys(groupedModels).map(modelName => (
-                            <option key={modelName} value={modelName}>
-                              {modelName} ({groupedModels[modelName].modelType})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      {comparisonModelName && groupedModels[comparisonModelName] && (
-                        <div className="comparison-version-selector">
-                          <div className="section-label">Comparison Version</div>
-                          <select 
-                            value={comparisonModelId || ''} 
-                            onChange={(e) => setComparisonModelId(e.target.value)}
-                            className="model-select"
-                          >
-                            {groupedModels[comparisonModelName].versions.map(version => (
-                              <option key={version._id} value={version._id}>
-                                {version.version}
-                                {version.accuracy && ` (${(version.accuracy * 100).toFixed(2)}%)`}
-                                {` - ${new Date(version.createdAt).toLocaleDateString()}`}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-                    </>
-                  )}
+                {/* Compare Toggle */}
+                <div className="flex items-end">
+                  <button 
+                    className={`w-full px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      compareMode 
+                        ? 'bg-green-500 text-white hover:bg-green-600' 
+                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                    }`}
+                    onClick={() => setCompareMode(!compareMode)}
+                  >
+                    {compareMode ? 'Comparison Active' : 'Compare Models'}
+                  </button>
                 </div>
               </div>
               
-              {/* <div className="last-retrained">
-                Last Retrained: {primaryModel ? new Date(primaryModel.createdAt).toLocaleDateString() : 'N/A'}
-              </div> */}
+              {/* Comparison Model Selectors */}
+              {compareMode && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-200">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Comparison Model</label>
+                    <select 
+                      value={comparisonModelName || ''} 
+                      onChange={(e) => {
+                        const compModelName = e.target.value;
+                        setComparisonModelName(compModelName);
+                        
+                        // Auto-select oldest version (v1.0.0) of comparison model
+                        if (compModelName && groupedModels[compModelName]?.versions.length > 0) {
+                          // Select last version (oldest - v1.0.0) since we sort oldest first
+                          const lastVersionIndex = groupedModels[compModelName].versions.length - 1;
+                          const oldestVersionId = groupedModels[compModelName].versions[lastVersionIndex]._id;
+                          setComparisonModelId(oldestVersionId);
+                        } else {
+                          setComparisonModelId(null);
+                        }
+                      }}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select a model</option>
+                      {Object.keys(groupedModels).map(modelName => (
+                        <option key={modelName} value={modelName}>
+                          {modelName} ({groupedModels[modelName].modelType})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {comparisonModelName && groupedModels[comparisonModelName] && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Comparison Version</label>
+                      <select 
+                        value={comparisonModelId || ''} 
+                        onChange={(e) => setComparisonModelId(e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        {groupedModels[comparisonModelName].versions.map(version => (
+                          <option key={version._id} value={version._id}>
+                            {version.version}
+                            {version.accuracy && ` (${(version.accuracy * 100).toFixed(2)}%)`}
+                            {` - ${new Date(version.createdAt).toLocaleDateString()}`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
-            <div className="stats-grid">
+            {/* Metrics Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               {compareMode && comparisonModel ? (
-                <>
-                  <div className="metrics-comparison">
-                    <h4>Primary Model: {primaryModel?.modelName}</h4>
-                    <div className="metrics-row">
-                      {Object.values(metrics).map((metric) => renderMetricCard(metric))}
-                    </div>
+                <div className="metrics-comparison">
+                  <h4>Primary Model: {primaryModel?.modelName}</h4>
+                  <div className="metrics-row">
+                    {Object.values(metrics).map((metric) => renderMetricCard(metric))}
                   </div>
-                  <div className="metrics-comparison">
-                    <h4>Comparison Model: {comparisonModel?.modelName}</h4>
-                    <div className="metrics-row">
-                      {Object.values(comparisonMetrics || {}).map((metric) => renderMetricCard(metric))}
-                    </div>
+                  <h4>Comparison Model: {comparisonModel?.modelName}</h4>
+                  <div className="metrics-row">
+                    {Object.values(comparisonMetrics || {}).map((metric) => renderMetricCard(metric))}
                   </div>
-                </>
+                </div>
               ) : (
                 Object.values(metrics).map((metric) => renderMetricCard(metric))
               )}
@@ -933,7 +924,6 @@ const ModelPerformance = () => {
                 </div>
               </div>
               <div className="confusion-matrix">
-                <h4>Confusion Matrix</h4>
                 {compareMode && comparisonModel ? (
                   <div className="matrix-comparison">
                     <div className="matrix-column">
@@ -951,34 +941,35 @@ const ModelPerformance = () => {
           </div>
         )}
 
-        <div className="retrain-section">
-          <h3>Retrain Model</h3>
+        {/* Retrain Model Section */}
+        <div className="bg-white rounded-lg p-6 shadow-md mt-8">
+          <h3 className="text-lg font-bold text-gray-900 mb-6">Retrain Model</h3>
           
-          <div className="file-upload-section required">
-            <div className="file-upload-header">
-              <div className="file-upload-labels">
-                <label htmlFor="dataset-upload-input">
-                  Upload Training Dataset *
-                </label>
-                <span className="upload-hint">
-                  Accepted formats: CSV, XLSX, JSON, TXT - Max size 25 MB
-                </span>
-              </div>
-              <span className="upload-requirement">Required - Upload your dataset file for model training.</span>
+          <div className="mb-6">
+            <div className="mb-4">
+              <label htmlFor="dataset-upload-input" className="block text-sm font-medium text-gray-700 mb-2">
+                Upload Training Dataset *
+              </label>
+              <p className="text-xs text-gray-500 mb-2">
+                Accepted formats: CSV, XLSX, JSON, TXT - Max size 25 MB
+              </p>
+              <p className="text-xs text-gray-600 mb-4">
+                Required - Upload your dataset file for model training.
+              </p>
             </div>
-            <div className="file-upload-control">
+            <div className="flex gap-3">
               <input
                 id="dataset-upload-input"
                 ref={fileInputRef}
                 type="file"
                 accept={SUPPORTED_FILE_TYPES.join(",")}
                 onChange={handleFileChange}
-                className="file-input-hidden"
+                className="hidden"
                 disabled={isUploading}
               />
               <button
                 type="button"
-                className="file-upload-trigger"
+                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
               >
@@ -987,7 +978,7 @@ const ModelPerformance = () => {
               {uploadedFile && (
                 <button
                   type="button"
-                  className="file-remove-button"
+                  className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                   onClick={handleRemoveFile}
                   aria-label="Remove selected training data file"
                   disabled={isUploading}
@@ -997,26 +988,24 @@ const ModelPerformance = () => {
               )}
             </div>
             {uploadedFile && (
-              <div className="file-info" role="status">
-                <div className="file-info__details">
-                  <span className="file-name">{uploadedFile.name}</span>
-                  <span className="file-meta">
-                    {uploadedFile.type.toUpperCase()} - {formatFileSize(uploadedFile.size)}
-                  </span>
-                </div>
+              <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-200" role="status">
+                <p className="text-sm font-medium text-gray-900">{uploadedFile.name}</p>
+                <p className="text-xs text-gray-600">
+                  {uploadedFile.type.toUpperCase()} - {formatFileSize(uploadedFile.size)}
+                </p>
               </div>
             )}
             {uploadError && (
-              <p className="input-error" role="alert">
+              <p className="mt-3 text-sm text-red-600" role="alert">
                 {uploadError}
               </p>
             )}
             {uploadSuccess && (
-              <div className="upload-success" role="status">
-                <p className="success-message">
+              <div className="mt-3 p-4 bg-green-50 rounded-md border border-green-200" role="status">
+                <p className="text-sm text-green-800">
                   ✅ {uploadSuccess.message}
                 </p>
-                <p className="success-version">
+                <p className="text-sm text-green-700 mt-1">
                   Version: <strong>{uploadSuccess.version}</strong>
                 </p>
               </div>
@@ -1025,7 +1014,7 @@ const ModelPerformance = () => {
 
           <button 
             type="button" 
-            className="retrain-button" 
+            className="w-full px-6 py-3 text-sm font-medium bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
             onClick={handleRetrain}
             disabled={!uploadedFile || isUploading}
           >

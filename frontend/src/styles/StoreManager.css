@@ -67,8 +67,8 @@
 }
 
 .tab.active {
-  color: #6366f1;
-  border-bottom: 2px solid #6366f1;
+  color: #3b82f6;
+  border-bottom: 2px solid #3b82f6;
 }
 
 .filters {
@@ -502,7 +502,7 @@ td {
 }
 
 .coming-soon-card h2 {
-  color: #4f46e5;
+  color: #3b82f6;
   font-size: 24px;
   margin-bottom: 16px;
 }

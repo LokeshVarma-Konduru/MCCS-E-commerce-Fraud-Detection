@@ -32,7 +32,7 @@ ChartJS.register(
   Legend
 );
 
-const TransactionMonitoring = () => {
+const TransactionMonitoring = ({ embedded = false }) => {
   // Filter states
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
@@ -57,8 +57,8 @@ const TransactionMonitoring = () => {
       {
         label: 'Fraud Rate',
         data: [],
-        borderColor: '#3498db',
-        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
         tension: 0.4,
         fill: true
       }
@@ -236,8 +236,8 @@ const TransactionMonitoring = () => {
             {
               label: 'Fraud Rate (%)',
               data,
-              borderColor: '#3498db',
-              backgroundColor: 'rgba(52, 152, 219, 0.1)',
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
               tension: 0.4,
               fill: true
             }
@@ -252,8 +252,8 @@ const TransactionMonitoring = () => {
               {
                 label: 'Fraud Rate (%)',
                 data: [],
-                borderColor: '#3498db',
-                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
                 tension: 0.4,
                 fill: true
               }
@@ -401,48 +401,39 @@ const TransactionMonitoring = () => {
       }
     } catch (err) {
       console.error('Error updating transaction status:', err);
-      setError('Failed to update transaction status. Please try again.');
+      setError('Failed to update transaction status');
     }
   };
 
   return (
-    <div className="developer-container transaction-monitoring" style={{ backgroundColor: '#f8fafc' }}>
-      <DeveloperNav activePath="/transaction-monitoring" />
+    <div className={embedded ? "" : "developer-container transaction-monitoring"}>
+      {!embedded && <DeveloperNav activePath="/transaction-monitoring" />}
 
-      <div className="main-content">
-        <PageHeader title="Transaction Monitoring" />
-        <div className="monitoring-filters" style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)', marginBottom: '24px' }}>
-          <div className="search-box">
-            <FaSearch className="search-icon" />
+      <div className={embedded ? "" : "main-content"}>
+        {!embedded && <PageHeader title="Transaction Monitoring" />}
+        
+        {/* Filters Card */}
+        <div className="bg-white rounded-lg p-6 shadow-md mb-6">
+          {/* Search Box */}
+          <div className="relative mb-6">
+            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input 
               type="text" 
               placeholder="Search by transaction ID, amount, or status..." 
-              className="search-input"
+              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ 
-                color: '#2d3748', 
-                backgroundColor: '#f8fafc',
-                border: '1px solid #cbd5e0',
-                boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.05)'
-              }}
             />
           </div>
 
-          <div className="filters" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-start' }}>
-            <div className="filter-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: '1 0 200px' }}>
-              <label style={{ color: '#4a5568', fontWeight: '500' }}>Transaction Type</label>
+          {/* Filters Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Transaction Type</label>
               <select 
                 value={txnType}
                 onChange={(e) => { setTxnType(e.target.value); if (e.target.value !== 'In-store') setSelectedStoreId(''); }}
-                style={{ 
-                  color: '#2d3748', 
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #cbd5e0',
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  width: '100%'
-                }}
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option>All</option>
                 <option>Online</option>
@@ -450,19 +441,12 @@ const TransactionMonitoring = () => {
               </select>
             </div>
             {txnType === 'In-store' && (
-              <div className="filter-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: '1 0 260px' }}>
-                <label style={{ color: '#4a5568', fontWeight: '500' }}>Store</label>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Store</label>
                 <select 
                   value={selectedStoreId}
                   onChange={(e) => setSelectedStoreId(e.target.value)}
-                  style={{ 
-                    color: '#2d3748', 
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #cbd5e0',
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    width: '100%'
-                  }}
+                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">All Stores</option>
                   {stores.map(st => (
@@ -471,8 +455,8 @@ const TransactionMonitoring = () => {
                 </select>
               </div>
             )}
-            <div className="filter-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: '1 0 300px' }}>
-              <label style={{ color: '#4a5568', fontWeight: '500' }}>Date Range</label>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <div style={{ position: 'relative', flex: 1 }}>
                   <DatePicker
@@ -533,19 +517,12 @@ const TransactionMonitoring = () => {
               </div>
             </div>
 
-            <div className="filter-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: '1 0 200px' }}>
-              <label style={{ color: '#4a5568', fontWeight: '500' }}>Amount Range</label>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Amount Range</label>
               <select 
                 value={amountRange}
                 onChange={(e) => setAmountRange(e.target.value)}
-                style={{ 
-                  color: '#2d3748', 
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #cbd5e0',
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  width: '100%'
-                }}
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option>All Amounts</option>
                 <option>$0 - $100</option>
@@ -555,19 +532,12 @@ const TransactionMonitoring = () => {
               </select>
             </div>
 
-            <div className="filter-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: '1 0 200px' }}>
-              <label style={{ color: '#4a5568', fontWeight: '500' }}>Fraud Score</label>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Fraud Score</label>
               <select 
                 value={fraudScore}
                 onChange={(e) => setFraudScore(e.target.value)}
-                style={{ 
-                  color: '#2d3748', 
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #cbd5e0',
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  width: '100%'
-                }}
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option>All Scores</option>
                 <option>High Risk (70+)</option>
@@ -576,19 +546,12 @@ const TransactionMonitoring = () => {
               </select>
             </div>
 
-            <div className="filter-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: '1 0 200px' }}>
-              <label style={{ color: '#4a5568', fontWeight: '500' }}>Prediction</label>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Prediction</label>
               <select 
                 value={prediction}
                 onChange={(e) => setPrediction(e.target.value)}
-                style={{ 
-                  color: '#2d3748', 
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #cbd5e0',
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  width: '100%'
-                }}
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option>All Predictions</option>
                 <option>Fraud</option>
@@ -596,19 +559,12 @@ const TransactionMonitoring = () => {
               </select>
             </div>
             
-            <div className="filter-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: '1 0 200px' }}>
-              <label style={{ color: '#4a5568', fontWeight: '500' }}>Review Status</label>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Review Status</label>
               <select 
                 value={reviewStatus}
                 onChange={(e) => setReviewStatus(e.target.value)}
-                style={{ 
-                  color: '#2d3748', 
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #cbd5e0',
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  width: '100%'
-                }}
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option>All Status</option>
                 <option>pending</option>
@@ -621,7 +577,7 @@ const TransactionMonitoring = () => {
         </div>
 
         <div className="transaction-stream" style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)', marginBottom: '24px' }}>
-          <h3 style={{ marginBottom: '24px', fontSize: '18px', fontWeight: '600', color: '#2c3e50' }}>Live Transaction Stream</h3>
+          <h3 style={{ marginBottom: '24px', fontSize: '18px', fontWeight: '700', color: '#2c3e50' }}>Live Transaction Stream</h3>
           <div className="transaction-table">
             <table>
               <thead>
@@ -715,7 +671,7 @@ const TransactionMonitoring = () => {
 
         <div className="monitoring-grid">
           <div className="fraud-trends" style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)' }}>
-            <h3 style={{ marginBottom: '24px', fontSize: '18px', fontWeight: '600', color: '#2c3e50' }}>Fraud Detection Trends</h3>
+            <h3 style={{ marginBottom: '24px', fontSize: '18px', fontWeight: '700', color: '#2c3e50' }}>Fraud Detection Trends</h3>
             <div style={{ height: '300px', position: 'relative' }}>
               {loadingTrends ? (
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
@@ -729,7 +685,7 @@ const TransactionMonitoring = () => {
 
           <div className="high-risk-alerts" style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)' }}>
             <div className="alerts-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#2c3e50', margin: 0 }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#2c3e50', margin: 0 }}>
                 <span style={{ color: '#ef4444', marginRight: '8px' }}>⚠️</span> 
                 Fraudulent Transaction Alerts
               </h3>

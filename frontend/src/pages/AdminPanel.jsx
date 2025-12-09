@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FaSearch } from 'react-icons/fa';
 import { addUsers, getUsers, deleteUser, toggleUserStatus, getStores } from '../api';
 import { useAuth } from '../context/AuthContext.jsx';
-import PageHeader from '../components/PageHeader';
 import '../styles/AdminPanel.css';
 
 const AdminPanel = () => {
@@ -316,10 +316,17 @@ const AdminPanel = () => {
   }, []);
 
   return (
-    <div className="admin-panel">
-      <div className="admin-container">
-        <PageHeader title="Admin Panel" />
-        <div className="admin-content">
+    <main className="admin-panel">
+      <header className="admin-panel__header">
+        <div>
+          <h1>Admin Panel</h1>
+          <p className="admin-panel__intro">
+            Manage system users, roles, and permissions
+          </p>
+        </div>
+      </header>
+      
+      <div className="admin-panel__content">
           <div className="admin-card">
             <h2>Add New Users</h2>
               {addUserMessage && (
@@ -426,18 +433,13 @@ const AdminPanel = () => {
               )}
               <div className="filter-section">
                 <div className="search-box">
+                  <FaSearch className="search-icon" />
                   <input
                     type="text"
                     placeholder="Search users by name or email..."
                     value={searchTerm}
                     onChange={handleSearchChange}
                     className={`search-input ${isSearching ? 'searching' : ''}`}
-                    style={{
-                      color: 'black',
-                      backgroundColor: 'white',
-                      fontWeight: 'bold',
-                      border: '3px solid #00bcd4'
-                    }}
                   />
                 </div>
                 <div className="role-filter">
@@ -524,10 +526,9 @@ const AdminPanel = () => {
                 )}
               </div>
             </div>
-        </div>
 
         {/* Delete Confirmation Modal */}
-          {deleteModalOpen && userToDelete && (
+        {deleteModalOpen && userToDelete && (
             <div className="modal-overlay">
               <div className="modal-container">
                 <div className="modal-header">
@@ -552,10 +553,10 @@ const AdminPanel = () => {
                 </div>
               </div>
             </div>
-          )}
+        )}
 
-          {/* User Status Toggle Modal */}
-          {statusModalOpen && userToToggle && (
+        {/* User Status Toggle Modal */}
+        {statusModalOpen && userToToggle && (
             <div className="modal-overlay">
               <div className="modal-container">
                 <div className="modal-header">
@@ -590,9 +591,9 @@ const AdminPanel = () => {
                 </div>
               </div>
             </div>
-          )}
-        </div>
+        )}
       </div>
+    </main>
   );
 };
 
