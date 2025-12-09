@@ -8,7 +8,9 @@ import { addUsers, getAllUsers, deleteUser, toggleUserStatus } from '../controll
 import { predictTransaction, getTransactions, getTransactionById, updateTransactionStatus, getFraudTrends as getTransactionFraudTrends, getHighRiskTransactions, migrateTransactions, getFlaggedTransactions } from '../controllers/transactionController.js';
 import authMiddleware from '../middleware/auth.js';
 import adminMiddleware from '../middleware/admin.js';
-import { getAllModels, getModelById } from '../controllers/mlModelController.js';
+import developerAndAdminMiddleware from '../middleware/developerAndAdmin.js';
+import storeManagerAndAdminMiddleware from '../middleware/storeManagerAndAdmin.js';
+import { getAllModels, getModelById, getModelsWithWeights } from '../controllers/mlModelController.js';
 import { getApiKey, generateApiKey, regenerateApiKey, validateApiKey } from '../controllers/apiKeyController.js';
 import { logApiCall, getApiLogs, getApiUsageStats, getApiLogById } from '../controllers/apiLogController.js';
 import { getDashboardStats } from '../controllers/dashboardController.js';
@@ -37,55 +39,73 @@ router.get('/users', authMiddleware, adminMiddleware, getAllUsers);
 router.delete('/admin/users/:userId', authMiddleware, adminMiddleware, deleteUser);
 router.post('/admin/users/:userId/toggle-status', authMiddleware, adminMiddleware, toggleUserStatus);
 
-// ML Model routes
-router.get('/models', authMiddleware,getAllModels);
-router.get('/model/:id', authMiddleware,getModelById);
+// ML Model routes (Developer and Admin only)
+router.get('/models', authMiddleware, developerAndAdminMiddleware, getAllModels);
+router.get('/models-with-weights', authMiddleware, developerAndAdminMiddleware, getModelsWithWeights); // Models with actual weight files
+router.get('/model/:id', authMiddleware, developerAndAdminMiddleware, getModelById);
 
-// API Key routes
-router.get('/api-key', authMiddleware, getApiKey);
-router.post('/api-key/generate', authMiddleware, generateApiKey);
-router.post('/api-key/regenerate', authMiddleware, regenerateApiKey);
+// API Key routes (Developer and Admin only)
+router.get('/api-key', authMiddleware, developerAndAdminMiddleware, getApiKey);
+router.post('/api-key/generate', authMiddleware, developerAndAdminMiddleware, generateApiKey);
+router.post('/api-key/regenerate', authMiddleware, developerAndAdminMiddleware, regenerateApiKey);
 
-// API Logs routes
-router.get('/api-logs', authMiddleware, getApiLogs);
-router.get('/api-logs/:id', authMiddleware, getApiLogById);
-router.get('/api-usage-stats', authMiddleware, getApiUsageStats);
+// API Logs routes (Developer and Admin only)
+router.get('/api-logs', authMiddleware, developerAndAdminMiddleware, getApiLogs);
+router.get('/api-logs/:id', authMiddleware, developerAndAdminMiddleware, getApiLogById);
+router.get('/api-usage-stats', authMiddleware, developerAndAdminMiddleware, getApiUsageStats);
 
-// Dashboard routes
-router.get('/dashboard-stats', authMiddleware, getDashboardStats);
+// Dashboard routes (Admin and Developer only)
+// Used by: AdminDashboard (Admin) and Developer page (Developer)
+router.get('/dashboard-stats', authMiddleware, developerAndAdminMiddleware, getDashboardStats);
 
-// Store Manager routes
-router.get('/store-manager/stats', authMiddleware, getStoreManagerStats);
-router.get('/store-manager/fraud-trends', authMiddleware, getFraudTrends);
-router.get('/store-manager/transaction-types', authMiddleware, getTransactionTypeDistribution);
-router.get('/store-manager/alerts', authMiddleware, getRecentAlerts);
+// Store Manager routes (StoreManager and Admin only)
+router.get('/store-manager/stats', authMiddleware, storeManagerAndAdminMiddleware, getStoreManagerStats);
+router.get('/store-manager/fraud-trends', authMiddleware, storeManagerAndAdminMiddleware, getFraudTrends);
+router.get('/store-manager/transaction-types', authMiddleware, storeManagerAndAdminMiddleware, getTransactionTypeDistribution);
+router.get('/store-manager/alerts', authMiddleware, storeManagerAndAdminMiddleware, getRecentAlerts);
 
 // Transaction routes
+// POST /predict - Public API endpoint (validated by API key)
 router.post('/predict', validateApiKey, logApiCall, predictTransaction);
-router.get('/transactions', getTransactions);
+// GET /transactions - Used by Developer and Admin (TransactionMonitoring, Developer pages)
+router.get('/transactions', authMiddleware, developerAndAdminMiddleware, getTransactions);
+// GET /transactions/flagged - Used by Admin, Developer, and StoreManager
+// StoreManager sees only their store's transactions (filtered by storeRef/storeID in query params)
+// Developer and Admin see all transactions (when no store filter is provided)
 router.get('/transactions/flagged', authMiddleware, getFlaggedTransactions);
-router.get('/transaction/:id', getTransactionById);
+// GET /transaction/:id - Used by Developer and Admin (TransactionMonitoring)
+router.get('/transaction/:id', authMiddleware, developerAndAdminMiddleware, getTransactionById);
+// POST /transaction/:id/status - Used by StoreManager (their transactions) and Developer/Admin (all transactions)
+// All authenticated users can update transaction status, controller should filter by role
 router.post('/transaction/:id/status', authMiddleware, updateTransactionStatus);
-router.get('/transaction-monitoring/fraud-trends', authMiddleware, getTransactionFraudTrends);
-router.get('/transaction-monitoring/high-risk', authMiddleware, getHighRiskTransactions);
+// Transaction Monitoring routes (Developer and Admin only)
+router.get('/transaction-monitoring/fraud-trends', authMiddleware, developerAndAdminMiddleware, getTransactionFraudTrends);
+router.get('/transaction-monitoring/high-risk', authMiddleware, developerAndAdminMiddleware, getHighRiskTransactions);
 
-// Migration endpoint - only for development/admin use
-router.post('/migrate-transactions', migrateTransactions);
+// Migration endpoint - Admin and Developer only (for development/admin use)
+router.post('/migrate-transactions', authMiddleware, developerAndAdminMiddleware, migrateTransactions);
 
 
 // Report routes
 router.post('/send-report', authMiddleware, sendReportEmail);
 
-// Sample data generation route - only for development
-router.post('/generate-sample-transactions', generateSampleTransactions);
+// Sample data generation route - Developer and Admin only (for development)
+router.post('/generate-sample-transactions', authMiddleware, developerAndAdminMiddleware, generateSampleTransactions);
 
 // Store routes
-router.get('/stores', authMiddleware, getAllStores);
-router.get('/stores/fraud-stats', authMiddleware, getStoresWithFraudStats);
-router.get('/stores/nearby', authMiddleware, getStoresNearby);
-router.get('/stores/manager/:managerId', authMiddleware, getStoresByManager);
-router.get('/stores/store-id/:storeId', authMiddleware, getStoreByStoreId);
-router.get('/stores/:id', authMiddleware, getStoreById);
+// GET /stores - Used by Admin (AdminPanel, AdminDashboard) and Developer (TransactionMonitoring, APIIntegration)
+router.get('/stores', authMiddleware, developerAndAdminMiddleware, getAllStores);
+// GET /stores/fraud-stats - Admin only (used in AdminDashboard)
+router.get('/stores/fraud-stats', authMiddleware, adminMiddleware, getStoresWithFraudStats);
+// GET /stores/nearby - Admin and Developer (for finding nearby stores)
+router.get('/stores/nearby', authMiddleware, developerAndAdminMiddleware, getStoresNearby);
+// GET /stores/manager/:managerId - StoreManager (their own stores) and Admin (all stores)
+router.get('/stores/manager/:managerId', authMiddleware, storeManagerAndAdminMiddleware, getStoresByManager);
+// GET /stores/store-id/:storeId - StoreManager (their own store) and Admin (all stores)
+router.get('/stores/store-id/:storeId', authMiddleware, storeManagerAndAdminMiddleware, getStoreByStoreId);
+// GET /stores/:id - StoreManager (their own store) and Admin (all stores)
+router.get('/stores/:id', authMiddleware, storeManagerAndAdminMiddleware, getStoreById);
+// POST/PUT/DELETE - Admin only (store management)
 router.post('/stores', authMiddleware, adminMiddleware, createStore);
 router.put('/stores/:id', authMiddleware, adminMiddleware, updateStore);
 router.delete('/stores/:id', authMiddleware, adminMiddleware, deleteStore);
@@ -94,10 +114,10 @@ router.delete('/stores/:id', authMiddleware, adminMiddleware, deleteStore);
 router.post('/seed-stores', authMiddleware, adminMiddleware, seedStores);
 router.delete('/clear-stores', authMiddleware, adminMiddleware, clearStores);
 
-// Dataset routes
-router.post('/datasets/upload', authMiddleware, uploadDataset);
-router.get('/datasets', authMiddleware, getAllDatasets);
-router.get('/datasets/version/:version', authMiddleware, getDatasetByVersion);
+// Dataset routes (Developer and Admin only)
+router.post('/datasets/upload', authMiddleware, developerAndAdminMiddleware, uploadDataset);
+router.get('/datasets', authMiddleware, developerAndAdminMiddleware, getAllDatasets);
+router.get('/datasets/version/:version', authMiddleware, developerAndAdminMiddleware, getDatasetByVersion);
 router.get('/datasets/latest', getLatestDataset); // Public endpoint for VT rack
 
 // Chatbot routes

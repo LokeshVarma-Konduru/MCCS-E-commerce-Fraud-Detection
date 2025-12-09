@@ -11,7 +11,7 @@ import RealtimeAlertsPanel from "../components/RealtimeAlertsPanel.jsx";
 import AdminReport from "../components/AdminReport.jsx";
 import FlaggedTransactionsPanel from "../components/FlaggedTransactionsPanel.jsx";
 import { FaFileAlt, FaEnvelope } from "react-icons/fa";
-import { getStores, sendReportEmail } from "../api.js";
+import { getStores, sendReportEmail, getRecentAlerts, updateTransactionStatus } from "../api.js";
 import "../styles/AdminDashboard.css";
 
 const riskLevelLabels = {
@@ -171,6 +171,16 @@ const AdminDashboard = () => {
   const [emailSent, setEmailSent] = useState(false);
   const [emailError, setEmailError] = useState(null);
 
+  // Recent Alerts state
+  const [recentAlerts, setRecentAlerts] = useState([]);
+  const [alertsLoading, setAlertsLoading] = useState(true);
+
+  // Flag transaction modal state
+  const [showFlagModal, setShowFlagModal] = useState(false);
+  const [flaggingTransaction, setFlaggingTransaction] = useState(null);
+  const [flagNotes, setFlagNotes] = useState('');
+  const [flagError, setFlagError] = useState(null);
+
   const emitFilterChange = useCallback((_payload) => {
     // TODO: Wire filter analytics / backend query trigger.
   }, []);
@@ -243,6 +253,26 @@ const AdminDashboard = () => {
     };
 
     fetchStores();
+  }, []);
+
+  // Fetch recent alerts
+  useEffect(() => {
+    const fetchRecentAlerts = async () => {
+      try {
+        setAlertsLoading(true);
+        const response = await getRecentAlerts(5, 'All Transactions', {});
+
+        if (response.data && response.data.success) {
+          setRecentAlerts(response.data.data);
+        }
+        setAlertsLoading(false);
+      } catch (err) {
+        console.error('Error fetching recent alerts:', err);
+        setAlertsLoading(false);
+      }
+    };
+
+    fetchRecentAlerts();
   }, []);
 
   const baseTransactions = useMemo(
@@ -735,6 +765,63 @@ const AdminDashboard = () => {
     }
   };
 
+  // Handle flagging a transaction
+  const handleFlagTransaction = (alert) => {
+    const transactionId = alert.fullTransactionId || alert.transactionId.replace('#TRX-', '');
+
+    setFlaggingTransaction({
+      id: transactionId,
+      displayId: alert.transactionId,
+      amount: alert.amount,
+      type: alert.type
+    });
+    setShowFlagModal(true);
+    setFlagNotes('');
+    setFlagError(null);
+  };
+
+  // Submit flag transaction
+  const handleSubmitFlag = async () => {
+    if (!flaggingTransaction) return;
+
+    try {
+      setFlagError(null);
+
+      const response = await updateTransactionStatus(
+        flaggingTransaction.id,
+        'rejected',
+        flagNotes || 'Manually flagged as fraudulent by admin'
+      );
+
+      if (response.data.success) {
+        setShowFlagModal(false);
+        setFlaggingTransaction(null);
+        setFlagNotes('');
+
+        // Refresh recent alerts
+        const alertsResponse = await getRecentAlerts(5, 'All Transactions', {});
+        if (alertsResponse.data && alertsResponse.data.success) {
+          setRecentAlerts(alertsResponse.data.data);
+        }
+
+        alert('Transaction successfully flagged as fraudulent');
+      } else {
+        throw new Error(response.data.error || 'Failed to flag transaction');
+      }
+    } catch (error) {
+      console.error('Error flagging transaction:', error);
+      setFlagError(error.message || 'Failed to flag transaction. Please try again.');
+    }
+  };
+
+  // Close flag modal
+  const handleCloseFlagModal = () => {
+    setShowFlagModal(false);
+    setFlaggingTransaction(null);
+    setFlagNotes('');
+    setFlagError(null);
+  };
+
   if (authLoading) {
     return (
       <div className="admin-dashboard__loading" role="status">
@@ -771,48 +858,16 @@ const AdminDashboard = () => {
             }}
           >
             <button
-              className="generate-report-button"
+              className="px-4 py-2 text-sm font-medium bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors flex items-center gap-2"
               onClick={handleGenerateReport}
-              style={{
-                padding: "10px 20px",
-                backgroundColor: "#3b82f6",
-                color: "white",
-                border: "none",
-                borderRadius: "6px",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                fontSize: "14px",
-                fontWeight: "500",
-                transition: "background-color 0.2s"
-              }}
-              onMouseEnter={(e) => e.target.style.backgroundColor = "#2563eb"}
-              onMouseLeave={(e) => e.target.style.backgroundColor = "#3b82f6"}
             >
               <FaFileAlt />
               {showReport ? "Hide Report" : "Generate Report"}
             </button>
             {showReport && (
               <button
-                className="send-report-button"
+                className="px-4 py-2 text-sm font-medium bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors flex items-center gap-2"
                 onClick={toggleEmailModal}
-                style={{
-                  padding: "10px 20px",
-                  backgroundColor: "#10b981",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  transition: "background-color 0.2s"
-                }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = "#059669"}
-                onMouseLeave={(e) => e.target.style.backgroundColor = "#10b981"}
               >
                 <FaEnvelope />
                 Send Report
@@ -829,7 +884,7 @@ const AdminDashboard = () => {
         metrics={mapMetrics}
         onSelectState={handleSelectState}
         headline="Fraud intensity across the United States"
-        description="Placeholder fraud-rate gradient by state. TODO: hook into regional analytics feed."
+        description="Real-time fraud rate visualization by state. Click on any state to view detailed regional analytics."
       />
 
       <div className="admin-dashboard__controls">
@@ -856,6 +911,79 @@ const AdminDashboard = () => {
         scopeLabel="All stores"
         className="admin-dashboard__alerts-panel"
       />
+
+      {/* Recent Alerts Table */}
+      <div style={{ background: "white", borderRadius: "12px", boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)", padding: "24px", marginTop: "24px" }}>
+        <h3 style={{ fontSize: "18px", fontWeight: "700", color: "#111827", marginBottom: "16px" }}>Recent Alerts</h3>
+        {alertsLoading ? (
+          <div style={{ textAlign: "center", padding: "32px", color: "#6b7280" }}>Loading alerts...</div>
+        ) : recentAlerts.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "32px", color: "#6b7280" }}>No recent alerts found</div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ borderBottom: "2px solid #e5e7eb" }}>
+                  <th style={{ padding: "12px", textAlign: "left", fontSize: "12px", fontWeight: "600", color: "#6b7280", textTransform: "uppercase" }}>Time</th>
+                  <th style={{ padding: "12px", textAlign: "left", fontSize: "12px", fontWeight: "600", color: "#6b7280", textTransform: "uppercase" }}>Transaction ID</th>
+                  <th style={{ padding: "12px", textAlign: "left", fontSize: "12px", fontWeight: "600", color: "#6b7280", textTransform: "uppercase" }}>Type</th>
+                  <th style={{ padding: "12px", textAlign: "left", fontSize: "12px", fontWeight: "600", color: "#6b7280", textTransform: "uppercase" }}>Amount</th>
+                  <th style={{ padding: "12px", textAlign: "left", fontSize: "12px", fontWeight: "600", color: "#6b7280", textTransform: "uppercase" }}>Risk Score</th>
+                  <th style={{ padding: "12px", textAlign: "left", fontSize: "12px", fontWeight: "600", color: "#6b7280", textTransform: "uppercase" }}>Status</th>
+                  <th style={{ padding: "12px", textAlign: "left", fontSize: "12px", fontWeight: "600", color: "#6b7280", textTransform: "uppercase" }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentAlerts.map((alert, index) => (
+                  <tr key={index} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                    <td style={{ padding: "12px", fontSize: "14px", color: "#374151" }}>{alert.time}</td>
+                    <td style={{ padding: "12px", fontSize: "14px", color: "#374151", fontWeight: "500" }}>{alert.transactionId}</td>
+                    <td style={{ padding: "12px", fontSize: "14px", color: "#374151" }}>{alert.type}</td>
+                    <td style={{ padding: "12px", fontSize: "14px", color: "#374151" }}>{alert.amount}</td>
+                    <td style={{ padding: "12px" }}>
+                      <span style={{
+                        padding: "4px 8px",
+                        borderRadius: "4px",
+                        fontSize: "12px",
+                        fontWeight: "500",
+                        backgroundColor: alert.riskScore.toLowerCase() === 'high' ? '#fee2e2' : alert.riskScore.toLowerCase() === 'medium' ? '#fef3c7' : '#d1fae5',
+                        color: alert.riskScore.toLowerCase() === 'high' ? '#991b1b' : alert.riskScore.toLowerCase() === 'medium' ? '#92400e' : '#065f46'
+                      }}>
+                        {alert.riskScore}
+                      </span>
+                    </td>
+                    <td style={{ padding: "12px", fontSize: "14px", color: "#374151" }}>{alert.status}</td>
+                    <td style={{ padding: "12px" }}>
+                      {alert.status !== 'Flagged' && alert.status !== 'Under Review' ? (
+                        <button
+                          onClick={() => handleFlagTransaction(alert)}
+                          style={{
+                            padding: "6px 12px",
+                            backgroundColor: "#ef4444",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                            fontSize: "12px",
+                            fontWeight: "500",
+                            transition: "background-color 0.2s"
+                          }}
+                          onMouseEnter={(e) => e.target.style.backgroundColor = "#dc2626"}
+                          onMouseLeave={(e) => e.target.style.backgroundColor = "#ef4444"}
+                        >
+                          Flag as Fraud
+                        </button>
+                      ) : (
+                        <span style={{ color: "#6b7280", fontSize: "12px" }}>Already flagged</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       <div style={{ marginTop: "24px" }}>
         <FlaggedTransactionsPanel showStoreFilter />
@@ -1011,20 +1139,9 @@ const AdminDashboard = () => {
                   )}
 
                   <button
-                    className="send-button"
+                    className="w-full px-4 py-2 text-sm font-medium bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                     onClick={handleSendReportEmail}
                     disabled={sendingEmail}
-                    style={{
-                      padding: "10px 20px",
-                      backgroundColor: "#10b981",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                      width: "100%"
-                    }}
                   >
                     {sendingEmail ? "Sending..." : "Send Report"}
                   </button>
@@ -1041,6 +1158,107 @@ const AdminDashboard = () => {
                   Report sent successfully!
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Flag Transaction Modal */}
+      {showFlagModal && flaggingTransaction && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000
+          }}
+        >
+          <div
+            style={{
+              background: "white",
+              borderRadius: "12px",
+              padding: "24px",
+              minWidth: "400px",
+              maxWidth: "500px"
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "20px"
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "700" }}>Flag Transaction as Fraudulent</h3>
+              <button
+                onClick={handleCloseFlagModal}
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontSize: "24px",
+                  cursor: "pointer",
+                  color: "#6b7280",
+                  padding: 0
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            <div>
+              <div style={{ marginBottom: "16px" }}>
+                <p style={{ margin: "8px 0" }}><strong>Transaction:</strong> {flaggingTransaction.displayId}</p>
+                <p style={{ margin: "8px 0" }}><strong>Amount:</strong> {flaggingTransaction.amount}</p>
+                <p style={{ margin: "8px 0" }}><strong>Type:</strong> {flaggingTransaction.type}</p>
+              </div>
+
+              <div style={{ marginBottom: "16px" }}>
+                <label style={{ display: "block", marginBottom: "8px", fontWeight: "500" }}>
+                  Notes (Optional):
+                </label>
+                <textarea
+                  value={flagNotes}
+                  onChange={(e) => setFlagNotes(e.target.value)}
+                  placeholder="Enter reason for flagging this transaction..."
+                  rows="4"
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "6px",
+                    fontSize: "14px",
+                    resize: "vertical",
+                    fontFamily: "inherit"
+                  }}
+                />
+              </div>
+
+              {flagError && (
+                <p style={{ color: "#ef4444", marginBottom: "16px", fontSize: "14px" }}>
+                  {flagError}
+                </p>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleSubmitFlag}
+                  className="flex-1 px-4 py-2 text-sm font-medium bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+                >
+                  Flag as Fraudulent
+                </button>
+                <button
+                  onClick={handleCloseFlagModal}
+                  className="flex-1 px-4 py-2 text-sm font-medium bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>

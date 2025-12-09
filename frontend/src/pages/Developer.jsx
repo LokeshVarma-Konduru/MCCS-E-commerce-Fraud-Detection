@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaChartPie, FaEnvelope } from 'react-icons/fa';
-import DeveloperNav from '../components/DeveloperNav';
 import { Line } from 'react-chartjs-2';
 import Report from '../components/Report';
-import PageHeader from '../components/PageHeader';
+import APIIntegration from './APIIntegration';
+import ModelPerformance from './ModelPerformance';
+import TransactionMonitoring from './TransactionMonitoring';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
-import { getTransactions, getDashboardStats, getApiUsageStats, sendReportEmail } from '../api';
+import { getTransactions, getDashboardStats, getApiUsageStats, sendReportEmail, getRecentAlerts, updateTransactionStatus } from '../api';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useSocket } from '../context/SocketContext.jsx';
 import RealtimeAlertsPanel from '../components/RealtimeAlertsPanel.jsx';
@@ -25,6 +26,7 @@ ChartJS.register(
 );
 
 const Developer = () => {
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [timeScale, setTimeScale] = useState('24H');
   const [exportDateRange, setExportDateRange] = useState('last7days');
   const [exportFormat, setExportFormat] = useState('csv');
@@ -44,6 +46,16 @@ const Developer = () => {
   const [emailSent, setEmailSent] = useState(false);
   const [emailError, setEmailError] = useState(null);
   const reportRef = useRef(null);
+
+  // Recent Alerts state
+  const [recentAlerts, setRecentAlerts] = useState([]);
+  const [alertsLoading, setAlertsLoading] = useState(true);
+
+  // Flag transaction modal state
+  const [showFlagModal, setShowFlagModal] = useState(false);
+  const [flaggingTransaction, setFlaggingTransaction] = useState(null);
+  const [flagNotes, setFlagNotes] = useState('');
+  const [flagError, setFlagError] = useState(null);
 
   const [transactions, setTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -298,14 +310,34 @@ const Developer = () => {
     fetchApiUsageStats();
   }, [timeScale]);
 
+  // Fetch recent alerts
+  useEffect(() => {
+    const fetchRecentAlerts = async () => {
+      try {
+        setAlertsLoading(true);
+        const response = await getRecentAlerts(5, 'All Transactions', {});
+
+        if (response.data && response.data.success) {
+          setRecentAlerts(response.data.data);
+        }
+        setAlertsLoading(false);
+      } catch (err) {
+        console.error('Error fetching recent alerts:', err);
+        setAlertsLoading(false);
+      }
+    };
+
+    fetchRecentAlerts();
+  }, []);
+
   const chartData = {
     labels: performanceData[timeScale].labels,
     datasets: [
       {
         label: 'Response Time (ms)',
         data: performanceData[timeScale].data,
-        borderColor: '#3498db',
-        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
         tension: 0.4,
         fill: true,
         borderWidth: 2
@@ -639,161 +671,361 @@ const Developer = () => {
     setEmailSent(false);
   };
 
+  // Handle flagging a transaction
+  const handleFlagTransaction = (alert) => {
+    const transactionId = alert.fullTransactionId || alert.transactionId.replace('#TRX-', '');
+
+    setFlaggingTransaction({
+      id: transactionId,
+      displayId: alert.transactionId,
+      amount: alert.amount,
+      type: alert.type
+    });
+    setShowFlagModal(true);
+    setFlagNotes('');
+    setFlagError(null);
+  };
+
+  // Submit flag transaction
+  const handleSubmitFlag = async () => {
+    if (!flaggingTransaction) return;
+
+    try {
+      setFlagError(null);
+
+      const response = await updateTransactionStatus(
+        flaggingTransaction.id,
+        'rejected',
+        flagNotes || 'Manually flagged as fraudulent by developer'
+      );
+
+      if (response.data.success) {
+        setShowFlagModal(false);
+        setFlaggingTransaction(null);
+        setFlagNotes('');
+
+        // Refresh recent alerts
+        const alertsResponse = await getRecentAlerts(5, 'All Transactions', {});
+        if (alertsResponse.data && alertsResponse.data.success) {
+          setRecentAlerts(alertsResponse.data.data);
+        }
+
+        alert('Transaction successfully flagged as fraudulent');
+      } else {
+        throw new Error(response.data.error || 'Failed to flag transaction');
+      }
+    } catch (error) {
+      console.error('Error flagging transaction:', error);
+      setFlagError(error.message || 'Failed to flag transaction. Please try again.');
+    }
+  };
+
+  // Close flag modal
+  const handleCloseFlagModal = () => {
+    setShowFlagModal(false);
+    setFlaggingTransaction(null);
+    setFlagNotes('');
+    setFlagError(null);
+  };
+
   return (
-    <div className="developer-container">
-      <DeveloperNav activePath="/developer" />
+    <div className="w-full px-6 sm:px-8 lg:px-12 py-4" style={{ marginTop: '80px', position: 'relative', zIndex: 1 }}>
+      {/* Navigation Tabs */}
+      <div 
+        className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide"
+        style={{ 
+          display: 'flex', 
+          gap: '12px', 
+          marginBottom: '24px', 
+          overflowX: 'auto',
+          borderBottom: '1px solid #e2e8f0',
+          paddingBottom: '0'
+        }}
+      >
+        <button 
+          className={`px-4 py-2 whitespace-nowrap transition-all flex-shrink-0`}
+          style={{
+            padding: '12px 20px',
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
+            fontSize: '15px',
+            fontWeight: activeTab === 'dashboard' ? '600' : '500',
+            color: activeTab === 'dashboard' ? '#3b82f6' : '#64748b',
+            borderBottom: activeTab === 'dashboard' ? '2px solid #3b82f6' : '2px solid transparent',
+            transition: 'all 0.2s ease',
+            outline: 'none'
+          }}
+          onClick={() => setActiveTab('dashboard')}
+          onMouseEnter={(e) => {
+            if (activeTab !== 'dashboard') {
+              e.target.style.color = '#1e293b';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (activeTab !== 'dashboard') {
+              e.target.style.color = '#64748b';
+            }
+          }}
+        >
+          Dashboard
+        </button>
+        <button 
+          className={`px-4 py-2 whitespace-nowrap transition-all flex-shrink-0`}
+          style={{
+            padding: '12px 20px',
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
+            fontSize: '15px',
+            fontWeight: activeTab === 'api' ? '600' : '500',
+            color: activeTab === 'api' ? '#3b82f6' : '#64748b',
+            borderBottom: activeTab === 'api' ? '2px solid #3b82f6' : '2px solid transparent',
+            transition: 'all 0.2s ease',
+            outline: 'none'
+          }}
+          onClick={() => setActiveTab('api')}
+          onMouseEnter={(e) => {
+            if (activeTab !== 'api') {
+              e.target.style.color = '#1e293b';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (activeTab !== 'api') {
+              e.target.style.color = '#64748b';
+            }
+          }}
+        >
+          API Integration
+        </button>
+        <button 
+          className={`px-4 py-2 whitespace-nowrap transition-all flex-shrink-0`}
+          style={{
+            padding: '12px 20px',
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
+            fontSize: '15px',
+            fontWeight: activeTab === 'models' ? '600' : '500',
+            color: activeTab === 'models' ? '#3b82f6' : '#64748b',
+            borderBottom: activeTab === 'models' ? '2px solid #3b82f6' : '2px solid transparent',
+            transition: 'all 0.2s ease',
+            outline: 'none'
+          }}
+          onClick={() => setActiveTab('models')}
+          onMouseEnter={(e) => {
+            if (activeTab !== 'models') {
+              e.target.style.color = '#1e293b';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (activeTab !== 'models') {
+              e.target.style.color = '#64748b';
+            }
+          }}
+        >
+          Model Performance
+        </button>
+        <button 
+          className={`px-4 py-2 whitespace-nowrap transition-all flex-shrink-0`}
+          style={{
+            padding: '12px 20px',
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
+            fontSize: '15px',
+            fontWeight: activeTab === 'transactions' ? '600' : '500',
+            color: activeTab === 'transactions' ? '#3b82f6' : '#64748b',
+            borderBottom: activeTab === 'transactions' ? '2px solid #3b82f6' : '2px solid transparent',
+            transition: 'all 0.2s ease',
+            outline: 'none'
+          }}
+          onClick={() => setActiveTab('transactions')}
+          onMouseEnter={(e) => {
+            if (activeTab !== 'transactions') {
+              e.target.style.color = '#1e293b';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (activeTab !== 'transactions') {
+              e.target.style.color = '#64748b';
+            }
+          }}
+        >
+          Transaction Monitoring
+        </button>
+      </div>
 
-      <div className="main-content">
-        <PageHeader title="Developer Dashboard" />
-        {/* Stats Cards */}
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-header">
-              <h3>Total Transactions</h3>
-              {statsLoading && <div className="stat-loading-indicator"></div>}
-            </div>
-            {statsError ? (
-              <div className="stat-error">Error loading data</div>
-            ) : (
-              <>
-                <div className="stat-value">
-                  {stats.totalTransactions.value.toLocaleString()}
-                </div>
-                <div className={`stat-change ${stats.totalTransactions.change.includes('+') ? 'positive' : 'negative'}`}>
-                  {stats.totalTransactions.change}
-                </div>
-              </>
-            )}
+      {/* Tab Content */}
+      {activeTab === 'dashboard' ? (
+        <>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-sm font-semibold text-gray-600 uppercase">Total Transactions</h3>
+            {statsLoading && <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>}
           </div>
-          <div className="stat-card">
-            <div className="stat-header">
-              <h3>Fraud Detection Rate</h3>
-              {statsLoading && <div className="stat-loading-indicator"></div>}
-            </div>
-            {statsError ? (
-              <div className="stat-error">Error loading data</div>
-            ) : (
-              <>
-                <div className="stat-value">
-                  {stats.fraudDetectionRate.value}
-                </div>
-                <div className={`stat-change ${stats.fraudDetectionRate.change.includes('+') ? 'positive' : 'negative'}`}>
-                  {stats.fraudDetectionRate.change}
-                </div>
-              </>
-            )}
+          {statsError ? (
+            <div className="text-red-500 text-sm">Error loading data</div>
+          ) : (
+            <>
+              <div className="text-3xl font-bold text-gray-900 mb-2">
+                {stats.totalTransactions.value.toLocaleString()}
+              </div>
+              <div className={`text-sm font-medium ${stats.totalTransactions.change.includes('+') ? 'text-green-600' : 'text-red-600'}`}>
+                {stats.totalTransactions.change}
+              </div>
+            </>
+          )}
+        </div>
+        <div className="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-sm font-semibold text-gray-600 uppercase">Fraud Detection Rate</h3>
+            {statsLoading && <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>}
           </div>
-          <div className="stat-card">
-            <div className="stat-header">
-              <h3>API Response Time</h3>
-              {statsLoading && <div className="stat-loading-indicator"></div>}
-            </div>
-            {statsError ? (
-              <div className="stat-error">Error loading data</div>
-            ) : (
-              <>
-                <div className="stat-value">
-                  {stats.apiResponseTime.value}
-                </div>
-                <div className={`stat-change ${stats.apiResponseTime.change.includes('-') ? 'positive' : 'negative'}`}>
-                  {stats.apiResponseTime.change}
-                </div>
-              </>
-            )}
+          {statsError ? (
+            <div className="text-red-500 text-sm">Error loading data</div>
+          ) : (
+            <>
+              <div className="text-3xl font-bold text-gray-900 mb-2">
+                {stats.fraudDetectionRate.value}
+              </div>
+              <div className={`text-sm font-medium ${stats.fraudDetectionRate.change.includes('+') ? 'text-green-600' : 'text-red-600'}`}>
+                {stats.fraudDetectionRate.change}
+              </div>
+            </>
+          )}
+        </div>
+        <div className="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-sm font-semibold text-gray-600 uppercase">API Response Time</h3>
+            {statsLoading && <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>}
+          </div>
+          {statsError ? (
+            <div className="text-red-500 text-sm">Error loading data</div>
+          ) : (
+            <>
+              <div className="text-3xl font-bold text-gray-900 mb-2">
+                {stats.apiResponseTime.value}
+              </div>
+              <div className={`text-sm font-medium ${stats.apiResponseTime.change.includes('-') ? 'text-green-600' : 'text-red-600'}`}>
+                {stats.apiResponseTime.change}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Chart Section */}
+      <div className="bg-white rounded-lg p-6 shadow-md mb-6">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-lg font-bold text-gray-900">API Performance</h3>
+          <div className="flex gap-2">
+            <button
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                timeScale === '1H' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+              onClick={() => setTimeScale('1H')}
+            >
+              1H
+            </button>
+            <button
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                timeScale === '24H' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+              onClick={() => setTimeScale('24H')}
+            >
+              24H
+            </button>
+            <button
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                timeScale === '7D' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+              onClick={() => setTimeScale('7D')}
+            >
+              7D
+            </button>
           </div>
         </div>
-
-        {/* Chart Section */}
-        <div className="chart-section">
-          <div className="chart-header">
-            <h3>API Performance</h3>
-            <div className="time-scale-buttons">
-              <button
-                className={timeScale === '1H' ? 'active' : ''}
-                onClick={() => setTimeScale('1H')}
-              >
-                1H
-              </button>
-              <button
-                className={timeScale === '24H' ? 'active' : ''}
-                onClick={() => setTimeScale('24H')}
-              >
-                24H
-              </button>
-              <button
-                className={timeScale === '7D' ? 'active' : ''}
-                onClick={() => setTimeScale('7D')}
-              >
-                7D
-              </button>
-            </div>
-          </div>
-          <div className="chart-container">
-            {chartLoading ? (
-              <div className="loading-indicator">Loading chart...</div>
-            ) : chartError ? (
-              <div className="error-message">Error: {chartError}</div>
-            ) : (
-              <Line data={chartData} options={chartOptions} />
-            )}
-          </div>
+        <div className="h-80">
+          {chartLoading ? (
+            <div className="flex items-center justify-center h-full text-gray-500">Loading chart...</div>
+          ) : chartError ? (
+            <div className="flex items-center justify-center h-full text-red-500">Error: {chartError}</div>
+          ) : (
+            <Line data={chartData} options={chartOptions} />
+          )}
         </div>
+      </div>
 
-        {/* Recent Transactions */}
-        <div className="transactions-section">
-          <div className="section-header">
-            <h3>Recent Transactions</h3>
-            
-            {/* Filter controls */}
-            <div className="transaction-filters">
-              <div className="filter-group">
-                <select 
-                  value={filters.status}
-                  onChange={(e) => setFilters({...filters, status: e.target.value})}
-                  className="filter-select"
-                >
+      {/* Recent Transactions */}
+      <div className="bg-white rounded-lg p-6 shadow-md mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          <h3 className="text-lg font-bold text-gray-900">Recent Transactions</h3>
+          
+          {/* Filter controls */}
+          <div className="flex flex-wrap gap-3">
+            <select 
+              value={filters.status}
+              onChange={(e) => setFilters({...filters, status: e.target.value})}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
                   {statusOptions.map(option => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
                   ))}
-                </select>
-                
-                <select 
-                  value={filters.productCategory}
-                  onChange={(e) => setFilters({...filters, productCategory: e.target.value})}
-                  className="filter-select"
-                >
+            </select>
+            
+            <select 
+              value={filters.productCategory}
+              onChange={(e) => setFilters({...filters, productCategory: e.target.value})}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
                   {productCategoryOptions.map(option => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
                   ))}
-                </select>
-                
-                <select 
-                  value={filters.paymentMethod}
-                  onChange={(e) => setFilters({...filters, paymentMethod: e.target.value})}
-                  className="filter-select"
-                >
+            </select>
+            
+            <select 
+              value={filters.paymentMethod}
+              onChange={(e) => setFilters({...filters, paymentMethod: e.target.value})}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
                   {paymentMethodOptions.map(option => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
                   ))}
-                </select>
-              </div>
-            </div>
+            </select>
           </div>
-          
-          <div className="transactions-list">
-            {isLoading ? (
-              <div className="loading-indicator">Loading transactions...</div>
-            ) : error ? (
-              <div className="error-message">Error: {error}</div>
-            ) : transactions.length === 0 ? (
-              <div className="no-data-message">No transactions found</div>
-            ) : (
+        </div>
+        
+        <div className="space-y-4">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8 text-gray-500">Loading transactions...</div>
+          ) : error ? (
+            <div className="flex items-center justify-center py-8 text-red-500">Error: {error}</div>
+          ) : transactions.length === 0 ? (
+            <div className="flex items-center justify-center py-8 text-gray-500">No transactions found</div>
+          ) : (
               <>
                 {transactions.map((transaction, index) => (
                   <div key={transaction.id || index} className="transaction-item">
@@ -834,7 +1066,82 @@ const Developer = () => {
                 </div>
               </>
             )}
-          </div>
+        </div>
+      </div>
+
+          {/* Remaining sections wrapper */}
+          <div>
+        {/* Recent Alerts Table */}
+        <div className="bg-white rounded-lg p-6 shadow-md" style={{ marginTop: "24px" }}>
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Recent Alerts</h3>
+          {alertsLoading ? (
+              <div style={{ textAlign: "center", padding: "32px", color: "#6b7280" }}>Loading alerts...</div>
+            ) : recentAlerts.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "32px", color: "#6b7280" }}>No recent alerts found</div>
+            ) : (
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "2px solid #e5e7eb" }}>
+                      <th style={{ padding: "12px", textAlign: "left", fontSize: "12px", fontWeight: "600", color: "#6b7280", textTransform: "uppercase" }}>Time</th>
+                      <th style={{ padding: "12px", textAlign: "left", fontSize: "12px", fontWeight: "600", color: "#6b7280", textTransform: "uppercase" }}>Transaction ID</th>
+                      <th style={{ padding: "12px", textAlign: "left", fontSize: "12px", fontWeight: "600", color: "#6b7280", textTransform: "uppercase" }}>Type</th>
+                      <th style={{ padding: "12px", textAlign: "left", fontSize: "12px", fontWeight: "600", color: "#6b7280", textTransform: "uppercase" }}>Amount</th>
+                      <th style={{ padding: "12px", textAlign: "left", fontSize: "12px", fontWeight: "600", color: "#6b7280", textTransform: "uppercase" }}>Risk Score</th>
+                      <th style={{ padding: "12px", textAlign: "left", fontSize: "12px", fontWeight: "600", color: "#6b7280", textTransform: "uppercase" }}>Status</th>
+                      <th style={{ padding: "12px", textAlign: "left", fontSize: "12px", fontWeight: "600", color: "#6b7280", textTransform: "uppercase" }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentAlerts.map((alert, index) => (
+                      <tr key={index} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                        <td style={{ padding: "12px", fontSize: "14px", color: "#374151" }}>{alert.time}</td>
+                        <td style={{ padding: "12px", fontSize: "14px", color: "#374151", fontWeight: "500" }}>{alert.transactionId}</td>
+                        <td style={{ padding: "12px", fontSize: "14px", color: "#374151" }}>{alert.type}</td>
+                        <td style={{ padding: "12px", fontSize: "14px", color: "#374151" }}>{alert.amount}</td>
+                        <td style={{ padding: "12px" }}>
+                          <span style={{
+                            padding: "4px 8px",
+                            borderRadius: "4px",
+                            fontSize: "12px",
+                            fontWeight: "500",
+                            backgroundColor: alert.riskScore.toLowerCase() === 'high' ? '#fee2e2' : alert.riskScore.toLowerCase() === 'medium' ? '#fef3c7' : '#d1fae5',
+                            color: alert.riskScore.toLowerCase() === 'high' ? '#991b1b' : alert.riskScore.toLowerCase() === 'medium' ? '#92400e' : '#065f46'
+                          }}>
+                            {alert.riskScore}
+                          </span>
+                        </td>
+                        <td style={{ padding: "12px", fontSize: "14px", color: "#374151" }}>{alert.status}</td>
+                        <td style={{ padding: "12px" }}>
+                          {alert.status !== 'Flagged' && alert.status !== 'Under Review' ? (
+                            <button
+                              onClick={() => handleFlagTransaction(alert)}
+                              style={{
+                                padding: "6px 12px",
+                                backgroundColor: "#ef4444",
+                                color: "white",
+                                border: "none",
+                                borderRadius: "4px",
+                                cursor: "pointer",
+                                fontSize: "12px",
+                                fontWeight: "500",
+                                transition: "background-color 0.2s"
+                              }}
+                              onMouseEnter={(e) => e.target.style.backgroundColor = "#dc2626"}
+                              onMouseLeave={(e) => e.target.style.backgroundColor = "#ef4444"}
+                            >
+                              Flag as Fraud
+                            </button>
+                          ) : (
+                            <span style={{ color: "#6b7280", fontSize: "12px" }}>Already flagged</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
         </div>
 
         <FlaggedTransactionsPanel showStoreFilter pageSize={8} className="developer-flagged-panel" />
@@ -870,11 +1177,8 @@ const Developer = () => {
         </div>
 
         {/* Report Generation */}
-        <div className="card report-generation-section">
-          <div className="card-header">
-            <h3>Generate Reports</h3>
-          </div>
-          <div className="card-body">
+        <div className="bg-white rounded-lg p-6 shadow-md report-generation-section">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Generate Reports</h3>
             <div className="report-controls">
               <div className="control-group">
                 <label>Report Period:</label>
@@ -977,7 +1281,141 @@ const Developer = () => {
             </div>
           </div>
         )}
-      </div>
+
+        {/* Flag Transaction Modal */}
+        {showFlagModal && flaggingTransaction && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1000
+            }}
+          >
+            <div
+              style={{
+                background: "white",
+                borderRadius: "12px",
+                padding: "24px",
+                minWidth: "400px",
+                maxWidth: "500px"
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "20px"
+                }}
+              >
+                <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "600" }}>Flag Transaction as Fraudulent</h3>
+                <button
+                  onClick={handleCloseFlagModal}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    fontSize: "24px",
+                    cursor: "pointer",
+                    color: "#6b7280",
+                    padding: 0
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+              <div>
+                <div style={{ marginBottom: "16px" }}>
+                  <p style={{ margin: "8px 0" }}><strong>Transaction:</strong> {flaggingTransaction.displayId}</p>
+                  <p style={{ margin: "8px 0" }}><strong>Amount:</strong> {flaggingTransaction.amount}</p>
+                  <p style={{ margin: "8px 0" }}><strong>Type:</strong> {flaggingTransaction.type}</p>
+                </div>
+
+                <div style={{ marginBottom: "16px" }}>
+                  <label style={{ display: "block", marginBottom: "8px", fontWeight: "500" }}>
+                    Notes (Optional):
+                  </label>
+                  <textarea
+                    value={flagNotes}
+                    onChange={(e) => setFlagNotes(e.target.value)}
+                    placeholder="Enter reason for flagging this transaction..."
+                    rows="4"
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                      resize: "vertical",
+                      fontFamily: "inherit"
+                    }}
+                  />
+                </div>
+
+                {flagError && (
+                  <p style={{ color: "#ef4444", marginBottom: "16px", fontSize: "14px" }}>
+                    {flagError}
+                  </p>
+                )}
+
+                <div style={{ display: "flex", gap: "12px" }}>
+                  <button
+                    onClick={handleSubmitFlag}
+                    style={{
+                      flex: 1,
+                      padding: "10px 20px",
+                      backgroundColor: "#ef4444",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      transition: "background-color 0.2s"
+                    }}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = "#dc2626"}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = "#ef4444"}
+                  >
+                    Flag as Fraudulent
+                  </button>
+                  <button
+                    onClick={handleCloseFlagModal}
+                    style={{
+                      flex: 1,
+                      padding: "10px 20px",
+                      backgroundColor: "#6b7280",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      transition: "background-color 0.2s"
+                    }}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = "#4b5563"}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = "#6b7280"}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        </>
+      ) : activeTab === 'api' ? (
+        <APIIntegration embedded={true} />
+      ) : activeTab === 'models' ? (
+        <ModelPerformance embedded={true} />
+      ) : activeTab === 'transactions' ? (
+        <TransactionMonitoring embedded={true} />
+      ) : null}
     </div>
   );
 };

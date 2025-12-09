@@ -3,9 +3,89 @@ import PageHeader from '../components/PageHeader';
 import { FaKey, FaHistory, FaBook, FaCopy, FaSync, FaCode } from 'react-icons/fa';
 import DeveloperNav from '../components/DeveloperNav';
 import '../styles/Developer.css';
-import { getApiKey, generateApiKey, regenerateApiKey, predictTransaction, getMLModelMetrics, API_URL, getStores } from '../api';
+import { getApiKey, generateApiKey, regenerateApiKey, predictTransaction, getModelsWithWeights, API_URL, getStores } from '../api';
 
-const APIIntegration = () => {
+// Helper to map model type to backend identifier
+const getModelIdentifier = (modelType) => {
+  const modelTypeLower = modelType.toLowerCase();
+  if (modelTypeLower.includes('logistic')) {
+    return 'logistic-regression';
+  } else if (modelTypeLower.includes('bernoulli') || modelTypeLower.includes('naive bayes')) {
+    return 'bernoulli-nb';
+  } else if (modelTypeLower.includes('decision') || modelTypeLower.includes('tree')) {
+    return 'decision-tree';
+  } else if (modelTypeLower.includes('xgboost') || modelTypeLower.includes('xgb')) {
+    return 'xgboost';
+  }
+  return 'logistic-regression'; // Default fallback
+};
+
+// Group models by modelName for two-level dropdown
+const groupModelsByName = (models) => {
+  const grouped = {};
+  
+  models.forEach(model => {
+    const key = model.modelName;
+    
+    if (!grouped[key]) {
+      grouped[key] = {
+        modelName: model.modelName,
+        modelType: model.modelType,
+        modelIdentifier: getModelIdentifier(model.modelType),
+        versions: []
+      };
+    }
+    
+    // Extract version from root or additionalInfo
+    const version = model.version || model.additionalInfo?.version || 'v1.0.0';
+    
+    // Get accuracy - prefer direct accuracy field from modelFiles.files, then check metrics
+    let accuracy = null;
+    if (model.accuracy !== undefined && model.accuracy !== null) {
+      // Direct accuracy from modelFiles.files
+      accuracy = model.accuracy;
+    } else {
+      // Fallback: find accuracy in metrics array
+      const accuracyMetric = model.metrics?.find(m => 
+        m.name && m.name.toLowerCase().includes('accuracy')
+      );
+      accuracy = accuracyMetric?.value || null;
+    }
+    
+    grouped[key].versions.push({
+      _id: model._id,
+      version: version,
+      createdAt: model.createdAt,
+      accuracy: accuracy
+    });
+    
+    // Sort versions by date (oldest first - v1.0.0 before v1.1.0)
+    grouped[key].versions.sort((a, b) => 
+      new Date(a.createdAt) - new Date(b.createdAt)
+    );
+  });
+  
+  // Sort grouped models - Logistic Regression first, then alphabetically
+  const sortedKeys = Object.keys(grouped).sort((a, b) => {
+    if (a === "Logistic Regression" && b !== "Logistic Regression") {
+      return -1;
+    }
+    if (a !== "Logistic Regression" && b === "Logistic Regression") {
+      return 1;
+    }
+    return a.localeCompare(b);
+  });
+  
+  // Rebuild grouped object with sorted keys
+  const sortedGrouped = {};
+  for (const key of sortedKeys) {
+    sortedGrouped[key] = grouped[key];
+  }
+  
+  return sortedGrouped;
+};
+
+const APIIntegration = ({ embedded = false }) => {
   const [apiKey, setApiKey] = useState('');
   const [hasApiKey, setHasApiKey] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -22,8 +102,11 @@ const APIIntegration = () => {
   const [storeRef, setStoreRef] = useState('');
   const [response, setResponse] = useState('');
   const [recentCalls, setRecentCalls] = useState([]);
-  const [models, setModels] = useState([]);
-  const [selectedModel, setSelectedModel] = useState('logistic-regression');
+  const [allModels, setAllModels] = useState([]);
+  const [groupedModels, setGroupedModels] = useState({});
+  const [selectedModelName, setSelectedModelName] = useState(null);
+  const [selectedVersionId, setSelectedVersionId] = useState(null);
+  const [selectedVersion, setSelectedVersion] = useState(null); // Store full version object
   const [apiUrl, setApiUrl] = useState('');
   const [error, setError] = useState('');
   const [copySuccess, setCopySuccess] = useState('');
@@ -52,18 +135,9 @@ const APIIntegration = () => {
     { value: 'desktop', label: 'Desktop' }
   ];
 
-  // Available model types that match backend expectations
-  const availableModels = [
-    { value: 'logistic-regression', label: 'Logistic Regression' },
-    { value: 'bernoulli-nb', label: 'Bernoulli Naive Bayes' },
-    { value: 'decision-tree', label: 'Decision Tree' },
-    { value: 'xgboost', label: 'XGBoost' }
-  ];
-
-  // Fetch API key on component mount
+  // Fetch API key and models on component mount
   useEffect(() => {
     fetchApiKey();
-    // Still fetch models for other data, but we'll use our hardcoded list for the dropdown
     fetchModels();
     // Load stores for in-store testing
     (async () => {
@@ -75,19 +149,18 @@ const APIIntegration = () => {
         // ignore
       }
     })();
-    
-    // Initialize with the first model in our list
-    setSelectedModel(availableModels[0].value);
   }, []);
 
-  // Update API URL when API key or model changes
+  // Update API URL when API key, model, or version changes
   useEffect(() => {
-    if (apiKey && selectedModel) {
-      console.log("Updating API URL with model:", selectedModel);
-      // Use the API_URL imported from api.js
-      setApiUrl(`${API_URL}/predict?apikey=${apiKey}&model=${selectedModel}`);
+    if (apiKey && selectedModelName && groupedModels[selectedModelName] && selectedVersion) {
+      const modelIdentifier = groupedModels[selectedModelName].modelIdentifier;
+      const version = selectedVersion.version;
+      console.log("Updating API URL with model:", modelIdentifier, "version:", version);
+      // Use the API_URL imported from api.js, include version parameter
+      setApiUrl(`${API_URL}/predict?apikey=${apiKey}&model=${modelIdentifier}&version=${version}`);
     }
-  }, [apiKey, selectedModel]);
+  }, [apiKey, selectedModelName, selectedVersion, groupedModels]);
 
   const fetchApiKey = async () => {
     setIsLoading(true);
@@ -109,46 +182,39 @@ const APIIntegration = () => {
 
   const fetchModels = async () => {
     try {
-      const response = await getMLModelMetrics();
+      // Fetch models with weight files from modelFiles GridFS (not all MLModel entries)
+      const response = await getModelsWithWeights();
       if (response.data.success) {
-        console.log("Raw model data:", response.data.data);
+        console.log("Raw model data (with weights):", response.data.data);
         
-        const modelList = response.data.data.map(model => {
-          // Map model types to the expected backend model identifiers
-          let modelIdentifier;
-          const modelTypeLower = model.modelType.toLowerCase();
-          
-          if (modelTypeLower.includes('logistic')) {
-            modelIdentifier = 'logistic-regression';
-          } else if (modelTypeLower.includes('bernoulli') || modelTypeLower.includes('naive bayes')) {
-            modelIdentifier = 'bernoulli-nb';
-          } else if (modelTypeLower.includes('decision') || modelTypeLower.includes('tree')) {
-            modelIdentifier = 'decision-tree';
-          } else if (modelTypeLower.includes('xgboost') || modelTypeLower.includes('xgb')) {
-            modelIdentifier = 'xgboost';
-          } else {
-            // Default fallback
-            modelIdentifier = 'logistic-regression';
-          }
-          
-          return {
-            id: model._id,
-            name: model.modelName,
-            type: model.modelType,
-            identifier: modelIdentifier
-          };
-        });
+        const models = response.data.data;
+        setAllModels(models);
         
-        console.log("Processed model list:", modelList);
-        setModels(modelList);
+        // Group models by name
+        const grouped = groupModelsByName(models);
+        setGroupedModels(grouped);
         
-        if (modelList.length > 0) {
-          console.log("Setting initial selected model to:", modelList[0].identifier);
-          setSelectedModel(modelList[0].identifier);
+        // Auto-select Logistic Regression first (if available), otherwise first model
+        // Find Logistic Regression in grouped models
+        let defaultModelName = null;
+        if (grouped["Logistic Regression"]) {
+          defaultModelName = "Logistic Regression";
+        } else {
+          // If Logistic Regression not available, use first model
+          defaultModelName = Object.keys(grouped)[0];
+        }
+        
+        if (defaultModelName && grouped[defaultModelName].versions.length > 0) {
+          setSelectedModelName(defaultModelName);
+          // Select last version (oldest - v1.0.0) since we sort oldest first
+          const lastVersionIndex = grouped[defaultModelName].versions.length - 1;
+          const oldestVersion = grouped[defaultModelName].versions[lastVersionIndex];
+          setSelectedVersionId(oldestVersion._id);
+          setSelectedVersion(oldestVersion);
         }
       }
     } catch (error) {
-      console.error('Error fetching models:', error);
+      console.error('Error fetching models with weights:', error);
       setError('Failed to load models. Please try again later.');
     }
   };
@@ -207,9 +273,9 @@ const APIIntegration = () => {
   const handleTestRequest = async (e) => {
     e.preventDefault();
     
-    if (!amount || !selectedModel) {
+    if (!amount || !selectedModelName || !selectedVersion) {
       setResponse(JSON.stringify({
-        error: 'Please fill in all required fields',
+        error: 'Please fill in all required fields and select a model version',
         status: 'error'
       }, null, 2));
       return;
@@ -238,7 +304,11 @@ const APIIntegration = () => {
         transactionData.storeRef = storeRef; // pass storeRef for backend to attach store
       }
 
-      const result = await predictTransaction(transactionData, apiKey, selectedModel);
+      // Get model identifier and version
+      const modelIdentifier = groupedModels[selectedModelName]?.modelIdentifier;
+      const version = selectedVersion.version;
+
+      const result = await predictTransaction(transactionData, apiKey, modelIdentifier, version);
       
       // Format the response for display
       setResponse(JSON.stringify(result.data, null, 2));
@@ -265,54 +335,61 @@ const APIIntegration = () => {
   };
 
   return (
-    <div className="developer-container">
-      <DeveloperNav activePath="/api-integration" />
+    <div className={embedded ? "" : "developer-container"}>
+      {!embedded && <DeveloperNav activePath="/api-integration" />}
 
-      <div className="main-content">
-        <PageHeader title="API Integration" />
+      <div className={embedded ? "" : "main-content"}>
+        {!embedded && <PageHeader title="API Integration" />}
 
         {error && (
-          <div className="error-message" style={{ color: 'red', marginBottom: '15px', padding: '10px', backgroundColor: '#ffeeee', borderRadius: '4px', border: '1px solid #ffcccc' }}>
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
             {error}
           </div>
         )}
 
         {copySuccess && (
-          <div className="success-message" style={{ color: 'green', marginBottom: '15px', padding: '10px', backgroundColor: '#eeffee', borderRadius: '4px', border: '1px solid #ccffcc' }}>
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
             {copySuccess}
           </div>
         )}
 
-        <div className="api-integration-grid">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* API Keys Section */}
-          <div className="card">
-            <div className="card-header">
-              <h3>API Keys</h3>
-            </div>
-            <div className="api-key-content">
+          <div className="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">API Keys</h3>
+            <div>
               {isLoading ? (
-                <p>Loading...</p>
+                <div className="flex items-center justify-center py-4 text-gray-500">Loading...</div>
               ) : hasApiKey ? (
-                <div className="api-key-input">
+                <div className="space-y-3">
                   <input 
                     type="text" 
                     value={apiKey} 
                     readOnly 
-                    className="key-field"
+                    className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-md font-mono text-sm"
                   />
-                  <div className="api-key-buttons">
-                    <button className="api-button" onClick={handleCopyKey}>
+                  <div className="flex gap-2">
+                    <button 
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+                      onClick={handleCopyKey}
+                    >
                       <FaCopy /> Copy
                     </button>
-                    <button className="api-button" onClick={handleRegenerateKey}>
+                    <button 
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                      onClick={handleRegenerateKey}
+                    >
                       <FaSync /> Regenerate
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="generate-key-section">
-                  <p>You don't have an API key yet. Generate one to start using our API.</p>
-                  <button className="primary-button" onClick={handleGenerateKey}>
+                <div className="text-center py-4">
+                  <p className="text-gray-600 mb-4">You don't have an API key yet. Generate one to start using our API.</p>
+                  <button 
+                    className="px-6 py-2 text-sm font-medium bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+                    onClick={handleGenerateKey}
+                  >
                     Generate API Key
                   </button>
                 </div>
@@ -322,131 +399,91 @@ const APIIntegration = () => {
 
           {/* API URL Generator */}
           {hasApiKey && (
-            <div className="card">
-              <div className="card-header">
-                <h3><FaCode className="header-icon" /> API URL Generator</h3>
-              </div>
-              <div className="api-url-content" style={{ padding: '20px' }}>
-                <div className="form-group">
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#333' }}>Select Model</label>
-                  <select 
-                    value={selectedModel}
-                    onChange={(e) => {
-                      console.log("Model selected:", e.target.value);
-                      setSelectedModel(e.target.value);
-                    }}
-                    className="form-select"
-                    style={{ 
-                      width: '100%', 
-                      padding: '10px', 
-                      borderRadius: '4px', 
-                      border: '1px solid #ddd',
-                      backgroundColor: '#f8f9fa',
-                      color: '#333',
-                      fontSize: '14px'
-                    }}
-                  >
-                    {availableModels.map(model => (
-                      <option key={model.value} value={model.value}>
-                        {model.label}
-                      </option>
-                    ))}
-                  </select>
+            <div className="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">API URL Generator</h3>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Select Model</label>
+                    <select 
+                      value={selectedModelName || ''}
+                      onChange={(e) => {
+                        const modelName = e.target.value;
+                        setSelectedModelName(modelName);
+                        
+                        // Auto-select oldest version (v1.0.0) of selected model
+                        if (groupedModels[modelName]?.versions.length > 0) {
+                          // Select last version (oldest - v1.0.0) since we sort oldest first
+                          const lastVersionIndex = groupedModels[modelName].versions.length - 1;
+                          const oldestVersion = groupedModels[modelName].versions[lastVersionIndex];
+                          setSelectedVersionId(oldestVersion._id);
+                          setSelectedVersion(oldestVersion);
+                        }
+                      }}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select a model</option>
+                      {Object.keys(groupedModels).map(modelName => (
+                        <option key={modelName} value={modelName}>
+                          {modelName} ({groupedModels[modelName].modelType})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  {selectedModelName && groupedModels[selectedModelName] && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Select Version</label>
+                      <select 
+                        value={selectedVersionId || ''}
+                        onChange={(e) => {
+                          const versionId = e.target.value;
+                          setSelectedVersionId(versionId);
+                          const version = groupedModels[selectedModelName].versions.find(v => v._id === versionId);
+                          setSelectedVersion(version || null);
+                        }}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Select a version</option>
+                        {groupedModels[selectedModelName].versions.map(version => (
+                          <option key={version._id} value={version._id}>
+                            {version.version}
+                            {version.accuracy && ` (${(version.accuracy * 100).toFixed(2)}%)`}
+                            {` - ${new Date(version.createdAt).toLocaleDateString()}`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
                 
-                <div className="api-url-display" style={{ 
-                  marginTop: '20px', 
-                  padding: '15px', 
-                  backgroundColor: '#f0f4f8', 
-                  borderRadius: '4px',
-                  border: '1px solid #d0d7de'
-                }}>
-                  <label style={{ 
-                    display: 'block', 
-                    marginBottom: '8px', 
-                    fontWeight: '500', 
-                    color: '#333' 
-                  }}>
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Your API Endpoint URL
                   </label>
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '10px',
-                    marginBottom: '10px'
-                  }}>
+                  <div className="flex items-center gap-2">
                     <input 
                       type="text" 
                       value={apiUrl} 
                       readOnly 
-                      className="url-field"
-                      style={{ 
-                        flex: '1',
-                        padding: '10px',
-                        borderRadius: '4px',
-                        border: '1px solid #ddd',
-                        backgroundColor: '#fff',
-                        color: '#333',
-                        fontSize: '14px',
-                        fontFamily: 'monospace'
-                      }}
+                      className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-md font-mono text-sm"
                     />
                     <button 
-                      className="api-button" 
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
                       onClick={handleCopyUrl}
-                      style={{ 
-                        padding: '10px 15px',
-                        backgroundColor: '#4a6cf7',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '5px',
-                        fontSize: '14px'
-                      }}
                     >
                       <FaCopy /> Copy
                     </button>
                   </div>
                 </div>
                 
-                <div className="api-usage-instructions" style={{ 
-                  marginTop: '20px',
-                  backgroundColor: '#fff',
-                  border: '1px solid #e1e4e8',
-                  borderRadius: '4px',
-                  padding: '15px'
-                }}>
-                  <h4 style={{ 
-                    color: '#333', 
-                    marginTop: '0',
-                    marginBottom: '10px',
-                    fontSize: '16px',
-                    fontWeight: '600'
-                  }}>How to use:</h4>
-                  <p style={{ 
-                    color: '#555', 
-                    marginBottom: '15px',
-                    fontSize: '14px',
-                    lineHeight: '1.5'
-                  }}>
+                <div className="bg-white border border-gray-200 rounded-md p-4">
+                  <h4 className="text-base font-semibold text-gray-900 mb-2">How to use:</h4>
+                  <p className="text-sm text-gray-600 mb-3">
                     Make a POST request to this URL with your transaction data in the request body.
                   </p>
-                  <div style={{ 
-                    backgroundColor: '#f6f8fa',
-                    borderRadius: '4px',
-                    padding: '15px',
-                    overflow: 'auto'
-                  }}>
-                    <pre style={{ 
-                      margin: '0',
-                      color: '#333',
-                      fontSize: '13px',
-                      fontFamily: 'monospace',
-                      lineHeight: '1.5'
-                    }}>
+                  <div className="bg-gray-50 rounded-md p-4 overflow-auto">
+                    <pre className="text-xs font-mono text-gray-800 leading-relaxed">
 {`// Example request body:
 {
   "Transaction Amount": [100.50],
@@ -472,10 +509,8 @@ const APIIntegration = () => {
 
           {/* Test API Calls Section */}
           {hasApiKey && (
-            <div className="card">
-              <div className="card-header">
-                <h3>Test API Calls</h3>
-              </div>
+            <div className="bg-white rounded-lg p-6 shadow-md">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Test API Calls</h3>
               <div className="test-api-content">
                 <form className="test-form" onSubmit={handleTestRequest}>
                   <div className="form-group">
@@ -614,22 +649,58 @@ const APIIntegration = () => {
                   <div className="form-group">
                     <label>Model</label>
                     <select 
-                      value={selectedModel}
+                      value={selectedModelName || ''}
                       onChange={(e) => {
-                        console.log("Test form model selected:", e.target.value);
-                        setSelectedModel(e.target.value);
+                        const modelName = e.target.value;
+                        setSelectedModelName(modelName);
+                        
+                        // Auto-select oldest version (v1.0.0) of selected model
+                        if (groupedModels[modelName]?.versions.length > 0) {
+                          // Select last version (oldest - v1.0.0) since we sort oldest first
+                          const lastVersionIndex = groupedModels[modelName].versions.length - 1;
+                          const oldestVersion = groupedModels[modelName].versions[lastVersionIndex];
+                          setSelectedVersionId(oldestVersion._id);
+                          setSelectedVersion(oldestVersion);
+                        }
                       }}
                       className="form-select"
                       style={{ backgroundColor: '#f5f5f5', color: '#333' }}
                       required
                     >
-                      {availableModels.map(model => (
-                        <option key={model.value} value={model.value}>
-                          {model.label}
+                      <option value="">Select a model</option>
+                      {Object.keys(groupedModels).map(modelName => (
+                        <option key={modelName} value={modelName}>
+                          {modelName} ({groupedModels[modelName].modelType})
                         </option>
                       ))}
                     </select>
                   </div>
+                  {selectedModelName && groupedModels[selectedModelName] && (
+                    <div className="form-group">
+                      <label>Version</label>
+                      <select 
+                        value={selectedVersionId || ''}
+                        onChange={(e) => {
+                          const versionId = e.target.value;
+                          setSelectedVersionId(versionId);
+                          const version = groupedModels[selectedModelName].versions.find(v => v._id === versionId);
+                          setSelectedVersion(version || null);
+                        }}
+                        className="form-select"
+                        style={{ backgroundColor: '#f5f5f5', color: '#333' }}
+                        required
+                      >
+                        <option value="">Select a version</option>
+                        {groupedModels[selectedModelName].versions.map(version => (
+                          <option key={version._id} value={version._id}>
+                            {version.version}
+                            {version.accuracy && ` (${(version.accuracy * 100).toFixed(2)}%)`}
+                            {` - ${new Date(version.createdAt).toLocaleDateString()}`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   <button type="submit" className="primary-button" disabled={isLoading}>
                     {isLoading ? 'Processing...' : 'Send Test Request'}
                   </button>
@@ -657,11 +728,9 @@ const APIIntegration = () => {
           )}
 
           {/* Recent API Calls Section */}
-          <div className="card">
-            <div className="card-header">
-              <h3>Recent API Calls</h3>
-            </div>
-            <div className="card-content">
+          <div className="bg-white rounded-lg p-6 shadow-md">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Recent API Calls</h3>
+            <div>
               <table className="api-calls-table">
                 <thead>
                   <tr>

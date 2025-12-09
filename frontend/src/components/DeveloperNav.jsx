@@ -1,8 +1,15 @@
 import PropTypes from 'prop-types';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { FaHome, FaCode, FaChartLine, FaExchangeAlt } from 'react-icons/fa';
 
-const DeveloperNav = ({ activePath }) => {
+const DeveloperNav = ({ activePath: propActivePath }) => {
+  // Use current location to auto-detect active path
+  const location = useLocation();
+  const currentPath = location.pathname;
+  
+  // Use prop if provided, otherwise use current location
+  const activePath = propActivePath || currentPath;
+  
   const buildClassName = (path) => `nav-item${path === activePath ? ' active' : ''}`;
 
   return (
@@ -39,7 +46,7 @@ DeveloperNav.propTypes = {
 };
 
 DeveloperNav.defaultProps = {
-  activePath: '/developer'
+  activePath: null // Will use current location if not provided
 };
 
 export default DeveloperNav;

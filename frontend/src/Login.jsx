@@ -53,8 +53,11 @@ const Login = () => {
           navigate('/developer');
         } else if (userRole === 'StoreManager') {
           navigate('/store-manager');
+        } else if (userRole === 'Admin') {
+          // Admin default landing page
+          navigate('/admin-dashboard');
         } else {
-          // Admin or any other role
+          // Fallback for any other role
           navigate('/dashboard');
         }
       }

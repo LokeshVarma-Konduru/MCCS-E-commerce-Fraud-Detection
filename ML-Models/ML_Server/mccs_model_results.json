@@ -1,0 +1,57 @@
+{
+  "model_name": "XGB",
+  "algorithm": null,
+  "version": "v1.1.0",
+  "created_at": "2025-11-03 01:45:00.846000",
+  "metrics": [
+    {
+      "name": "Accuracy",
+      "value": 0.9502855933996192
+    },
+    {
+      "name": "Confusion Matrix",
+      "value": [
+        [
+          4443,
+          32
+        ],
+        [
+          203,
+          49
+        ]
+      ]
+    },
+    {
+      "name": "Classification Report",
+      "value": {
+        "0": {
+          "precision": 0.9563065002152389,
+          "recall": 0.9928491620111732,
+          "f1-score": 0.9742352812191646,
+          "support": 4475.0
+        },
+        "1": {
+          "precision": 0.6049382716049383,
+          "recall": 0.19444444444444445,
+          "f1-score": 0.29429429429429427,
+          "support": 252.0
+        },
+        "accuracy": 0.9502855933996192,
+        "macro avg": {
+          "precision": 0.7806223859100886,
+          "recall": 0.5936468032278088,
+          "f1-score": 0.6342647877567295,
+          "support": 4727.0
+        },
+        "weighted avg": {
+          "precision": 0.9375747901221998,
+          "recall": 0.9502855933996192,
+          "f1-score": 0.9379871050598527,
+          "support": 4727.0
+        }
+      }
+    }
+  ],
+  "feature_importance": {},
+  "dataset_info": {}
+}

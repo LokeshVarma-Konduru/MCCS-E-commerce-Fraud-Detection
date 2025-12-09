@@ -1,7 +1,7 @@
 /* eslint-disable no-useless-catch */
 import axios from 'axios';
 
-export const API_URL = 'http://localhost:9000/mccs';
+export const API_URL = process.env.API_URL || 'http://backend:9000/mccs';
 // export const API_URL = 'http://35.164.210.165:9000/mccs';
 
 // Configure axios defaults
@@ -66,6 +66,20 @@ export const getMLModelMetrics = async () => {
         console.error('Error fetching ML model metrics:', error);
         throw {
             message: error.response?.data?.message || 'Failed to fetch model metrics',
+            status: error.response?.status
+        };
+    }
+};
+
+// Get models with weight files (for API Integration - only models with actual .pkl files)
+export const getModelsWithWeights = async () => {
+    try {
+        const response = await axios.get(`${API_URL}/models-with-weights`);
+        return response;
+    } catch (error) {
+        console.error('Error fetching models with weights:', error);
+        throw {
+            message: error.response?.data?.message || 'Failed to fetch models with weights',
             status: error.response?.status
         };
     }
@@ -137,9 +151,14 @@ export const getStores = async (params = {}) => {
 };
 
 // Transaction prediction with API key
-export const predictTransaction = async (data, apiKey, model) => {
+export const predictTransaction = async (data, apiKey, model, version = null) => {
     try {
-        const response = await axios.post(`${API_URL}/predict?apikey=${apiKey}&model=${model}`, data);
+        // Build URL with optional version parameter
+        let url = `${API_URL}/predict?apikey=${apiKey}&model=${model}`;
+        if (version) {
+            url += `&version=${version}`;
+        }
+        const response = await axios.post(url, data);
         return response;
     } catch (error) {
         console.error('Error predicting transaction:', error);

@@ -1,0 +1,63 @@
+{
+  "training_date": "2025-11-20T10:40:51.818435",
+  "dataset": "IEEE-CIS Fraud Detection Competition",
+  "cross_validation": {
+    "method": "5-Fold Stratified K-Fold",
+    "results": [
+      {
+        "Model": "Logistic Regression",
+        "Mean_ROC_AUC": 0.8759623293166046,
+        "Std_Dev": 0.003922574383371621,
+        "Min": 0.8702007407761113,
+        "Max": 0.8808064746848704
+      },
+      {
+        "Model": "XGBoost",
+        "Mean_ROC_AUC": 0.9346291117981765,
+        "Std_Dev": 0.0022677483752131153,
+        "Min": 0.9321792454432555,
+        "Max": 0.9379887621819827
+      }
+    ]
+  },
+  "optimization": {
+    "method": "Optuna (70 trials)",
+    "best_params": {
+      "learning_rate": 0.12356101335458687,
+      "n_estimators": 499,
+      "max_depth": 10,
+      "min_child_weight": 2,
+      "gamma": 0.46450277663292694,
+      "subsample": 0.9386066652349279,
+      "colsample_bytree": 0.9707562266528582,
+      "reg_alpha": 0.3848404906666518,
+      "reg_lambda": 0.9158099397884951,
+      "scale_pos_weight": 7.135736120794603
+    },
+    "best_roc_auc": 0.9740771062118747,
+    "best_accuracy": 0.9873674941578894
+  },
+  "test_set_performance": {
+    "roc_auc": 0.9729627439723937,
+    "accuracy": 0.9874606292545806,
+    "precision": 0.8955847255369929,
+    "recall": 0.7263488991047665,
+    "f1_score": 0.8021376085504343,
+    "false_positive_rate": 0.0030708488703663083,
+    "confusion_matrix": [
+      [
+        113625,
+        350
+      ],
+      [
+        1131,
+        3002
+      ]
+    ]
+  },
+  "features": {
+    "categorical_count": 31,
+    "numerical_count": 411,
+    "total_features": 442
+  }
+}

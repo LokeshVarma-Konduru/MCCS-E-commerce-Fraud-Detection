@@ -199,7 +199,7 @@ const FlaggedTransactionsPanel = ({
     <section className={panelClasses.join(" ")}>
       <div className="flagged-panel__header">
         <div>
-          <h3>{title}</h3>
+          <h3 style={{ fontWeight: '700' }}>{title}</h3>
           <p>Manual review activity from the fraud investigation team.</p>
         </div>
         <div className="flagged-panel__header-actions">

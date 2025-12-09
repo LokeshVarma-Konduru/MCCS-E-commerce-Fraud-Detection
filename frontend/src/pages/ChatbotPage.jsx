@@ -259,21 +259,24 @@ const ChatbotPage = () => {
   };
 
   return (
-    <div className="h-screen bg-gray-50 flex pt-16">
+    <div className="h-screen flex pt-16" style={{ background: '#f5f7fb' }}>
       {/* Sidebar */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+      <div className="w-80 bg-white flex flex-col" style={{ borderRight: '1px solid #e2e8f0', boxShadow: '0 14px 34px rgba(15, 23, 42, 0.08)' }}>
         {/* Sidebar Header */}
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6" style={{ borderBottom: '1px solid #e2e8f0' }}>
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-900 to-blue-700 rounded-full flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#3b82f6' }}>
               <MessageCircle className="text-white" size={20} />
             </div>
-            <h1 className="text-lg font-semibold text-gray-900 m-0 leading-none">AI Assistant</h1>
+            <h1 className="m-0 leading-none" style={{ fontSize: '1.35rem', fontWeight: 700, color: '#0f172a' }}>AI Assistant</h1>
           </div>
 
           <button
             onClick={handleNewChat}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 text-white rounded-lg transition-all"
+            style={{ background: '#3b82f6', textTransform: 'uppercase', fontSize: '0.875rem', fontWeight: 600, letterSpacing: '0.5px' }}
+            onMouseEnter={(e) => e.target.style.background = '#2563eb'}
+            onMouseLeave={(e) => e.target.style.background = '#3b82f6'}
           >
             <Plus size={20} />
             New Chat
@@ -326,13 +329,13 @@ const ChatbotPage = () => {
 
         {/* Recent Chats */}
         <div className="flex-1 overflow-y-auto p-4">
-          <h2 className="text-xs font-semibold text-gray-500 uppercase mb-3">Recent Chats</h2>
+          <h2 className="uppercase mb-3" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#334155', letterSpacing: '0.05em' }}>Recent Chats</h2>
           {isLoadingHistory ? (
             <div className="flex justify-center items-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-900"></div>
+              <div className="animate-spin rounded-full h-8 w-8" style={{ borderBottom: '2px solid #3b82f6' }}></div>
             </div>
           ) : recentChats.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-4">No chat history yet</p>
+            <p className="text-center py-4" style={{ fontSize: '0.875rem', color: '#334155' }}>No chat history yet</p>
           ) : (
             <div className="space-y-2">
               {recentChats.map((chat) => (
@@ -342,10 +345,13 @@ const ChatbotPage = () => {
                 >
                   <div
                     onClick={() => handleLoadChat(chat.id)}
-                    className="p-3 pr-10 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
+                    className="p-3 pr-10 rounded-lg cursor-pointer transition-colors"
+                    style={{ background: 'transparent' }}
+                    onMouseEnter={(e) => e.target.style.background = '#f8fafc'}
+                    onMouseLeave={(e) => e.target.style.background = 'transparent'}
                   >
-                    <p className="text-sm font-medium text-gray-900 truncate">{chat.title}</p>
-                    <p className="text-xs text-gray-500 mt-1">{formatRelativeTime(chat.lastMessageAt)}</p>
+                    <p className="truncate" style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0f172a' }}>{chat.title}</p>
+                    <p className="mt-1" style={{ fontSize: '0.75rem', color: '#334155' }}>{formatRelativeTime(chat.lastMessageAt)}</p>
                   </div>
                   <button
                     onClick={(e) => handleDeleteChat(chat.id, e)}
@@ -361,16 +367,16 @@ const ChatbotPage = () => {
         </div>
 
         {/* User Info */}
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4" style={{ borderTop: '1px solid #e2e8f0' }}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-              <span className="text-blue-900 font-semibold text-sm">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(59, 130, 246, 0.1)' }}>
+              <span style={{ color: '#3b82f6', fontWeight: 600, fontSize: '0.875rem' }}>
                 {user?.name?.charAt(0) || 'U'}
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
-              <p className="text-xs text-gray-500">{user?.role}</p>
+              <p className="truncate" style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0f172a' }}>{user?.name}</p>
+              <p style={{ fontSize: '0.75rem', color: '#334155' }}>{user?.role}</p>
             </div>
           </div>
         </div>
@@ -379,19 +385,22 @@ const ChatbotPage = () => {
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-8 py-4">
+        <div className="bg-white px-8 py-4" style={{ borderBottom: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(15, 23, 42, 0.05)' }}>
           <div className="flex items-center justify-end gap-4">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium text-green-700">API Connected</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: '#f0fdf4', border: '1px solid #10b981' }}>
+              <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#10b981' }}></div>
+              <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#065f46' }}>API Connected</span>
             </div>
 
             <button
               onClick={handleExportChat}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 rounded-lg transition-colors"
+              style={{ background: 'transparent' }}
+              onMouseEnter={(e) => e.target.style.background = '#f8fafc'}
+              onMouseLeave={(e) => e.target.style.background = 'transparent'}
               title="Export chat"
             >
-              <Download size={20} className="text-gray-600" />
+              <Download size={20} style={{ color: '#334155' }} />
             </button>
           </div>
         </div>
@@ -405,18 +414,19 @@ const ChatbotPage = () => {
                 className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 {message.sender === 'bot' && (
-                  <div className="w-10 h-10 bg-blue-900 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center mr-3 flex-shrink-0" style={{ background: '#3b82f6' }}>
                     <MessageCircle className="text-white" size={20} />
                   </div>
                 )}
 
                 <div className={`flex flex-col max-w-3xl ${message.sender === 'user' ? 'items-end' : 'items-start'}`}>
                   <div
-                    className={`rounded-2xl px-6 py-4 ${
-                      message.sender === 'user'
-                        ? 'bg-blue-900 text-white'
-                        : 'bg-gray-100 text-gray-900'
-                    } ${message.isError ? 'bg-red-50 border border-red-200 text-red-900' : ''}`}
+                    className="rounded-2xl px-6 py-4"
+                    style={{
+                      background: message.isError ? '#fef2f2' : (message.sender === 'user' ? '#3b82f6' : '#f8fafc'),
+                      color: message.isError ? '#991b1b' : (message.sender === 'user' ? '#ffffff' : '#0f172a'),
+                      border: message.isError ? '1px solid #fecaca' : 'none'
+                    }}
                   >
                     {message.sender === 'bot' ? (
                       <div className="prose prose-sm max-w-none">
@@ -448,8 +458,8 @@ const ChatbotPage = () => {
                 </div>
 
                 {message.sender === 'user' && (
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center ml-3 flex-shrink-0">
-                    <span className="text-blue-900 font-semibold text-sm">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center ml-3 flex-shrink-0" style={{ background: 'rgba(59, 130, 246, 0.1)' }}>
+                    <span style={{ color: '#3b82f6', fontWeight: 600, fontSize: '0.875rem' }}>
                       {user?.name?.charAt(0) || 'U'}
                     </span>
                   </div>
@@ -459,10 +469,10 @@ const ChatbotPage = () => {
 
             {isLoading && (
               <div className="flex justify-start">
-                <div className="w-10 h-10 bg-blue-900 rounded-full flex items-center justify-center mr-3">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center mr-3" style={{ background: '#3b82f6' }}>
                   <MessageCircle className="text-white" size={20} />
                 </div>
-                <div className="bg-gray-100 rounded-2xl px-6 py-4">
+                <div className="rounded-2xl px-6 py-4" style={{ background: '#f8fafc' }}>
                   <div className="flex gap-2">
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
@@ -477,7 +487,7 @@ const ChatbotPage = () => {
         </div>
 
         {/* Input */}
-        <div className="bg-white border-t border-gray-200 px-8 py-6">
+        <div className="bg-white px-8 py-6" style={{ borderTop: '1px solid #e2e8f0', boxShadow: '0 -1px 3px rgba(15, 23, 42, 0.05)' }}>
           <div className="max-w-4xl mx-auto">
             <form onSubmit={handleSendMessage} className="flex gap-4 items-end">
               <input
@@ -486,14 +496,33 @@ const ChatbotPage = () => {
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 placeholder="Ask about model performance, logs, or metrics..."
-                className="flex-1 px-6 py-4 border border-gray-300 rounded-full outline-none focus:border-blue-900 focus:ring-2 focus:ring-blue-900 focus:ring-opacity-20 transition-all disabled:bg-gray-50 disabled:cursor-not-allowed"
+                className="flex-1 px-6 py-4 rounded-full outline-none transition-all disabled:cursor-not-allowed"
+                style={{
+                  border: '1px solid #d1d5db',
+                  background: '#ffffff',
+                  color: '#0f172a'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#3b82f6';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#d1d5db';
+                  e.target.style.boxShadow = 'none';
+                }}
                 disabled={isLoading}
                 maxLength={1000}
               />
               <button
                 type="submit"
                 disabled={!inputMessage.trim() || isLoading}
-                className="w-14 h-14 bg-blue-900 text-white rounded-full flex items-center justify-center hover:bg-blue-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+                className="w-14 h-14 text-white rounded-full flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  background: '#3b82f6',
+                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+                }}
+                onMouseEnter={(e) => !e.target.disabled && (e.target.style.background = '#2563eb')}
+                onMouseLeave={(e) => !e.target.disabled && (e.target.style.background = '#3b82f6')}
               >
                 <Send size={24} />
               </button>

@@ -43,6 +43,14 @@
   color: #1e293b;
 }
 
+.nav-item.active {
+  background-color: #eff6ff;
+  color: #2563eb;
+  font-weight: 600;
+  border-bottom: 2px solid #2563eb;
+  border-radius: 6px 6px 0 0;
+}
+
 .nav-icon {
   font-size: 18px;
 }
@@ -243,9 +251,9 @@
 }
 
 .time-scale-buttons button.active {
-  background-color: #6366f1;
+  background-color: #3b82f6;
   color: white;
-  border-color: #6366f1;
+  border-color: #3b82f6;
 }
 
 .chart-container {

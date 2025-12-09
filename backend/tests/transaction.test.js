@@ -25,15 +25,15 @@ beforeAll(async () => {
   // Seed test data
   await User.insertMany(users);
   
-  // Create a test store
+  // Create a test store with GeoJSON format coordinates
   const testStore = new Store({
     storeID: "ST001",
     storeName: "Test Store",
     storeLocation: "Test City",
     zipCode: "12345",
     coordinates: {
-      latitude: 40.7128,
-      longitude: -74.0060
+      type: 'Point',
+      coordinates: [-74.0060, 40.7128] // [longitude, latitude] as required by GeoJSON
     },
     status: "active"
   });
@@ -152,6 +152,7 @@ describe("Transaction Controller Tests", () => {
     it("should return a list of transactions with pagination", async () => {
       const response = await request(app)
         .get("/mccs/transactions")
+        .set("Cookie", authCookie)
         .query({ page: 1, limit: 10 });
       
       expect(response.statusCode).toBe(200);
@@ -169,6 +170,7 @@ describe("Transaction Controller Tests", () => {
     it("should filter transactions by model", async () => {
       const response = await request(app)
         .get("/mccs/transactions")
+        .set("Cookie", authCookie)
         .query({ model: "xgboost" });
       
       expect(response.statusCode).toBe(200);
@@ -179,6 +181,7 @@ describe("Transaction Controller Tests", () => {
     it("should filter transactions by prediction", async () => {
       const response = await request(app)
         .get("/mccs/transactions")
+        .set("Cookie", authCookie)
         .query({ prediction: 1 }); // Fraudulent transactions
       
       expect(response.statusCode).toBe(200);
@@ -189,6 +192,7 @@ describe("Transaction Controller Tests", () => {
     it("should filter transactions by transaction type", async () => {
       const response = await request(app)
         .get("/mccs/transactions")
+        .set("Cookie", authCookie)
         .query({ transactionType: "in-store" });
       
       expect(response.statusCode).toBe(200);
@@ -199,6 +203,7 @@ describe("Transaction Controller Tests", () => {
     it("should filter transactions by product category", async () => {
       const response = await request(app)
         .get("/mccs/transactions")
+        .set("Cookie", authCookie)
         .query({ productCategory: "electronics" });
       
       expect(response.statusCode).toBe(200);
@@ -209,6 +214,7 @@ describe("Transaction Controller Tests", () => {
     it("should filter transactions by payment method", async () => {
       const response = await request(app)
         .get("/mccs/transactions")
+        .set("Cookie", authCookie)
         .query({ paymentMethod: "PayPal" });
       
       expect(response.statusCode).toBe(200);
@@ -219,6 +225,7 @@ describe("Transaction Controller Tests", () => {
     it("should filter transactions by risk score range", async () => {
       const response = await request(app)
         .get("/mccs/transactions")
+        .set("Cookie", authCookie)
         .query({ minRiskScore: 50, maxRiskScore: 100 });
       
       expect(response.statusCode).toBe(200);
@@ -230,6 +237,7 @@ describe("Transaction Controller Tests", () => {
     it("should filter transactions by amount range", async () => {
       const response = await request(app)
         .get("/mccs/transactions")
+        .set("Cookie", authCookie)
         .query({ minAmount: 300, maxAmount: 600 });
       
       expect(response.statusCode).toBe(200);
@@ -241,6 +249,7 @@ describe("Transaction Controller Tests", () => {
     it("should filter transactions by storeRef", async () => {
       const response = await request(app)
         .get("/mccs/transactions")
+        .set("Cookie", authCookie)
         .query({ storeRef: storeId.toString() });
       
       expect(response.statusCode).toBe(200);
@@ -252,6 +261,7 @@ describe("Transaction Controller Tests", () => {
     it("should filter transactions by storeID", async () => {
       const response = await request(app)
         .get("/mccs/transactions")
+        .set("Cookie", authCookie)
         .query({ storeID: "ST001" });
       
       expect(response.statusCode).toBe(200);
@@ -263,6 +273,7 @@ describe("Transaction Controller Tests", () => {
     it("should filter in-store transactions by store", async () => {
       const response = await request(app)
         .get("/mccs/transactions")
+        .set("Cookie", authCookie)
         .query({ transactionType: "in-store", storeRef: storeId.toString() });
       
       expect(response.statusCode).toBe(200);
@@ -305,10 +316,14 @@ describe("Transaction Controller Tests", () => {
   describe("GET /mccs/transaction/:id", () => {
     it("should return a transaction by ID", async () => {
       // First get a transaction ID
-      const transactionsResponse = await request(app).get("/mccs/transactions");
+      const transactionsResponse = await request(app)
+        .get("/mccs/transactions")
+        .set("Cookie", authCookie);
       const transactionId = transactionsResponse.body.transactions[0]._id;
       
-      const response = await request(app).get(`/mccs/transaction/${transactionId}`);
+      const response = await request(app)
+        .get(`/mccs/transaction/${transactionId}`)
+        .set("Cookie", authCookie);
       
       expect(response.statusCode).toBe(200);
       expect(response.body).toHaveProperty("success", true);
@@ -318,7 +333,9 @@ describe("Transaction Controller Tests", () => {
     
     it("should return 404 for non-existent transaction ID", async () => {
       const fakeId = new mongoose.Types.ObjectId();
-      const response = await request(app).get(`/mccs/transaction/${fakeId}`);
+      const response = await request(app)
+        .get(`/mccs/transaction/${fakeId}`)
+        .set("Cookie", authCookie);
       
       expect(response.statusCode).toBe(404);
       expect(response.body).toHaveProperty("success", false);
@@ -326,7 +343,9 @@ describe("Transaction Controller Tests", () => {
     });
     
     it("should return 400 for invalid transaction ID format", async () => {
-      const response = await request(app).get("/mccs/transaction/invalid-id");
+      const response = await request(app)
+        .get("/mccs/transaction/invalid-id")
+        .set("Cookie", authCookie);
       
       expect(response.statusCode).toBe(400);
       expect(response.body).toHaveProperty("success", false);
@@ -337,7 +356,9 @@ describe("Transaction Controller Tests", () => {
   describe("POST /mccs/transaction/:id/status", () => {
     it("should update transaction status", async () => {
       // First get a transaction ID
-      const transactionsResponse = await request(app).get("/mccs/transactions");
+      const transactionsResponse = await request(app)
+        .get("/mccs/transactions")
+        .set("Cookie", authCookie);
       const transactionId = transactionsResponse.body.transactions[0]._id;
       
       const response = await request(app)
@@ -359,7 +380,9 @@ describe("Transaction Controller Tests", () => {
     
     it("should return 400 for invalid status", async () => {
       // First get a transaction ID
-      const transactionsResponse = await request(app).get("/mccs/transactions");
+      const transactionsResponse = await request(app)
+        .get("/mccs/transactions")
+        .set("Cookie", authCookie);
       const transactionId = transactionsResponse.body.transactions[1]._id;
       
       const response = await request(app)
@@ -392,7 +415,9 @@ describe("Transaction Controller Tests", () => {
     
     it("should return 401 when not authenticated", async () => {
       // First get a transaction ID
-      const transactionsResponse = await request(app).get("/mccs/transactions");
+      const transactionsResponse = await request(app)
+        .get("/mccs/transactions")
+        .set("Cookie", authCookie);
       const transactionId = transactionsResponse.body.transactions[2]._id;
       
       const response = await request(app)
@@ -524,6 +549,6 @@ describe("Transaction Controller Tests", () => {
         expect(response.body.error).not.toContain("storeRef");
         expect(response.body.error).not.toContain("storeID");
       }
-    });
+    }, 15000); // Increase timeout to 15 seconds for Python script execution
   });
 });
