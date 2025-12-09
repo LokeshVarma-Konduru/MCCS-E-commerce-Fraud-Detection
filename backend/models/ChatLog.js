@@ -51,6 +51,7 @@ const chatLogSchema = new mongoose.Schema({
 // Index for efficient queries
 chatLogSchema.index({ userId: 1, lastMessageAt: -1 });
 chatLogSchema.index({ userId: 1, isActive: 1, lastMessageAt: -1 });
+chatLogSchema.index({ title: 'text', 'messages.text': 'text' });
 
 const ChatLog = mongoose.model('ChatLog', chatLogSchema);
 export default ChatLog;

@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useChatbot } from '../hooks/useChatbot';
-import { MessageCircle, Send, Plus, Download, Trash2 } from 'lucide-react';
+import { MessageCircle, Send, Plus, Download, Trash2, Search, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getChatHistory, getChatById, deleteChatSession } from '../api';
 import ReactMarkdown from 'react-markdown';
@@ -10,29 +10,78 @@ const ChatbotPage = () => {
   const [inputMessage, setInputMessage] = useState('');
   const [recentChats, setRecentChats] = useState([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('active');
+  const [dateRange, setDateRange] = useState('all');
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
   const { user } = useAuth();
   const { messages, isLoading, sendMessage, clearMessages, loadChatSession, chatSessionId } = useChatbot();
 
-  // Fetch chat history on mount
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        setIsLoadingHistory(true);
-        const response = await getChatHistory(10);
-        setRecentChats(response.data.history || []);
-      } catch (error) {
-        console.error('Error fetching chat history:', error);
-        toast.error('Failed to load chat history');
-      } finally {
-        setIsLoadingHistory(false);
-      }
+  const computeStartDate = useCallback(() => {
+    const now = Date.now();
+    const offsets = {
+      '24h': 24 * 60 * 60 * 1000,
+      '7d': 7 * 24 * 60 * 60 * 1000,
+      '30d': 30 * 24 * 60 * 60 * 1000
     };
+    const offset = offsets[dateRange];
+    if (!offset) return null;
+    return new Date(now - offset).toISOString();
+  }, [dateRange]);
 
-    fetchHistory();
-  }, []);
+  const matchesActiveFilters = useCallback((chat) => {
+    if (statusFilter === 'active' && chat.isActive === false) return false;
+    if (statusFilter === 'inactive' && chat.isActive !== false) return false;
+
+    const startDateIso = computeStartDate();
+    if (startDateIso) {
+      const startDate = new Date(startDateIso);
+      const lastMessage = chat.lastMessageAt
+        ? new Date(chat.lastMessageAt)
+        : new Date(chat.createdAt || Date.now());
+      if (lastMessage < startDate) return false;
+    }
+
+    if (searchTerm.trim()) {
+      const term = searchTerm.trim().toLowerCase();
+      const title = (chat.title || '').toLowerCase();
+      const preview = (chat.preview || '').toLowerCase();
+      if (!title.includes(term) && !preview.includes(term)) {
+        return false;
+      }
+    }
+
+    return true;
+  }, [computeStartDate, statusFilter, searchTerm]);
+
+  const fetchHistory = useCallback(async () => {
+    try {
+      setIsLoadingHistory(true);
+      const response = await getChatHistory({
+        limit: 25,
+        search: searchTerm,
+        status: statusFilter,
+        startDate: computeStartDate()
+      });
+      setRecentChats(response.data.history || []);
+    } catch (error) {
+      console.error('Error fetching chat history:', error);
+      toast.error('Failed to load chat history');
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  }, [searchTerm, statusFilter, computeStartDate]);
+
+  // Fetch chat history (debounced) when filters change
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchHistory();
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [fetchHistory]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -51,50 +100,51 @@ const ChatbotPage = () => {
   // Update recent chats when a new chat session is created
   useEffect(() => {
     if (chatSessionId && messages.length > 1) {
-      // Check if this chat is already in the list
-      const existingChat = recentChats.find(chat => String(chat.id) === String(chatSessionId));
-
-      if (!existingChat) {
-        // Find the first user message to use as title
+      setRecentChats(prev => {
+        const existingChat = prev.find(chat => String(chat.id) === String(chatSessionId));
         const firstUserMessage = messages.find(msg => msg.sender === 'user');
-        const title = firstUserMessage ? firstUserMessage.text.substring(0, 50) : 'New Conversation';
 
-        // Add new chat to the top of the list
-        const newChat = {
-          id: chatSessionId,
-          title: title,
-          lastMessageAt: new Date(),
-          createdAt: new Date(),
-          messageCount: messages.length,
-          isActive: true,
-          preview: firstUserMessage ? firstUserMessage.text.substring(0, 100) : ''
-        };
+        if (!existingChat) {
+          const title = firstUserMessage ? firstUserMessage.text.substring(0, 50) : 'New Conversation';
+          const newChat = {
+            id: chatSessionId,
+            title,
+            lastMessageAt: new Date(),
+            createdAt: new Date(),
+            messageCount: messages.length,
+            isActive: true,
+            preview: firstUserMessage ? firstUserMessage.text.substring(0, 100) : ''
+          };
 
-        setRecentChats(prev => [newChat, ...prev]);
-      } else {
-        // Update existing chat's lastMessageAt and preview, then move to top
-        setRecentChats(prev => {
-          const lastMessage = messages[messages.length - 1];
-          const updated = prev.map(chat => {
-            if (String(chat.id) === String(chatSessionId)) {
-              return {
-                ...chat,
-                lastMessageAt: new Date(),
-                messageCount: messages.length,
-                preview: lastMessage.text.substring(0, 100)
-              };
-            }
-            return chat;
-          });
+          if (!matchesActiveFilters(newChat)) {
+            return prev;
+          }
 
-          // Sort to bring the updated chat to the top
-          return updated.sort((a, b) => {
-            return new Date(b.lastMessageAt) - new Date(a.lastMessageAt);
-          });
+          return [newChat, ...prev];
+        }
+
+        const lastMessage = messages[messages.length - 1];
+        const updated = prev.map(chat => {
+          if (String(chat.id) === String(chatSessionId)) {
+            return {
+              ...chat,
+              lastMessageAt: new Date(),
+              messageCount: messages.length,
+              preview: lastMessage.text.substring(0, 100)
+            };
+          }
+          return chat;
         });
-      }
+
+        const filtered = updated.filter(matchesActiveFilters);
+
+        // Sort to bring the updated chat to the top
+        return filtered.sort((a, b) => {
+          return new Date(b.lastMessageAt) - new Date(a.lastMessageAt);
+        });
+      });
     }
-  }, [chatSessionId, messages.length]);
+  }, [chatSessionId, messages, matchesActiveFilters]);
 
   const handleSendMessage = (e) => {
     e.preventDefault();
@@ -156,8 +206,7 @@ const ChatbotPage = () => {
 
       // Refresh the chat list on error to ensure consistency
       try {
-        const response = await getChatHistory(10);
-        setRecentChats(response.data.history || []);
+        await fetchHistory();
       } catch (refreshError) {
         console.error('Error refreshing chat history:', refreshError);
       }
@@ -232,6 +281,50 @@ const ChatbotPage = () => {
             <Plus size={20} />
             New Chat
           </button>
+
+          <div className="mt-4 space-y-3">
+            <div className="relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search conversations"
+                className="w-full pl-9 pr-9 py-2.5 border border-gray-300 rounded-lg text-sm focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20 transition disabled:opacity-50"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  aria-label="Clear search"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20 transition"
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Archived</option>
+                <option value="all">All</option>
+              </select>
+              <select
+                value={dateRange}
+                onChange={(e) => setDateRange(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20 transition"
+              >
+                <option value="all">Any time</option>
+                <option value="24h">Last 24h</option>
+                <option value="7d">Last 7 days</option>
+                <option value="30d">Last 30 days</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         {/* Recent Chats */}
