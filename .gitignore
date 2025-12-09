@@ -31,4 +31,4 @@ Thumbs.db               # Windows
 
 # ML models csv files
 ML-Models/Fraudulent_E-Commerce_Transaction_Data.csv
-ML-Models/Fraudulent_E-Commerce_Transaction_Data_2.csv.DS_Store
+ML-Models/Fraudulent_E-Commerce_Transaction_Data_2.csv
