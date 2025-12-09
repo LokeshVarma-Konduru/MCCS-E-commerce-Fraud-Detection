@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { getMLModelMetrics, getModelById } from '../api';
 import { ResponsiveHeatMap } from '@nivo/heatmap';
 import Plot from 'react-plotly.js';
-import PageHeader from '../components/PageHeader';
 import '../styles/Dashboard.css';
 
 // Helper function to normalize names (handles case, spaces, underscores, prefixes)
@@ -805,36 +804,46 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-container">
-      <PageHeader title="ML Model Dashboard" />
       <div className="dashboard-content">
-        <div className="dashboard-header">
-          <div className="model-controls">
-            <div className="model-selector">
-              <div className="section-label">Model</div>
-              <select 
-                value={selectedModelName || ''} 
-                onChange={(e) => {
-                  const modelName = e.target.value;
-                  setSelectedModelName(modelName);
-                  
-                  // Auto-select oldest version (v1.0.0) of selected model
-                  if (groupedModels[modelName]?.versions.length > 0) {
-                    // Select last version (oldest - v1.0.0) since we sort oldest first
-                    const lastVersionIndex = groupedModels[modelName].versions.length - 1;
-                    const oldestVersionId = groupedModels[modelName].versions[lastVersionIndex]._id;
-                    setSelectedVersionId(oldestVersionId);
-                  }
-                }}
-                className="model-select"
-              >
-                <option value="">Select a model</option>
-                {Object.keys(groupedModels).map(modelName => (
-                  <option key={modelName} value={modelName}>
-                    {modelName} ({groupedModels[modelName].modelType})
-                  </option>
-                ))}
-              </select>
-            </div>
+        {/* Hero Header - Matching Admin Dashboard */}
+        <div className="dashboard-hero">
+          <h1>ML Model Dashboard</h1>
+          <p className="dashboard-hero-subtitle">
+            Comprehensive ML model performance metrics and visualizations for fraud detection analysis
+          </p>
+        </div>
+
+        {/* Main Content Card - Wraps all content like Admin Dashboard map card */}
+        <div className="dashboard-main-card">
+          {/* Model Selection Section */}
+          <div className="dashboard-header">
+            <div className="model-controls">
+              <div className="model-selector">
+                <div className="section-label">Model</div>
+                <select 
+                  value={selectedModelName || ''} 
+                  onChange={(e) => {
+                    const modelName = e.target.value;
+                    setSelectedModelName(modelName);
+                    
+                    // Auto-select oldest version (v1.0.0) of selected model
+                    if (groupedModels[modelName]?.versions.length > 0) {
+                      // Select last version (oldest - v1.0.0) since we sort oldest first
+                      const lastVersionIndex = groupedModels[modelName].versions.length - 1;
+                      const oldestVersionId = groupedModels[modelName].versions[lastVersionIndex]._id;
+                      setSelectedVersionId(oldestVersionId);
+                    }
+                  }}
+                  className="model-select"
+                >
+                  <option value="">Select a model</option>
+                  {Object.keys(groupedModels).map(modelName => (
+                    <option key={modelName} value={modelName}>
+                      {modelName} ({groupedModels[modelName].modelType})
+                    </option>
+                  ))}
+                </select>
+              </div>
             
             {selectedModelName && groupedModels[selectedModelName] && (
               <div className="version-selector">
@@ -1159,6 +1168,8 @@ const Dashboard = () => {
             </div>
           </div>
         )}
+        </div>
+        {/* End of dashboard-main-card */}
       </div>
     </div>
   );

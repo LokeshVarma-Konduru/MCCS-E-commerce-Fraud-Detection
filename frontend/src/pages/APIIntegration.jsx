@@ -85,7 +85,7 @@ const groupModelsByName = (models) => {
   return sortedGrouped;
 };
 
-const APIIntegration = () => {
+const APIIntegration = ({ embedded = false }) => {
   const [apiKey, setApiKey] = useState('');
   const [hasApiKey, setHasApiKey] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -335,54 +335,61 @@ const APIIntegration = () => {
   };
 
   return (
-    <div className="developer-container">
-      <DeveloperNav activePath="/api-integration" />
+    <div className={embedded ? "" : "developer-container"}>
+      {!embedded && <DeveloperNav activePath="/api-integration" />}
 
-      <div className="main-content">
-        <PageHeader title="API Integration" />
+      <div className={embedded ? "" : "main-content"}>
+        {!embedded && <PageHeader title="API Integration" />}
 
         {error && (
-          <div className="error-message" style={{ color: 'red', marginBottom: '15px', padding: '10px', backgroundColor: '#ffeeee', borderRadius: '4px', border: '1px solid #ffcccc' }}>
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
             {error}
           </div>
         )}
 
         {copySuccess && (
-          <div className="success-message" style={{ color: 'green', marginBottom: '15px', padding: '10px', backgroundColor: '#eeffee', borderRadius: '4px', border: '1px solid #ccffcc' }}>
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
             {copySuccess}
           </div>
         )}
 
-        <div className="api-integration-grid">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* API Keys Section */}
-          <div className="card">
-            <div className="card-header">
-              <h3>API Keys</h3>
-            </div>
-            <div className="api-key-content">
+          <div className="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">API Keys</h3>
+            <div>
               {isLoading ? (
-                <p>Loading...</p>
+                <div className="flex items-center justify-center py-4 text-gray-500">Loading...</div>
               ) : hasApiKey ? (
-                <div className="api-key-input">
+                <div className="space-y-3">
                   <input 
                     type="text" 
                     value={apiKey} 
                     readOnly 
-                    className="key-field"
+                    className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-md font-mono text-sm"
                   />
-                  <div className="api-key-buttons">
-                    <button className="api-button" onClick={handleCopyKey}>
+                  <div className="flex gap-2">
+                    <button 
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+                      onClick={handleCopyKey}
+                    >
                       <FaCopy /> Copy
                     </button>
-                    <button className="api-button" onClick={handleRegenerateKey}>
+                    <button 
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                      onClick={handleRegenerateKey}
+                    >
                       <FaSync /> Regenerate
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="generate-key-section">
-                  <p>You don't have an API key yet. Generate one to start using our API.</p>
-                  <button className="primary-button" onClick={handleGenerateKey}>
+                <div className="text-center py-4">
+                  <p className="text-gray-600 mb-4">You don't have an API key yet. Generate one to start using our API.</p>
+                  <button 
+                    className="px-6 py-2 text-sm font-medium bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+                    onClick={handleGenerateKey}
+                  >
                     Generate API Key
                   </button>
                 </div>
@@ -392,14 +399,12 @@ const APIIntegration = () => {
 
           {/* API URL Generator */}
           {hasApiKey && (
-            <div className="card">
-              <div className="card-header">
-                <h3><FaCode className="header-icon" /> API URL Generator</h3>
-              </div>
-              <div className="api-url-content" style={{ padding: '20px' }}>
-                <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-                  <div className="form-group" style={{ flex: 1 }}>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#333' }}>Select Model</label>
+            <div className="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">API URL Generator</h3>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Select Model</label>
                     <select 
                       value={selectedModelName || ''}
                       onChange={(e) => {
@@ -415,16 +420,7 @@ const APIIntegration = () => {
                           setSelectedVersion(oldestVersion);
                         }
                       }}
-                      className="form-select"
-                      style={{ 
-                        width: '100%', 
-                        padding: '10px', 
-                        borderRadius: '4px', 
-                        border: '1px solid #ddd',
-                        backgroundColor: '#f8f9fa',
-                        color: '#333',
-                        fontSize: '14px'
-                      }}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">Select a model</option>
                       {Object.keys(groupedModels).map(modelName => (
@@ -436,8 +432,8 @@ const APIIntegration = () => {
                   </div>
                   
                   {selectedModelName && groupedModels[selectedModelName] && (
-                    <div className="form-group" style={{ flex: 1 }}>
-                      <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#333' }}>Select Version</label>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Select Version</label>
                       <select 
                         value={selectedVersionId || ''}
                         onChange={(e) => {
@@ -446,16 +442,7 @@ const APIIntegration = () => {
                           const version = groupedModels[selectedModelName].versions.find(v => v._id === versionId);
                           setSelectedVersion(version || null);
                         }}
-                        className="form-select"
-                        style={{ 
-                          width: '100%', 
-                          padding: '10px', 
-                          borderRadius: '4px', 
-                          border: '1px solid #ddd',
-                          backgroundColor: '#f8f9fa',
-                          color: '#333',
-                          fontSize: '14px'
-                        }}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="">Select a version</option>
                         {groupedModels[selectedModelName].versions.map(version => (
@@ -470,99 +457,33 @@ const APIIntegration = () => {
                   )}
                 </div>
                 
-                <div className="api-url-display" style={{ 
-                  marginTop: '20px', 
-                  padding: '15px', 
-                  backgroundColor: '#f0f4f8', 
-                  borderRadius: '4px',
-                  border: '1px solid #d0d7de'
-                }}>
-                  <label style={{ 
-                    display: 'block', 
-                    marginBottom: '8px', 
-                    fontWeight: '500', 
-                    color: '#333' 
-                  }}>
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Your API Endpoint URL
                   </label>
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '10px',
-                    marginBottom: '10px'
-                  }}>
+                  <div className="flex items-center gap-2">
                     <input 
                       type="text" 
                       value={apiUrl} 
                       readOnly 
-                      className="url-field"
-                      style={{ 
-                        flex: '1',
-                        padding: '10px',
-                        borderRadius: '4px',
-                        border: '1px solid #ddd',
-                        backgroundColor: '#fff',
-                        color: '#333',
-                        fontSize: '14px',
-                        fontFamily: 'monospace'
-                      }}
+                      className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-md font-mono text-sm"
                     />
                     <button 
-                      className="api-button" 
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
                       onClick={handleCopyUrl}
-                      style={{ 
-                        padding: '10px 15px',
-                        backgroundColor: '#4a6cf7',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '5px',
-                        fontSize: '14px'
-                      }}
                     >
                       <FaCopy /> Copy
                     </button>
                   </div>
                 </div>
                 
-                <div className="api-usage-instructions" style={{ 
-                  marginTop: '20px',
-                  backgroundColor: '#fff',
-                  border: '1px solid #e1e4e8',
-                  borderRadius: '4px',
-                  padding: '15px'
-                }}>
-                  <h4 style={{ 
-                    color: '#333', 
-                    marginTop: '0',
-                    marginBottom: '10px',
-                    fontSize: '16px',
-                    fontWeight: '600'
-                  }}>How to use:</h4>
-                  <p style={{ 
-                    color: '#555', 
-                    marginBottom: '15px',
-                    fontSize: '14px',
-                    lineHeight: '1.5'
-                  }}>
+                <div className="bg-white border border-gray-200 rounded-md p-4">
+                  <h4 className="text-base font-semibold text-gray-900 mb-2">How to use:</h4>
+                  <p className="text-sm text-gray-600 mb-3">
                     Make a POST request to this URL with your transaction data in the request body.
                   </p>
-                  <div style={{ 
-                    backgroundColor: '#f6f8fa',
-                    borderRadius: '4px',
-                    padding: '15px',
-                    overflow: 'auto'
-                  }}>
-                    <pre style={{ 
-                      margin: '0',
-                      color: '#333',
-                      fontSize: '13px',
-                      fontFamily: 'monospace',
-                      lineHeight: '1.5'
-                    }}>
+                  <div className="bg-gray-50 rounded-md p-4 overflow-auto">
+                    <pre className="text-xs font-mono text-gray-800 leading-relaxed">
 {`// Example request body:
 {
   "Transaction Amount": [100.50],
@@ -588,10 +509,8 @@ const APIIntegration = () => {
 
           {/* Test API Calls Section */}
           {hasApiKey && (
-            <div className="card">
-              <div className="card-header">
-                <h3>Test API Calls</h3>
-              </div>
+            <div className="bg-white rounded-lg p-6 shadow-md">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Test API Calls</h3>
               <div className="test-api-content">
                 <form className="test-form" onSubmit={handleTestRequest}>
                   <div className="form-group">
@@ -809,11 +728,9 @@ const APIIntegration = () => {
           )}
 
           {/* Recent API Calls Section */}
-          <div className="card">
-            <div className="card-header">
-              <h3>Recent API Calls</h3>
-            </div>
-            <div className="card-content">
+          <div className="bg-white rounded-lg p-6 shadow-md">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Recent API Calls</h3>
+            <div>
               <table className="api-calls-table">
                 <thead>
                   <tr>

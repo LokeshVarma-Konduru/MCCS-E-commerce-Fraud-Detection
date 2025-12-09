@@ -200,27 +200,18 @@ const Navbar = () => {
           </div>
         </div>
 
-        {isDeveloperDashboard && (
-          <div className="navbar-center">
-            <div className="search-bar">
-              <FaSearch className="search-icon" />
-              <input 
-                type="text" 
-                placeholder="Search logs, transactions..." 
-                className="search-input"
-              />
-            </div>
-          </div>
-        )}
+        {/* Global Search Bar */}
+        <div className="navbar-search">
+          <FaSearch className="search-icon" />
+          <input
+            type="text"
+            placeholder="Search logs, transactions..."
+            className="navbar-search-input"
+          />
+        </div>
 
-        <div className="navbar-right">
-          {isDeveloperDashboard && (
-            <div className="api-status">
-              <span className="status-dot"></span>
-              <span className="status-text">API Connected</span>
-            </div>
-          )}
-          <div className="profile-container" ref={profileRef} onClick={() => setIsProfileOpen(!isProfileOpen)}>
+        <div className="navbar-right" ref={profileRef}>
+          <div className="profile-container" onClick={() => setIsProfileOpen(!isProfileOpen)}>
             <span className="profile-text">{user ? getInitials(user.name) : 'U'}</span>
             {isProfileOpen && (
               <div className="profile-dropdown">
