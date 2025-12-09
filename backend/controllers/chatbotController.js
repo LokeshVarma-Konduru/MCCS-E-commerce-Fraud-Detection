@@ -11,6 +11,7 @@ import ChatLog from '../models/ChatLog.js';
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const PREVIOUS_REFERENCE_REGEX = /\b(these|those|them|both|all|this|that)\b/i;
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 function extractTransactionIds(text) {
   if (!text) return [];
@@ -700,20 +701,67 @@ async function buildUserContext(user) {
 export const getChatHistory = async (req, res) => {
   try {
     const user = req.user;
-    const { limit = 10, includeInactive = false } = req.query;
+    const {
+      limit = 10,
+      includeInactive = false,
+      search = '',
+      status,
+      startDate,
+      endDate
+    } = req.query;
+
+    const includeInactiveFlag = includeInactive === true || includeInactive === 'true';
+    const parsedLimit = Math.min(Math.max(parseInt(limit, 10) || 10, 1), 50);
 
     // Build filter based on user role
     const filter = { userId: user._id };
 
-    // Only show active chats by default
-    if (!includeInactive) {
+    // Apply status filter
+    if (status === 'active') {
+      filter.isActive = true;
+    } else if (status === 'inactive') {
+      filter.isActive = false;
+    } else if (!includeInactiveFlag) {
+      // Default to active chats only if caller didn't explicitly request inactive/all
       filter.isActive = true;
     }
 
+    // Date range filter
+    const dateRange = {};
+    if (startDate) {
+      const parsedStart = new Date(startDate);
+      if (!isNaN(parsedStart.getTime())) {
+        dateRange.$gte = parsedStart;
+      }
+    }
+    if (endDate) {
+      const parsedEnd = new Date(endDate);
+      if (!isNaN(parsedEnd.getTime())) {
+        dateRange.$lte = parsedEnd;
+      }
+    }
+    if (Object.keys(dateRange).length > 0) {
+      filter.lastMessageAt = dateRange;
+    }
+
+    // Search filter across titles and message text
+    let query = { ...filter };
+    if (search && typeof search === 'string' && search.trim()) {
+      const safeSearch = escapeRegex(search.trim());
+      const searchRegex = new RegExp(safeSearch, 'i');
+      query = {
+        ...filter,
+        $or: [
+          { title: searchRegex },
+          { 'messages.text': searchRegex }
+        ]
+      };
+    }
+
     // Fetch chat sessions
-    const chatSessions = await ChatLog.find(filter)
+    const chatSessions = await ChatLog.find(query)
       .sort({ lastMessageAt: -1 })
-      .limit(parseInt(limit))
+      .limit(parsedLimit)
       .select('title lastMessageAt isActive messages createdAt')
       .lean();
 

@@ -390,9 +390,56 @@ export const sendChatMessage = async (message, chatSessionId = null) => {
   }
 };
 
-export const getChatHistory = async (limit = 10) => {
+export const getChatHistory = async (options = {}) => {
   try {
-    const response = await axios.get(`${API_URL}/chatbot/history?limit=${limit}`);
+    const {
+      limit = 10,
+      search = '',
+      status = 'active',
+      startDate,
+      endDate,
+      dateRange = 'all'
+    } = options || {};
+
+    const params = new URLSearchParams();
+    params.append('limit', limit);
+
+    const trimmedSearch = search?.trim();
+    if (trimmedSearch) {
+      params.append('search', trimmedSearch);
+    }
+
+    // Status filtering
+    if (status && status !== 'all') {
+      params.append('status', status);
+    } else {
+      params.append('includeInactive', true);
+    }
+
+    const now = Date.now();
+    let computedStartDate = startDate;
+    if (!computedStartDate && dateRange && dateRange !== 'all') {
+      const offsets = {
+        '24h': 24 * 60 * 60 * 1000,
+        '7d': 7 * 24 * 60 * 60 * 1000,
+        '30d': 30 * 24 * 60 * 60 * 1000
+      };
+      const offset = offsets[dateRange];
+      if (offset) {
+        computedStartDate = new Date(now - offset).toISOString();
+      }
+    }
+
+    if (computedStartDate) {
+      params.append('startDate', new Date(computedStartDate).toISOString());
+    }
+
+    if (endDate) {
+      params.append('endDate', new Date(endDate).toISOString());
+    }
+
+    const queryString = params.toString();
+    const response = await axios.get(`${API_URL}/chatbot/history${queryString ? `?${queryString}` : ''}`);
     return response;
   } catch (error) {
     console.error('Error fetching chat history:', error);

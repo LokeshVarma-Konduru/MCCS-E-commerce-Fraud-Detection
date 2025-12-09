@@ -68,37 +68,81 @@ const Help = () => {
     ],
     developer: [
       {
-        title: 'Developer Tools',
-        icon: <FaCode />,
+        title: 'Architecture & Data Flow',
+        icon: <FaChartBar />,
         content: (
           <>
-            <p>Access to the system's technical components and development tools.</p>
-            <h4>Available Tools</h4>
+            <p>Two-tier app: React/Vite frontend (port 5173) consuming Express/Node backend (port 9000) that serves REST under <code>/mccs</code>. MongoDB persists users, transactions, models, and chat logs. Socket.io enables real-time alerts. Gemini API powers the chatbot responses. Frontend auth uses HTTP-only cookies issued by the backend.</p>
+            <h4>Flow (happy-path)</h4>
             <ul>
-              <li>API documentation and endpoints</li>
-              <li>Algorithm configuration interface</li>
-              <li>Testing environment for rule modifications</li>
+              <li>User logs in → backend sets auth cookie → React routes are unlocked.</li>
+              <li>Dashboards fetch KPIs and transaction data via <code>/mccs/*</code> APIs.</li>
+              <li>Chatbot calls <code>/mccs/chatbot/ask</code>; backend stores messages in <code>ChatLog</code> and calls Gemini.</li>
+              <li>Alerts stream over Socket.io rooms scoped by role/store.</li>
+            </ul>
+          </>
+        )
+      },
+      {
+        title: 'Repository Structure',
+        icon: <FaList />,
+        content: (
+          <>
+            <ul>
+              <li><code>/backend</code>: Express entry <code>index.js</code>; routes under <code>routes/</code>; controllers (incl. chatbot) under <code>controllers/</code>; Mongoose models in <code>models/</code>; middleware for auth/admin; ML assets in <code>ml_models/</code>.</li>
+              <li><code>/frontend</code>: Vite React app; pages in <code>src/pages</code>; shared components in <code>src/components</code>; hooks (e.g., <code>useChatbot</code>) in <code>src/hooks</code>; styles in <code>src/styles</code>; API helper in <code>src/api.js</code>.</li>
+              <li><code>/ML-Models</code>: notebooks, preprocessing scripts, and model artifacts for offline training.</li>
+            </ul>
+          </>
+        )
+      },
+      {
+        title: 'Runbook (Dev)',
+        icon: <FaTools />,
+        content: (
+          <>
+            <h4>Env keys (backend)</h4>
+            <ul>
+              <li><code>PORT</code> (default 9000), <code>MONGO_URI</code>, <code>JWT_SECRET</code>, <code>FRONTEND_URL</code> (e.g., http://localhost:5173), <code>GEMINI_API_KEY</code>.</li>
+            </ul>
+            <h4>Commands</h4>
+            <ul>
+              <li>Backend: <code>cd backend && npm install && npm start</code></li>
+              <li>Frontend: <code>cd frontend && npm install && npm run dev</code></li>
+              <li>API base: <code>http://localhost:9000/mccs</code> (protected by auth cookie)</li>
+            </ul>
+          </>
+        )
+      },
+      {
+        title: 'Chatbot & History',
+        icon: <FaLightbulb />,
+        content: (
+          <>
+            <ul>
+              <li>Endpoint: <code>POST /mccs/chatbot/ask</code> with optional <code>chatSessionId</code>; chat persisted in <code>ChatLog</code>.</li>
+              <li>History: <code>GET /mccs/chatbot/history</code> supports <code>search</code>, <code>status</code>, <code>startDate</code>, <code>includeInactive</code>; frontend sidebar includes search + status/date filters.</li>
+              <li>Deletes: <code>DELETE /mccs/chatbot/chat/:id</code> marks sessions inactive.</li>
+              <li>Transactions: <code>PUT /mccs/chatbot/transaction/status</code> enforces role-based store scoping.</li>
+            </ul>
+          </>
+        )
+      },
+      {
+        title: 'Security & Testing',
+        icon: <FaLock />,
+        content: (
+          <>
+            <ul>
+              <li>Auth: JWT in HTTP-only cookie; routes behind auth middleware; rate limiting on chatbot endpoints.</li>
+              <li>RBAC: Admin/Developer/StoreManager enforced in controllers and Socket.io room joins.</li>
+              <li>Tests: <code>npm test</code> in backend runs Jest with in-memory Mongo; add integration tests under <code>backend/tests</code>.</li>
             </ul>
             <div className="api-docs-link">
               <Link to="/api-docs">
                 <FaBook /> View Complete API Documentation <FaExternalLinkAlt />
               </Link>
             </div>
-          </>
-        )
-      },
-      {
-        title: 'Algorithm Management',
-        icon: <FaDatabase />,
-        content: (
-          <>
-            <p>Configure and fine-tune the fraud detection algorithms.</p>
-            <h4>Key Features</h4>
-            <ul>
-              <li>Rule creation and modification</li>
-              <li>Threshold adjustments</li>
-              <li>Model performance monitoring</li>
-            </ul>
           </>
         )
       }
