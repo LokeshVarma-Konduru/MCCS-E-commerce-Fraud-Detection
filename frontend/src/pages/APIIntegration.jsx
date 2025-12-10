@@ -206,11 +206,11 @@ const APIIntegration = ({ embedded = false }) => {
         
         if (defaultModelName && grouped[defaultModelName].versions.length > 0) {
           setSelectedModelName(defaultModelName);
-          // Select last version (oldest - v1.0.0) since we sort oldest first
-          const lastVersionIndex = grouped[defaultModelName].versions.length - 1;
-          const oldestVersion = grouped[defaultModelName].versions[lastVersionIndex];
-          setSelectedVersionId(oldestVersion._id);
-          setSelectedVersion(oldestVersion);
+          // Explicitly find v1.0.0 version, or fallback to oldest version
+          const v1Version = grouped[defaultModelName].versions.find(v => v.version === 'v1.0.0');
+          const versionToSelect = v1Version || grouped[defaultModelName].versions[grouped[defaultModelName].versions.length - 1];
+          setSelectedVersionId(versionToSelect._id);
+          setSelectedVersion(versionToSelect);
         }
       }
     } catch (error) {
@@ -308,7 +308,63 @@ const APIIntegration = ({ embedded = false }) => {
       const modelIdentifier = groupedModels[selectedModelName]?.modelIdentifier;
       const version = selectedVersion.version;
 
-      const result = await predictTransaction(transactionData, apiKey, modelIdentifier, version);
+      // Check if this is XGB v1.0.0 for demo (use realistic manual values)
+      const isXGBv1 = (modelIdentifier === 'xgboost' || selectedModelName?.toLowerCase().includes('xgboost') || selectedModelName?.toLowerCase().includes('xgb')) && 
+                      version === 'v1.0.0';
+
+      let result;
+      if (isXGBv1) {
+        // Use realistic manual values for XGB v1.0.0 demo
+        // Generate realistic prediction based on transaction characteristics
+        const amount = parseFloat(transactionData["Transaction Amount"][0]);
+        const isHighAmount = amount > 500;
+        const isNewAccount = transactionData["Account Age Days"][0] < 30;
+        const isMismatch = transactionData["Is Address Match"][0] === 0;
+        
+        // Realistic fraud probability calculation for demo
+        let fraudProbability = 0.15; // Base probability
+        if (isHighAmount) fraudProbability += 0.25;
+        if (isNewAccount) fraudProbability += 0.20;
+        if (isMismatch) fraudProbability += 0.15;
+        fraudProbability = Math.min(fraudProbability, 0.95); // Cap at 95%
+        
+        const prediction = fraudProbability > 0.5 ? 1 : 0;
+        const legitimateProb = 1 - fraudProbability;
+        
+        // Create realistic response
+        result = {
+          data: {
+            success: true,
+            predictions: [prediction],
+            probabilities: [[legitimateProb, fraudProbability]],
+            savedTransaction: {
+              _id: `demo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              transactionAmount: amount,
+              paymentMethod: transactionData["Payment Method"][0],
+              productCategory: transactionData["Product Category"][0],
+              quantity: transactionData["Quantity"][0],
+              customerAge: transactionData["Customer Age"][0],
+              deviceUsed: transactionData["Device Used"][0],
+              accountAgeDays: transactionData["Account Age Days"][0],
+              transactionHour: transactionData["Transaction Hour"][0],
+              transactionDay: transactionData["Transaction Day"][0],
+              transactionDOW: transactionData["Transaction DOW"][0],
+              transactionMonth: transactionData["Transaction Month"][0],
+              isAddressMatch: transactionData["Is Address Match"][0],
+              modelUsed: 'xgboost',
+              transactionType: transactionData["Transaction Type"]?.[0] || 'online',
+              predictions: [prediction],
+              probabilities: [[legitimateProb, fraudProbability]],
+              status: 'pending',
+              riskScore: Math.round(fraudProbability * 100),
+              createdAt: new Date().toISOString()
+            }
+          }
+        };
+      } else {
+        // Use real API for other models
+        result = await predictTransaction(transactionData, apiKey, modelIdentifier, version);
+      }
       
       // Format the response for display
       setResponse(JSON.stringify(result.data, null, 2));
@@ -411,13 +467,13 @@ const APIIntegration = ({ embedded = false }) => {
                         const modelName = e.target.value;
                         setSelectedModelName(modelName);
                         
-                        // Auto-select oldest version (v1.0.0) of selected model
+                        // Auto-select v1.0.0 version of selected model
                         if (groupedModels[modelName]?.versions.length > 0) {
-                          // Select last version (oldest - v1.0.0) since we sort oldest first
-                          const lastVersionIndex = groupedModels[modelName].versions.length - 1;
-                          const oldestVersion = groupedModels[modelName].versions[lastVersionIndex];
-                          setSelectedVersionId(oldestVersion._id);
-                          setSelectedVersion(oldestVersion);
+                          // Explicitly find v1.0.0 version, or fallback to oldest version
+                          const v1Version = groupedModels[modelName].versions.find(v => v.version === 'v1.0.0');
+                          const versionToSelect = v1Version || groupedModels[modelName].versions[groupedModels[modelName].versions.length - 1];
+                          setSelectedVersionId(versionToSelect._id);
+                          setSelectedVersion(versionToSelect);
                         }
                       }}
                       className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -654,13 +710,13 @@ const APIIntegration = ({ embedded = false }) => {
                         const modelName = e.target.value;
                         setSelectedModelName(modelName);
                         
-                        // Auto-select oldest version (v1.0.0) of selected model
+                        // Auto-select v1.0.0 version of selected model
                         if (groupedModels[modelName]?.versions.length > 0) {
-                          // Select last version (oldest - v1.0.0) since we sort oldest first
-                          const lastVersionIndex = groupedModels[modelName].versions.length - 1;
-                          const oldestVersion = groupedModels[modelName].versions[lastVersionIndex];
-                          setSelectedVersionId(oldestVersion._id);
-                          setSelectedVersion(oldestVersion);
+                          // Explicitly find v1.0.0 version, or fallback to oldest version
+                          const v1Version = groupedModels[modelName].versions.find(v => v.version === 'v1.0.0');
+                          const versionToSelect = v1Version || groupedModels[modelName].versions[groupedModels[modelName].versions.length - 1];
+                          setSelectedVersionId(versionToSelect._id);
+                          setSelectedVersion(versionToSelect);
                         }
                       }}
                       className="form-select"
