@@ -3,6 +3,7 @@
 import bcrypt from 'bcrypt';
 import User from '../models/User.js';
 import sendMail from '../utils/functions.js';
+import Store from '../models/Store.js';
 import { v4 as uuidv4 } from 'uuid';
 import mongoose from 'mongoose';
 
@@ -23,7 +24,7 @@ export const addUsers = async (req, res) => {
     const failedUsers = [];
 
     for (const userData of users) {
-        const { email, name, role } = userData;
+        const { email, name, role, storeRef, storeID } = userData;
 
         // Basic validation
         if (!email || !name || !role) {
@@ -31,8 +32,8 @@ export const addUsers = async (req, res) => {
             continue;
         }
 
-        if (!['Admin', 'Developer'].includes(role)) {
-            failedUsers.push({ email, message: 'Invalid role specified (must be Admin or Developer)' });
+        if (!['Admin', 'Developer', 'StoreManager'].includes(role)) {
+            failedUsers.push({ email, message: 'Invalid role specified (must be Admin, Developer, or StoreManager)' });
             continue;
         }
 
@@ -42,6 +43,28 @@ export const addUsers = async (req, res) => {
             if (existingUser) {
                 failedUsers.push({ email, message: 'Email already exists' });
                 continue;
+            }
+
+            // Resolve store if role is StoreManager (allow either storeRef or storeID)
+            let resolvedStore = null;
+            if (role === 'StoreManager') {
+                try {
+                    if (storeRef) {
+                        resolvedStore = await Store.findById(storeRef);
+                    } else if (storeID) {
+                        resolvedStore = await Store.findOne({ storeID });
+                    } else {
+                        failedUsers.push({ email, message: 'StoreManager requires storeRef or storeID' });
+                        continue;
+                    }
+                    if (!resolvedStore) {
+                        failedUsers.push({ email, message: 'Provided store not found' });
+                        continue;
+                    }
+                } catch (storeErr) {
+                    failedUsers.push({ email, message: 'Invalid store reference' });
+                    continue;
+                }
             }
 
             // Generate temporary password
@@ -54,7 +77,11 @@ export const addUsers = async (req, res) => {
                 name,
                 role,
                 password: hashedPassword,
-                status: true
+                status: true,
+                ...(role === 'StoreManager' && resolvedStore ? {
+                    storeRef: resolvedStore._id,
+                    storeID: resolvedStore.storeID
+                } : {})
             });
 
             await newUser.save();
@@ -70,8 +97,9 @@ Your temporary password is: ${tempPassword}
 
 Please log in and change your password immediately.
 
-Best regards,
-Your Company Name`;
+${role === 'StoreManager' && resolvedStore ? `Store Assignment:\n- Store ID: ${resolvedStore.storeID}\n- Store Name: ${resolvedStore.storeName}\n- Location: ${resolvedStore.storeLocation}\n` : ''}
+
+Best regards,\nMCCS Team`;
 
             await sendMail(email, subject, text);
         } catch (error) {
@@ -111,7 +139,8 @@ export const getAllUsers = async (req, res) => {
         
         // Fetch users with selected fields only
         const users = await User.find(query)
-            .select('name email role status')
+            .select('name email role status storeRef storeID')
+            .populate({ path: 'storeRef', select: 'storeID storeName storeLocation' })
             .sort({ name: 1 }); // Sort by name ascending
         
         res.status(200).json({

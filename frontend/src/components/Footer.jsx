@@ -5,7 +5,7 @@ const Footer = () => {
   return (
     <footer className="bg-[#111111] border-t border-gray-800">
       <div className="container mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* MCCS Info */}
           <div>
             <h3 className="text-xl font-bold text-white mb-4">MCCS</h3>
@@ -19,8 +19,60 @@ const Footer = () => {
             <h3 className="text-xl font-bold text-white mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/dashboard" className="text-gray-400 hover:text-white transition-colors">
-                  Dashboard
+                <Link to="/developer" className="text-gray-400 hover:text-white transition-colors">
+                  Developer Dashboard
+                </Link>
+              </li>
+              <li>
+                <Link to="/store-manager" className="text-gray-400 hover:text-white transition-colors">
+                  Store Manager
+                </Link>
+              </li>
+              <li>
+                <Link to="/admin" className="text-gray-400 hover:text-white transition-colors">
+                  Admin Dashboard
+                </Link>
+              </li>
+              <li>
+                <Link to="/reports" className="text-gray-400 hover:text-white transition-colors">
+                  Reports
+                </Link>
+              </li>
+              <li>
+                <Link to="/help" className="text-gray-400 hover:text-white transition-colors">
+                  Help Center
+                </Link>
+              </li>
+              <li>
+                <Link to="/chatbot" className="text-gray-400 hover:text-white transition-colors">
+                  AI Assistant
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Resources */}
+          <div>
+            <h3 className="text-xl font-bold text-white mb-4">Resources</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/api-integration" className="text-gray-400 hover:text-white transition-colors">
+                  API Integration
+                </Link>
+              </li>
+              <li>
+                <Link to="/model-performance" className="text-gray-400 hover:text-white transition-colors">
+                  Model Performance
+                </Link>
+              </li>
+              <li>
+                <Link to="/transaction-monitoring" className="text-gray-400 hover:text-white transition-colors">
+                  Transaction Monitoring
+                </Link>
+              </li>
+              <li>
+                <Link to="/admin-panel" className="text-gray-400 hover:text-white transition-colors">
+                  Admin Panel
                 </Link>
               </li>
               <li>

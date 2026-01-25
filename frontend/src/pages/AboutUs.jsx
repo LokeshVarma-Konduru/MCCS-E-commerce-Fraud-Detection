@@ -1,34 +1,31 @@
 import React from 'react';
-import Footer from '../components/Footer';
 import logo from '../assets/logo.jpg';
 import '../styles/AboutUs.css';
 
 const AboutUs = () => {
   return (
-    <div className="about-container bg-[#1a1a1a] text-gray-300">
+    <div className="about-container">
       <div className="about-content">
-        {/* Hero Section with Smaller Logo */}
-        <div className="relative bg-[#222222] py-12 mt-16">
-          <div className="container mx-auto px-6">
-            <div className="flex flex-col items-center text-center">
-              <img src={logo} alt="MCCS Logo" className="w-48 h-48 object-contain mb-6" />
-              <h1 className="text-4xl font-bold mb-4 text-white">Welcome to MCCS</h1>
-              <p className="text-xl text-gray-400">Marine Corps Community Services</p>
-              <p className="text-lg text-gray-500 mt-2 italic">"Semper Fidelis"</p>
-            </div>
+        {/* Hero Section with Logo */}
+        <div className="about-hero">
+          <div className="about-hero-content">
+            <img src={logo} alt="MCCS Logo" className="about-logo" />
+            <h1 className="about-title">Welcome to MCCS</h1>
+            <p className="about-subtitle">Marine Corps Community Services</p>
+            <p className="about-motto">"Semper Fidelis"</p>
           </div>
         </div>
 
         {/* Mission Section */}
-        <section className="bg-[#1a1a1a] py-12">
-          <div className="container mx-auto px-6">
-            <h2 className="text-3xl font-bold mb-8 text-center text-white">Our Mission</h2>
-            <div className="bg-[#222222] p-6 rounded-lg shadow-lg">
-              <p className="text-lg leading-relaxed">
+        <section className="about-section">
+          <div className="about-section-inner">
+            <h2 className="about-section-title">Our Mission</h2>
+            <div className="about-card">
+              <p className="about-text">
                 MCCS is a comprehensive network of quality of life programs and services designed to support 
                 and enhance the lives of Marines, their families, and the military community.
               </p>
-              <p className="text-lg leading-relaxed mt-4">
+              <p className="about-text">
                 Our mission is to provide the highest quality programs, services, and facilities to support 
                 the readiness and retention of Marines, while enhancing their quality of life and that of their families.
               </p>
@@ -37,22 +34,19 @@ const AboutUs = () => {
         </section>
 
         {/* Core Values Section */}
-        <section className="bg-[#222222] py-12">
-          <div className="container mx-auto px-6">
-            <h2 className="text-3xl font-bold mb-8 text-center text-white">Core Values</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <section className="about-section about-section-alt">
+          <div className="about-section-inner">
+            <h2 className="about-section-title">Core Values</h2>
+            <div className="about-values-grid">
               {[
                 { title: 'Excellence', desc: 'in Service' },
                 { title: 'Commitment', desc: 'to Our Community' },
                 { title: 'Innovation', desc: 'in Solutions' },
                 { title: 'Integrity', desc: 'in Operations' }
               ].map((value, index) => (
-                <div 
-                  key={index} 
-                  className="bg-[#1a1a1a] p-6 rounded-lg shadow-lg transform hover:scale-105 transition-transform duration-300 border border-gray-800"
-                >
-                  <h3 className="text-xl font-bold mb-2 text-white">{value.title}</h3>
-                  <p className="text-gray-400">{value.desc}</p>
+                <div key={index} className="about-value-card">
+                  <h3 className="about-value-title">{value.title}</h3>
+                  <p className="about-value-desc">{value.desc}</p>
                 </div>
               ))}
             </div>
@@ -60,11 +54,11 @@ const AboutUs = () => {
         </section>
 
         {/* Commitment Section */}
-        <section className="bg-[#1a1a1a] py-12">
-          <div className="container mx-auto px-6">
-            <h2 className="text-3xl font-bold mb-8 text-center text-white">Our Commitment</h2>
-            <div className="bg-[#222222] p-6 rounded-lg shadow-lg border border-gray-800">
-              <p className="text-lg leading-relaxed text-center">
+        <section className="about-section">
+          <div className="about-section-inner">
+            <h2 className="about-section-title">Our Commitment</h2>
+            <div className="about-card">
+              <p className="about-text about-text-center">
                 In line with our motto "Semper Fidelis" (Always Faithful), we are committed to maintaining 
                 the highest standards of security and reliability in our e-commerce fraud detection system, 
                 protecting our community while ensuring seamless service delivery.
@@ -72,8 +66,6 @@ const AboutUs = () => {
             </div>
           </div>
         </section>
-
-        <Footer />
       </div>
     </div>
   );

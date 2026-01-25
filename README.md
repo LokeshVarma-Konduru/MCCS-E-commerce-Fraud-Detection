@@ -55,12 +55,26 @@ EMAIL_PASS=your_email_pass
 NODE_ENV=development
 ```
 
-3. Start the backend server:
+3. Create Python virtual environment and install ML runtime (required for predictions):
+```bash
+# from repo root (Windows CMD)
+python -m venv .venv
+.venv\Scripts\activate.bat
+pip install --upgrade pip
+pip install -r backend/requirements.txt
+```
+
+4. Ensure Node uses this Python when calling the ML script:
+```bash
+set PYTHON_BIN=%CD%\.venv\Scripts\python.exe
+```
+
+5. Start the backend server:
 ```bash
 npm start
 ```
 
-4. Run tests (optional):
+6. Run tests (optional):
 ```bash
 npm test
 ```

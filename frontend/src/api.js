@@ -1,7 +1,9 @@
 /* eslint-disable no-useless-catch */
 import axios from 'axios';
 
-const API_URL = 'http://localhost:9000/mccs';
+// export const API_URL = process.env.API_URL || 'http://backend:9000/mccs';
+export const API_URL = 'http://localhost:9000/mccs';
+// export const API_URL = 'http://35.164.210.165:9000/mccs';
 
 // Configure axios defaults
 axios.defaults.withCredentials = true;
@@ -10,6 +12,9 @@ axios.defaults.headers.common['Accept'] = 'application/json';
 
 export const login = (email, password) => 
     axios.post(`${API_URL}/login`, { email, password });
+
+export const testLogin = () => 
+    axios.post(`${API_URL}/test-login`);
 
 export const verifyLoginOTP = (userId, otp) => 
     axios.post(`${API_URL}/verify-login-otp`, { userId, otp });
@@ -67,6 +72,20 @@ export const getMLModelMetrics = async () => {
     }
 };
 
+// Get models with weight files (for API Integration - only models with actual .pkl files)
+export const getModelsWithWeights = async () => {
+    try {
+        const response = await axios.get(`${API_URL}/models-with-weights`);
+        return response;
+    } catch (error) {
+        console.error('Error fetching models with weights:', error);
+        throw {
+            message: error.response?.data?.message || 'Failed to fetch models with weights',
+            status: error.response?.status
+        };
+    }
+};
+
 export const getModelById = async (modelId) => {
     try {
         const response = await axios.get(`${API_URL}/model/${modelId}`);
@@ -78,4 +97,414 @@ export const getModelById = async (modelId) => {
             status: error.response?.status
         };
     }
+};
+
+// API Key management endpoints
+export const getApiKey = async () => {
+    try {
+        const response = await axios.get(`${API_URL}/api-key`);
+        return response;
+    } catch (error) {
+        console.error('Error fetching API key:', error);
+        throw {
+            message: error.response?.data?.message || 'Failed to fetch API key',
+            status: error.response?.status
+        };
+    }
+};
+
+export const generateApiKey = async () => {
+    try {
+        const response = await axios.post(`${API_URL}/api-key/generate`);
+        return response;
+    } catch (error) {
+        console.error('Error generating API key:', error);
+        throw {
+            message: error.response?.data?.message || 'Failed to generate API key',
+            status: error.response?.status
+        };
+    }
+};
+
+export const regenerateApiKey = async () => {
+    try {
+        const response = await axios.post(`${API_URL}/api-key/regenerate`);
+        return response;
+    } catch (error) {
+        console.error('Error regenerating API key:', error);
+        throw {
+            message: error.response?.data?.message || 'Failed to regenerate API key',
+            status: error.response?.status
+        };
+    }
+};
+
+// Stores
+export const getStores = async (params = {}) => {
+    try {
+        return axios.get(`${API_URL}/stores`, { params });
+    } catch (error) {
+        throw {
+            message: error.response?.data?.message || 'Failed to fetch stores',
+            status: error.response?.status
+        };
+    }
+};
+
+// Transaction prediction with API key
+export const predictTransaction = async (data, apiKey, model, version = null) => {
+    try {
+        // Build URL with optional version parameter
+        let url = `${API_URL}/predict?apikey=${apiKey}&model=${model}`;
+        if (version) {
+            url += `&version=${version}`;
+        }
+        const response = await axios.post(url, data);
+        return response;
+    } catch (error) {
+        console.error('Error predicting transaction:', error);
+        throw {
+            message: error.response?.data?.message || 'Failed to predict transaction',
+            status: error.response?.status
+        };
+    }
+};
+
+// API Logs and Usage Statistics
+export const getApiLogs = (params = {}) => {
+    return axios.get(`${API_URL}/api-logs`, { params });
+};
+
+export const getApiLogById = (id) => {
+    return axios.get(`${API_URL}/api-logs/${id}`);
+};
+
+export const getApiUsageStats = (period = 'week') => {
+    return axios.get(`${API_URL}/api-usage-stats`, {
+        params: { period },
+        withCredentials: true  // Explicitly ensure credentials are sent
+    });
+};
+
+// Transaction data
+export const getTransactions = (params = {}) => {
+    // Add default pagination parameters if not provided
+    const queryParams = {
+        page: params.page || 1,
+        limit: params.limit || 10,
+        ...params
+    };
+    return axios.get(`${API_URL}/transactions`, { params: queryParams });
+};
+
+// Get manually flagged transactions
+export const getFlaggedTransactions = (params = {}) => {
+    const queryParams = {
+        page: params.page || 1,
+        limit: params.limit || 10,
+        ...params
+    };
+    return axios.get(`${API_URL}/transactions/flagged`, { params: queryParams });
+};
+
+export const getTransactionById = (id) => {
+    return axios.get(`${API_URL}/transaction/${id}`);
+};
+
+// Dashboard statistics
+export const getDashboardStats = (period = 'month') => {
+  try {
+    return axios.get(`${API_URL}/dashboard-stats`, { 
+      params: { period } 
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Store Manager endpoints
+export const getStoreManagerStats = (period = 'day', transactionType = 'All Transactions', storeCtx = {}) => {
+  try {
+    const { storeRef, storeID } = storeCtx || {};
+    return axios.get(`${API_URL}/store-manager/stats`, { 
+      params: { period, transactionType, storeRef, storeID } 
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getFraudTrends = (period = 'week', transactionType = 'All Transactions', storeCtx = {}) => {
+  try {
+    const { storeRef, storeID } = storeCtx || {};
+    return axios.get(`${API_URL}/store-manager/fraud-trends`, { 
+      params: { period, transactionType, storeRef, storeID } 
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getTransactionTypeDistribution = (period = 'day', typeFilter = null, storeCtx = {}) => {
+  try {
+    const { storeRef, storeID } = storeCtx || {};
+    return axios.get(`${API_URL}/store-manager/transaction-types`, { 
+      params: { period, transactionType: typeFilter, storeRef, storeID } 
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getRecentAlerts = (limit = 5, transactionType = 'All Transactions', storeCtx = {}) => {
+  try {
+    const { storeRef, storeID } = storeCtx || {};
+    return axios.get(`${API_URL}/store-manager/alerts`, { 
+      params: { limit, transactionType, storeRef, storeID } 
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Transaction Monitoring specific endpoints
+export const getTransactionFraudTrends = (period = 'week', transactionType = 'all') => {
+  try {
+    return axios.get(`${API_URL}/transaction-monitoring/fraud-trends`, {
+      params: { period, transactionType }
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getHighRiskTransactions = (limit = 5, transactionType = 'all', minRiskScore = 0) => {
+  try {
+    return axios.get(`${API_URL}/transaction-monitoring/high-risk`, {
+      params: { limit, transactionType, minRiskScore }
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const updateTransactionStatus = (transactionId, status, notes = '') => {
+  try {
+    return axios.post(`${API_URL}/transaction/:id/status`.replace(':id', transactionId), {
+      status,
+      notes
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Send report email with PDF attachment
+export const sendReportEmail = async (email, subject, message, pdfData, filename, userName = '', userRole = '') => {
+  try {
+    return axios.post(`${API_URL}/send-report`, {
+      email,
+      subject,
+      message,
+      pdfData,
+      filename,
+      userName,
+      userRole
+    });
+  } catch (error) {
+    console.error('Error sending report email:', error);
+    throw {
+      message: error.response?.data?.message || 'Failed to send report email',
+      status: error.response?.status
+    };
+  }
+};
+
+// Training Dataset endpoints
+export const uploadTrainingDataset = async (file) => {
+  try {
+    const formData = new FormData();
+    formData.append('dataset', file);
+    
+    // Use axios for file upload
+    // axios automatically detects FormData and sets 'multipart/form-data' with boundary
+    // We need to remove the default 'application/json' Content-Type for this request
+    const response = await axios({
+      method: 'post',
+      url: `${API_URL}/datasets/upload`,
+      data: formData,
+      withCredentials: true,
+      headers: {
+        // Delete the default Content-Type - axios will set multipart/form-data automatically
+      },
+      transformRequest: [(data, headers) => {
+        // Remove Content-Type to let axios handle FormData automatically
+        delete headers['Content-Type'];
+        return data;
+      }]
+    });
+    
+    return response;
+  } catch (error) {
+    console.error('Error uploading training dataset:', error);
+    throw {
+      message: error.response?.data?.message || error.response?.data?.error || 'Failed to upload dataset',
+      status: error.response?.status
+    };
+  }
+};
+
+export const getAllTrainingDatasets = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/datasets`);
+    return response;
+  } catch (error) {
+    console.error('Error fetching training datasets:', error);
+    throw {
+      message: error.response?.data?.message || 'Failed to fetch datasets',
+      status: error.response?.status
+    };
+  }
+};
+
+export const getTrainingDatasetByVersion = async (version) => {
+  try {
+    const response = await axios.get(`${API_URL}/datasets/version/${version}`);
+    return response;
+  } catch (error) {
+    console.error('Error fetching training dataset:', error);
+    throw {
+      message: error.response?.data?.message || 'Failed to fetch dataset',
+      status: error.response?.status
+    };
+  }
+};
+
+export const getLatestTrainingDataset = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/datasets/latest`);
+    return response;
+  } catch (error) {
+    console.error('Error fetching latest training dataset:', error);
+    throw {
+      message: error.response?.data?.message || 'Failed to fetch latest dataset',
+      status: error.response?.status
+    };
+  }
+};
+
+// Chatbot endpoints
+export const sendChatMessage = async (message, chatSessionId = null) => {
+  try {
+    const response = await axios.post(`${API_URL}/chatbot/ask`, {
+      message,
+      chatSessionId
+    });
+    return response;
+  } catch (error) {
+    console.error('Error sending chat message:', error);
+    throw {
+      message: error.response?.data?.error || 'Failed to get response from AI assistant',
+      status: error.response?.status
+    };
+  }
+};
+
+export const getChatHistory = async (options = {}) => {
+  try {
+    const {
+      limit = 10,
+      search = '',
+      status = 'active',
+      startDate,
+      endDate,
+      dateRange = 'all'
+    } = options || {};
+
+    const params = new URLSearchParams();
+    params.append('limit', limit);
+
+    const trimmedSearch = search?.trim();
+    if (trimmedSearch) {
+      params.append('search', trimmedSearch);
+    }
+
+    // Status filtering
+    if (status && status !== 'all') {
+      params.append('status', status);
+    } else {
+      params.append('includeInactive', true);
+    }
+
+    const now = Date.now();
+    let computedStartDate = startDate;
+    if (!computedStartDate && dateRange && dateRange !== 'all') {
+      const offsets = {
+        '24h': 24 * 60 * 60 * 1000,
+        '7d': 7 * 24 * 60 * 60 * 1000,
+        '30d': 30 * 24 * 60 * 60 * 1000
+      };
+      const offset = offsets[dateRange];
+      if (offset) {
+        computedStartDate = new Date(now - offset).toISOString();
+      }
+    }
+
+    if (computedStartDate) {
+      params.append('startDate', new Date(computedStartDate).toISOString());
+    }
+
+    if (endDate) {
+      params.append('endDate', new Date(endDate).toISOString());
+    }
+
+    const queryString = params.toString();
+    const response = await axios.get(`${API_URL}/chatbot/history${queryString ? `?${queryString}` : ''}`);
+    return response;
+  } catch (error) {
+    console.error('Error fetching chat history:', error);
+    throw {
+      message: error.response?.data?.error || 'Failed to fetch chat history',
+      status: error.response?.status
+    };
+  }
+};
+
+export const getChatById = async (chatId) => {
+  try {
+    const response = await axios.get(`${API_URL}/chatbot/chat/${chatId}`);
+    return response;
+  } catch (error) {
+    console.error('Error fetching chat session:', error);
+    throw {
+      message: error.response?.data?.error || 'Failed to fetch chat session',
+      status: error.response?.status
+    };
+  }
+};
+
+export const createNewChat = async (title = 'New Conversation') => {
+  try {
+    const response = await axios.post(`${API_URL}/chatbot/new`, { title });
+    return response;
+  } catch (error) {
+    console.error('Error creating new chat:', error);
+    throw {
+      message: error.response?.data?.error || 'Failed to create new chat session',
+      status: error.response?.status
+    };
+  }
+};
+
+export const deleteChatSession = async (chatId) => {
+  try {
+    const response = await axios.delete(`${API_URL}/chatbot/chat/${chatId}`);
+    return response;
+  } catch (error) {
+    console.error('Error deleting chat session:', error);
+    throw {
+      message: error.response?.data?.error || 'Failed to delete chat session',
+      status: error.response?.status
+    };
+  }
 };

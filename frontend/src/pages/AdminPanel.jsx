@@ -1,15 +1,18 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { addUsers, getUsers, getUserInfo, deleteUser, toggleUserStatus } from '../api';
-import Footer from '../components/Footer';
+import { FaSearch } from 'react-icons/fa';
+import { addUsers, getUsers, deleteUser, toggleUserStatus, getStores } from '../api';
+import { useAuth } from '../context/AuthContext.jsx';
 import '../styles/AdminPanel.css';
 
 const AdminPanel = () => {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
   const [userEntries, setUserEntries] = useState([
     { email: '', name: '', role: 'Developer' }
   ]);
   const [users, setUsers] = useState([]);
+  const [stores, setStores] = useState([]);
   
   // Separate messages for Add User and Users List
   const [addUserMessage, setAddUserMessage] = useState('');
@@ -51,11 +54,41 @@ const AdminPanel = () => {
   }, [roleFilter, searchTerm]);
 
   useEffect(() => {
-    checkAdminAccess();
-    fetchUsers();
-  }, []);
+    if (loading) {
+      return;
+    }
+
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    if (user.role !== 'Admin') {
+      navigate('/dashboard');
+    }
+  }, [user, loading, navigate]);
+
+  // Load stores once for dropdowns
+  useEffect(() => {
+    const loadStores = async () => {
+      try {
+        const res = await getStores();
+        const list = res?.data || [];
+        setStores(Array.isArray(list) ? list : (list.data || []));
+      } catch (e) {
+        // Silent fail; admin can still add non-store users
+      }
+    };
+    if (!loading && user && user.role === 'Admin') {
+      loadStores();
+    }
+  }, [loading, user]);
 
   useEffect(() => {
+    if (loading || !user || user.role !== 'Admin') {
+      return;
+    }
+
     // Clear any existing timeout
     if (searchTimeout.current) {
       clearTimeout(searchTimeout.current);
@@ -73,25 +106,7 @@ const AdminPanel = () => {
         clearTimeout(searchTimeout.current);
       }
     };
-  }, [fetchUsers, searchTerm, roleFilter]);
-
-  const checkAdminAccess = async () => {
-    try {
-      const userId = localStorage.getItem('userId');
-      if (!userId) {
-        navigate('/login');
-        return;
-      }
-
-      const response = await getUserInfo(userId);
-      if (!response.data.user || response.data.user.role !== 'Admin') {
-        navigate('/dashboard');
-      }
-    } catch (error) {
-      console.error('Error checking admin access:', error);
-      navigate('/login');
-    }
-  };
+  }, [fetchUsers, searchTerm, roleFilter, loading, user]);
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
@@ -138,7 +153,18 @@ const AdminPanel = () => {
     }
 
     try {
-      const response = await addUsers({ users: userEntries });
+      // Map entries: if StoreManager, attach storeRef and storeID from selected store
+      const mapped = userEntries.map((entry) => {
+        if (entry.role === 'StoreManager' && entry._selectedStoreId) {
+          const st = stores.find(s => (s._id === entry._selectedStoreId));
+          if (st) {
+            return { ...entry, storeRef: st._id, storeID: st.storeID };
+          }
+        }
+        return entry;
+      });
+
+      const response = await addUsers({ users: mapped });
 
       if (response.data) {
         const { addedUsers, failedUsers } = response.data;
@@ -290,16 +316,21 @@ const AdminPanel = () => {
   }, []);
 
   return (
-    <div className="admin-container">
-      <div className="admin-content">
-        <div className="admin-panel-container min-h-screen bg-black">
-          <div className="admin-container">
-            <h1>Admin Panel</h1>
-            <div className="admin-card">
-              <h2>Add New Users</h2>
+    <main className="admin-panel">
+      <header className="admin-panel__header">
+        <div>
+          <h1>Admin Panel</h1>
+          <p className="admin-panel__intro">
+            Manage system users, roles, and permissions
+          </p>
+        </div>
+      </header>
+      
+      <div className="admin-panel__content">
+          <div className="admin-card">
+            <h2>Add New Users</h2>
               {addUserMessage && (
-                <div className={`message ${addUserMessageType} ${addUserMessageVisible ? 'visible' : ''}`}
-                     style={{ whiteSpace: 'pre-line' }}>
+                <div className={`message ${addUserMessageType} ${addUserMessageVisible ? 'visible' : ''}`}>
                   {addUserMessage}
                 </div>
               )}
@@ -317,6 +348,7 @@ const AdminPanel = () => {
                             name="email"
                             value={entry.email}
                             onChange={(e) => handleInputChange(index, e)}
+                            className="form-input"
                             required
                           />
                         </div>
@@ -328,6 +360,7 @@ const AdminPanel = () => {
                             name="name"
                             value={entry.name}
                             onChange={(e) => handleInputChange(index, e)}
+                            className="form-input"
                             required
                           />
                         </div>
@@ -338,12 +371,34 @@ const AdminPanel = () => {
                             name="role"
                             value={entry.role}
                             onChange={(e) => handleInputChange(index, e)}
+                            className="form-input"
                             required
                           >
                             <option value="Developer">Developer</option>
                             <option value="Admin">Admin</option>
+                            <option value="StoreManager">Store Manager</option>
                           </select>
                         </div>
+                        {entry.role === 'StoreManager' && (
+                          <div className="form-group">
+                            <label htmlFor={`store-${index}`}>Store:</label>
+                            <select
+                              id={`store-${index}`}
+                              name="_selectedStoreId"
+                              value={entry._selectedStoreId || ''}
+                              onChange={(e) => handleInputChange(index, e)}
+                              className="form-input"
+                              required
+                            >
+                              <option value="" disabled>Select a store</option>
+                              {stores.map(st => (
+                                <option key={st._id} value={st._id}>
+                                  {st.storeID} — {st.storeName}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
                       </div>
                       {userEntries.length > 1 && (
                         <button
@@ -369,7 +424,7 @@ const AdminPanel = () => {
               </form>
             </div>
 
-            <div className="admin-card users-list">
+          <div className="admin-card users-list">
               <h2>User List</h2>
               {usersListMessageVisible && (
                 <div className={`message ${usersListMessageType} visible`}>
@@ -378,9 +433,10 @@ const AdminPanel = () => {
               )}
               <div className="filter-section">
                 <div className="search-box">
+                  <FaSearch className="search-icon" />
                   <input
                     type="text"
-                    placeholder="Search by name or email..."
+                    placeholder="Search users by name or email..."
                     value={searchTerm}
                     onChange={handleSearchChange}
                     className={`search-input ${isSearching ? 'searching' : ''}`}
@@ -395,6 +451,7 @@ const AdminPanel = () => {
                     <option value="">All Roles</option>
                     <option value="Admin">Admin</option>
                     <option value="Developer">Developer</option>
+                    <option value="StoreManager">Store Manager</option>
                   </select>
                 </div>
               </div>
@@ -422,7 +479,20 @@ const AdminPanel = () => {
                       {users.length > 0 ? (
                         users.map((user) => (
                           <tr key={user._id}>
-                            <td>{user.name}</td>
+                            <td>
+                              {user.name}
+                              {user.role === 'StoreManager' && (
+                                <div style={{ fontSize: '12px', color: '#555', marginTop: '4px' }}>
+                                  {(() => {
+                                    const storeID = user?.storeRef?.storeID || user?.storeID;
+                                    const storeName = user?.storeRef?.storeName;
+                                    if (storeID && storeName) return `Store: ${storeID} — ${storeName}`;
+                                    if (storeID) return `Store: ${storeID}`;
+                                    return null;
+                                  })()}
+                                </div>
+                              )}
+                            </td>
                             <td>{user.email}</td>
                             <td>{user.role}</td>
                             <td>
@@ -456,10 +526,9 @@ const AdminPanel = () => {
                 )}
               </div>
             </div>
-          </div>
 
-          {/* Delete Confirmation Modal */}
-          {deleteModalOpen && userToDelete && (
+        {/* Delete Confirmation Modal */}
+        {deleteModalOpen && userToDelete && (
             <div className="modal-overlay">
               <div className="modal-container">
                 <div className="modal-header">
@@ -484,10 +553,10 @@ const AdminPanel = () => {
                 </div>
               </div>
             </div>
-          )}
+        )}
 
-          {/* User Status Toggle Modal */}
-          {statusModalOpen && userToToggle && (
+        {/* User Status Toggle Modal */}
+        {statusModalOpen && userToToggle && (
             <div className="modal-overlay">
               <div className="modal-container">
                 <div className="modal-header">
@@ -522,12 +591,14 @@ const AdminPanel = () => {
                 </div>
               </div>
             </div>
-          )}
-        </div>
+        )}
       </div>
-      <Footer />
-    </div>
+    </main>
   );
 };
 
 export default AdminPanel;
+
+
+
+

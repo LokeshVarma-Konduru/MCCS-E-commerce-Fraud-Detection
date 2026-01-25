@@ -1,0 +1,27 @@
+/* Global Footer Styling */
+footer {
+  background-color: #111111;
+  border-top: 1px solid #333;
+  width: 100%;
+  margin-top: auto;
+}
+
+/* Container styling within footer */
+footer .container {
+  max-width: 100%;
+  width: 100%;
+  padding: 24px 48px;
+}
+
+/* Ensure proper spacing for all page containers */
+.dashboard-container,
+.developer-container,
+.help-container,
+.admin-panel-container,
+.about-us-container,
+.contact-container,
+.api-docs-container,
+.store-manager-container {
+  margin-bottom: 0;
+  padding-bottom: 24px;
+}

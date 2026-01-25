@@ -5,6 +5,7 @@ import { sendMail, generateOTP } from '../utils/functions.js';
 
 export const login = async (req, res) => {
     const { email, password } = req.body;
+    console.log(req.body);
     try {
         // Validate input
         if (!email || !password) {
@@ -21,7 +22,23 @@ export const login = async (req, res) => {
             return res.status(403).json({ message: 'Account is deactivated. Please contact administrator.' });
         }
 
-        // Generate OTP
+        // Check if this is the test user (test@gmail.com)
+        if (email === 'test@gmail.com') {
+            // Use fixed OTP for test user
+            const testOTP = '123456';
+            user.otp = testOTP;
+            user.otpExpiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+            await user.save();
+            
+            console.log(`Test user login with fixed OTP: ${testOTP}`);
+            return res.status(200).json({ 
+                message: 'Login OTP sent to email (test user)', 
+                userId: user._id,
+                isTestUser: true
+            });
+        }
+
+        // For regular users, generate random OTP
         const otp = generateOTP();
         user.otp = otp;
         user.otpExpiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
@@ -39,7 +56,7 @@ If you did not request this, please contact support.
 
 Best regards,
 Your Company Name`;
-
+        console.log(otp);
         await sendMail(email, subject, text);
 
         res.status(200).json({ message: 'Login OTP sent to email', userId: user._id });
@@ -73,7 +90,17 @@ export const verifyLoginOTP = async (req, res) => {
         const token = jwt.sign({ userId: user._id, role:user.role}, process.env.JWT_SECRET, { expiresIn: '1h' });
         res.cookie('authonlycookie', token, { httpOnly: true, maxAge: 3600000 }); // 1 hour
 
-        res.status(200).json({ message: 'OTP verified, login successful' });
+        res.status(200).json({ 
+            message: 'OTP verified, login successful',
+            token: token,
+            user: {
+                id: user._id,
+                email: user.email,
+                role: user.role,
+                storeRef: user.storeRef || null,
+                storeID: user.storeID || null
+            }
+        });
     } catch (error) {
         console.error('Verify OTP error:', error);
         res.status(500).json({ message: 'OTP verification error', error: error.message });
@@ -126,5 +153,60 @@ export const updatePassword = async (req, res) => {
     } catch (error) {
         console.error('Error updating password:', error);
         res.status(500).json({ message: 'Failed to update password', error: error.message });
+    }
+};
+
+// Create Test User Controller: Creates a test user with fixed credentials for stakeholders
+export const testLogin = async (req, res) => {
+    try {
+        // Fixed test credentials
+        const testEmail = 'test@gmail.com';
+        const testPassword = 'test@1234';
+        const testOTP = '123456';
+        
+        // Find or create the test user
+        let testUser = await User.findOne({ email: testEmail });
+        
+        if (!testUser) {
+            // Create a new test user if it doesn't exist
+            const hashedPassword = await bcrypt.hash(testPassword, 10);
+            testUser = new User({
+                email: testEmail,
+                password: hashedPassword,
+                name: 'Test User',
+                role: 'Admin',
+                status: true
+            });
+            await testUser.save();
+            res.status(201).json({ 
+                message: 'Test user created successfully', 
+                credentials: {
+                    email: testEmail,
+                    password: 'test@1234',
+                    otp: testOTP,
+                    role: 'Admin'
+                }
+            });
+        } else {
+            // Update the existing test user's password if needed
+            const hashedPassword = await bcrypt.hash(testPassword, 10);
+            testUser.password = hashedPassword;
+            testUser.role = 'Admin';
+            testUser.status = true;
+            await testUser.save();
+            
+            res.status(200).json({ 
+                message: 'Test user already exists', 
+                credentials: {
+                    email: testEmail,
+                    password: 'test@1234',
+                    otp: testOTP,
+                    role: 'Admin'
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Test user creation error:', error);
+        res.status(500).json({ message: 'Test user creation error', error: error.message });
     }
 };

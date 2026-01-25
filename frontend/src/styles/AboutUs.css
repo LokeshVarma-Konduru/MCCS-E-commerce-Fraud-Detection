@@ -1,24 +1,231 @@
-/* Custom styles for About Us page */
+/* About Us Page - Matching Admin Panel Styling */
+
+/* Main Container - Matching AdminPanel.css */
 .about-container {
-  padding: 1rem;
-  padding-top: 2rem;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  background-color: #1a1a1a;
+  gap: 2rem;
+  padding: 4rem 2.5rem 3rem;
+  background: #f5f7fb;
+  color: #0f172a;
+  min-height: calc(100vh - 140px);
+  margin-top: 80px;
 }
 
 .about-content {
-  flex: 1;
-  margin-bottom: 2rem; /* Add consistent spacing before footer */
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
 
-/* Card and section backgrounds */
+/* Hero Section */
+.about-hero {
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 3rem 1.65rem;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.about-hero:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+}
+
+.about-hero-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+}
+
+.about-logo {
+  width: 192px;
+  height: 192px;
+  object-fit: contain;
+  margin-bottom: 1rem;
+}
+
+/* Typography - Matching Admin Panel */
+.about-title {
+  margin: 0;
+  font-size: 2.1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.about-subtitle {
+  margin: 0.6rem 0 0;
+  font-size: 1.25rem;
+  color: #334155;
+  line-height: 1.6;
+}
+
+.about-motto {
+  margin: 0.4rem 0 0;
+  font-size: 1rem;
+  color: #475569;
+  font-style: italic;
+}
+
+/* Sections */
+.about-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.about-section-alt {
+  background: transparent;
+}
+
+.about-section-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.about-section-title {
+  color: #0f172a;
+  margin: 0 0 1.5rem 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* Cards - Matching Admin Panel */
 .about-card {
-  background-color: #222222;
-  border-radius: 10px;
-  padding: 1.5rem;
-  margin-bottom: 1.0rem;
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 1.65rem;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Additional custom styles can be added here */
+.about-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+}
+
+/* Text Content */
+.about-text {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #334155;
+  margin: 0 0 1rem 0;
+}
+
+.about-text:last-child {
+  margin-bottom: 0;
+}
+
+.about-text-center {
+  text-align: center;
+}
+
+/* Core Values Grid */
+.about-values-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .about-values-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.about-value-card {
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 1.65rem;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.about-value-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+}
+
+.about-value-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.about-value-desc {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #334155;
+  font-weight: 600;
+}
+
+/* Responsive Design - Matching Admin Panel */
+@media (max-width: 1024px) {
+  .about-values-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .about-container {
+    padding: 4rem 0.5rem 3rem;
+  }
+  
+  .about-hero {
+    padding: 2rem 1rem;
+  }
+  
+  .about-card {
+    padding: 1rem;
+  }
+  
+  .about-value-card {
+    padding: 1rem;
+  }
+  
+  .about-title {
+    font-size: 1.75rem;
+  }
+  
+  .about-subtitle {
+    font-size: 1.1rem;
+  }
+  
+  .about-section-title {
+    font-size: 1.25rem;
+  }
+  
+  .about-logo {
+    width: 150px;
+    height: 150px;
+  }
+}
+
+@media (max-width: 480px) {
+  .about-container {
+    padding: 3.5rem 0.25rem 3rem;
+  }
+  
+  .about-values-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .about-hero {
+    padding: 1.5rem 0.75rem;
+  }
+  
+  .about-card {
+    padding: 0.75rem;
+  }
+  
+  .about-value-card {
+    padding: 0.75rem;
+  }
+}

@@ -1,49 +1,64 @@
 // eslint-disable-next-line no-unused-vars
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { getUserInfo, logout } from '../api';
-import ChangePasswordModal from './ChangePasswordModal';
 import '../styles/Navbar.css';
+import { FaSearch, FaBars } from 'react-icons/fa';
+import ChangePasswordModal from './ChangePasswordModal';
+import mccsLogo from '../assets/16_MCCSlogo_Comp_NoText.png';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
-  const [user, setUser] = useState(null);
+  const { user, loading, logout: logoutUser } = useAuth();
   const menuRef = useRef(null);
   const profileRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    const fetchUserInfo = async () => {
-      try {
-        const userId = localStorage.getItem('userId');
-        if (!userId) {
-          navigate('/login');
-          return;
-        }
-        
-        const response = await getUserInfo(userId);
-        console.log('User Info Response:', response.data); // Debug log
-        if (response && response.data && response.data.user) {
-          setUser(response.data.user);
-        }
-      } catch (error) {
-        console.error('Error fetching user info:', error);
-        if (error.response?.status === 401) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('userId');
-          navigate('/login');
-        }
-      }
-    };
+    if (loading) {
+      return;
+    }
 
-    fetchUserInfo();
-  }, [navigate]);
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    const userRole = user.role;
+    const currentPath = location.pathname;
+
+    if (['/admin', '/admin-dashboard'].includes(currentPath) && userRole !== 'Admin') {
+      navigate(userRole === 'Developer' ? '/developer' : '/store-manager');
+      return;
+    }
+
+    const developerPaths = ['/developer', '/api-integration', '/model-performance', '/transaction-monitoring'];
+    if (!['Developer', 'Admin'].includes(userRole) && developerPaths.includes(currentPath)) {
+      navigate('/store-manager');
+      return;
+    }
+
+    if (!['StoreManager', 'Admin'].includes(userRole) && currentPath === '/store-manager') {
+      navigate('/developer');
+    }
+  }, [user, loading, navigate, location.pathname]);
+
+  // Remove debug logs
 
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // Check if the click is on a navigation item
+      const isNavigationItem = event.target.closest('.sidebar-menu li');
+      if (isNavigationItem) {
+        // Don't close the sidebar if clicking on a navigation item
+        // The handleNavigation function will handle this
+        return;
+      }
+      
+      // Otherwise, close menus when clicking outside
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setIsOpen(false);
       }
@@ -57,15 +72,22 @@ const Navbar = () => {
   }, []);
 
   const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      console.error('Error during logout:', error);
-    } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('userId');
-      navigate('/login');
+    await logoutUser();
+    navigate('/login');
+  };
+
+  const handleNavigation = (path, event) => {
+    // Prevent the default behavior and stop propagation
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
     }
+    
+    // Close the sidebar
+    setIsOpen(false);
+    
+    // Navigate to the selected path
+    navigate(path);
   };
 
   const getInitials = (name) => {
@@ -73,47 +95,124 @@ const Navbar = () => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
+  const isDeveloperDashboard = location.pathname === '/developer';
+  const currentPath = location.pathname;
+
   return (
     <nav className="navbar">
       <div className="navbar-container">
-        <div className="left-section">
-          <div className="hamburger-menu" onClick={() => setIsOpen(!isOpen)} ref={menuRef}>
-            <div className={`hamburger-icon ${isOpen ? 'open' : ''}`}>
-              <span></span>
-              <span></span>
-              <span></span>
+        <div className="navbar-left">
+          <button className="menu-button" onClick={() => setIsOpen(!isOpen)} ref={menuRef}>
+            <FaBars />
+          </button>
+          <Link to="/" className="navbar-brand">
+            <img src={mccsLogo} alt="MCCS Logo" className="navbar-logo" />
+            <span className="brand-text">MCCS Fraud Detection</span>
+          </Link>
+          <div className={`sidebar ${isOpen ? 'open' : ''}`}>
+            <div className="sidebar-header">
+              <img src={mccsLogo} alt="MCCS Logo" className="sidebar-logo" />
+              <h3>Menu</h3>
             </div>
-            <div className={`sidebar ${isOpen ? 'open' : ''}`}>
-              <div className="sidebar-header">
-                <h3>Menu</h3>
-              </div>
-              <ul className="sidebar-menu">
-                <li><Link to="/dashboard">Dashboard</Link></li>
-                <li><Link to="/transactions">Transactions</Link></li>
-                {user && user.role === 'Admin' && (
-                  <li><Link to="/admin">Admin Panel</Link></li>
-                )}
-              </ul>
-            </div>
-          </div>
-          <div className="brand">
-            <span className="brand-name">MCCS Fraud Detection</span>
+            <ul className="sidebar-menu">
+              {/* ML Model Dashboard - Only visible to Admin */}
+              {user && user.role === 'Admin' && (
+                <li 
+                  className={currentPath === '/dashboard' ? 'active' : ''}
+                  onClick={(e) => handleNavigation('/dashboard', e)}
+                >
+                  ML Model Dashboard
+                </li>
+              )}
+              
+              {user && user.role === 'Admin' && (
+                <li 
+                  className={currentPath === '/admin-dashboard' ? 'active' : ''}
+                  onClick={(e) => handleNavigation('/admin-dashboard', e)}
+                >
+                  Admin Dashboard
+                </li>
+              )}
+              
+              {/* Admin Panel - Only visible to Admin */}
+              {user && user.role === 'Admin' && (
+                <li 
+                  className={currentPath === '/admin' ? 'active' : ''}
+                  onClick={(e) => handleNavigation('/admin', e)}
+                >
+                  Admin Panel
+                </li>
+              )}
+              
+              {/* Developer Dashboard - Visible to Admin and Developer */}
+              {user && ['Admin', 'Developer'].includes(user.role) && (
+                <li 
+                  className={currentPath === '/developer' ? 'active' : ''}
+                  onClick={(e) => handleNavigation('/developer', e)}
+                >
+                  Developer Dashboard
+                </li>
+              )}
+              
+              {/* Developer sub-pages are accessed through the Developer Dashboard's top navigation */}
+              
+              {/* Store Manager - Visible to Admin and StoreManager */}
+              {user && ['Admin', 'StoreManager'].includes(user.role) && (
+                <li
+                  className={currentPath === '/store-manager' ? 'active' : ''}
+                  onClick={(e) => handleNavigation('/store-manager', e)}
+                >
+                  Store Manager
+                </li>
+              )}
+
+              {/* Chatbot - Visible to all authenticated users */}
+              <li
+                className={currentPath === '/chatbot' ? 'active' : ''}
+                onClick={(e) => handleNavigation('/chatbot', e)}
+              >
+                AI Chatbot
+              </li>
+
+              <li
+                className={currentPath === '/help' ? 'active' : ''}
+                onClick={(e) => handleNavigation('/help', e)}
+              >
+                Help & Documentation
+              </li>
+              
+              {/* About Us - Visible to all roles */}
+              <li 
+                className={currentPath === '/about' ? 'active' : ''}
+                onClick={(e) => handleNavigation('/about', e)}
+              >
+                About Us
+              </li>
+              
+              {/* Contact - Visible to all roles */}
+              <li 
+                className={currentPath === '/contact' ? 'active' : ''}
+                onClick={(e) => handleNavigation('/contact', e)}
+              >
+                Contact
+              </li>
+            </ul>
           </div>
         </div>
 
-        <div className="center-section">
-          <div className="nav-links">
-            <Link to="/dashboard" className={`nav-link ${location.pathname === '/dashboard' ? 'active' : ''}`}>Home</Link>
-            <Link to="/contact" className={`nav-link ${location.pathname === '/contact' ? 'active' : ''}`}>Contact Us</Link>
-            <Link to="/about" className={`nav-link ${location.pathname === '/about' ? 'active' : ''}`}>About Us</Link>
-          </div>
+        {/* Global Search Bar */}
+        <div className="navbar-search">
+          <FaSearch className="search-icon" />
+          <input
+            type="text"
+            placeholder="Search logs, transactions..."
+            className="navbar-search-input"
+          />
         </div>
 
-        <div className="right-section" ref={profileRef}>
-          <div className="profile-menu" onClick={() => setIsProfileOpen(!isProfileOpen)}>
-            <div className="profile-icon">
-              <span>{user ? getInitials(user.name) : 'U'}</span>
-            </div>
+        <div className="navbar-right" ref={profileRef}>
+          <div className="profile-container" onClick={() => setIsProfileOpen(!isProfileOpen)}>
+            <span className="profile-text">{user ? getInitials(user.name) : 'U'}</span>
             {isProfileOpen && (
               <div className="profile-dropdown">
                 <div className="profile-header">
@@ -124,6 +223,22 @@ const Navbar = () => {
                 </div>
                 <div className="profile-body">
                   <div className="role-badge">{user ? (user.role || 'User') : 'User'}</div>
+                  {user && user.role === 'StoreManager' && (
+                    <div style={{ marginTop: '8px', fontSize: '12px', color: '#cbd5e1' }}>
+                      {(() => {
+                        const sid = user?.storeRef?.storeID || user?.storeID;
+                        const sname = user?.storeRef?.storeName;
+                        const sloc = user?.storeRef?.storeLocation;
+                        if (!sid && !sname) return null;
+                        return (
+                          <>
+                            <div>Store: {sid}{sname ? ` — ${sname}` : ''}</div>
+                            {sloc ? <div>Location: {sloc}</div> : null}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
                 </div>
                 <div className="profile-footer">
                   <button 
